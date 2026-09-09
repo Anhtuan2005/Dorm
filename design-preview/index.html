@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Nếp KTX, bản xem trước thiết kế</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body data-screen="dashboard">
+  <a class="skip-link" href="#main-content">Bỏ qua đến nội dung chính</a>
+
+  <header class="mobile-header">
+    <a class="brand" href="?screen=student" aria-label="Nếp KTX">
+      <span class="brand-mark"><span></span><span></span><span></span></span>
+      <span><b>NẾP</b><small>Ký túc xá</small></span>
+    </a>
+    <button class="icon-button notification-button" aria-label="Thông báo"><span class="bell-icon"></span><span class="notification-dot"></span></button>
+  </header>
+
+  <aside class="sidebar">
+    <a class="brand brand-desktop" href="?screen=dashboard" aria-label="Nếp KTX">
+      <span class="brand-mark"><span></span><span></span><span></span></span>
+      <span><b>NẾP</b><small>Ký túc xá</small></span>
+    </a>
+
+    <nav class="nav manager-nav" aria-label="Điều hướng quản lý">
+      <p class="nav-label">VẬN HÀNH</p>
+      <a data-nav="dashboard" href="?screen=dashboard"><span class="nav-glyph">TQ</span>Tổng quan</a>
+      <a data-nav="rooms" href="?screen=rooms"><span class="nav-glyph">PH</span>Phòng ở</a>
+      <a data-nav="applications" href="?screen=applications"><span class="nav-glyph">ĐĐ</span>Đơn đăng ký<span class="nav-count">12</span></a>
+      <a data-nav="billing" href="?screen=billing"><span class="nav-glyph">CP</span>Thu phí</a>
+      <a data-nav="maintenance" href="?screen=maintenance"><span class="nav-glyph">SC</span>Sự cố<span class="nav-count warning">5</span></a>
+      <p class="nav-label">DỮ LIỆU</p>
+      <a href="#"><span class="nav-glyph">SV</span>Sinh viên</a>
+      <a href="#"><span class="nav-glyph">TB</span>Thông báo</a>
+      <a href="#"><span class="nav-glyph">BC</span>Báo cáo</a>
+    </nav>
+
+    <nav class="nav student-nav" aria-label="Điều hướng sinh viên">
+      <p class="nav-label">CỔNG SINH VIÊN</p>
+      <a href="#"><span class="nav-glyph">TC</span>Trang chủ</a>
+      <a class="active" href="?screen=student"><span class="nav-glyph">TP</span>Tìm phòng</a>
+      <a href="#"><span class="nav-glyph">ĐK</span>Đăng ký của tôi</a>
+      <a href="#"><span class="nav-glyph">HD</span>Hóa đơn</a>
+      <a href="#"><span class="nav-glyph">YC</span>Yêu cầu hỗ trợ</a>
+    </nav>
+
+    <div class="sidebar-help">
+      <span class="help-mark">?</span>
+      <div><b>Cần hỗ trợ?</b><small>Ban quản lý trực đến 21:00</small></div>
+    </div>
+    <div class="profile-card">
+      <span class="avatar manager-avatar">LN</span>
+      <span class="manager-profile"><b>Nguyễn Thị Lan</b><small>Nhân viên quản lý</small></span>
+      <span class="student-profile"><b>Trần Minh Anh</b><small>SV20240128</small></span>
+      <button aria-label="Mở menu">•••</button>
+    </div>
+  </aside>
+
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="breadcrumb manager-only"><span>Cơ sở Thủ Đức</span><b>/</b><span>Học kỳ I, 2026–2027</span></div>
+      <div class="breadcrumb student-only"><span>Cổng sinh viên</span><b>/</b><span>Tìm phòng</span></div>
+      <div class="topbar-actions">
+        <label class="quick-search"><span>⌕</span><input aria-label="Tìm nhanh" placeholder="Tìm sinh viên, phòng…"><kbd>⌘ K</kbd></label>
+        <button class="icon-button" aria-label="Trợ giúp">?</button>
+        <button class="icon-button notification-button" aria-label="Thông báo"><span class="bell-icon"></span><span class="notification-dot"></span></button>
+      </div>
+    </header>
+
+    <main id="main-content">
+      <section class="screen screen-dashboard" data-page="dashboard">
+        <div class="page-heading">
+          <div><p class="eyebrow">THỨ TƯ, 09 THÁNG 09</p><h1>Chào buổi sáng, chị Lan</h1><p>Những việc cần chú ý tại cơ sở Thủ Đức hôm nay.</p></div>
+          <div class="heading-actions"><button class="button secondary">Xuất báo cáo</button><button class="button primary">＋ Tạo thông báo</button></div>
+        </div>
+
+        <div class="overview-strip">
+          <div class="overview-lead"><span class="status-dot good"></span><div><small>TỶ LỆ LẤP ĐẦY</small><strong>89,2%</strong><span>1.142 / 1.280 chỗ</span></div></div>
+          <div><small>CHỖ CÒN TRỐNG</small><strong>138</strong><span>trên 4 tòa nhà</span></div>
+          <div><small>SINH VIÊN ĐANG Ở</small><strong>1.126</strong><span><i class="trend-up">↑ 18</i> so với tháng trước</span></div>
+          <div><small>ĐÃ THU KỲ 09</small><strong>412,8 tr</strong><span>86% tổng phải thu</span></div>
+        </div>
+
+        <div class="dashboard-grid">
+          <section class="work-panel panel">
+            <div class="section-heading"><div><p class="eyebrow">CẦN XỬ LÝ</p><h2>Hàng đợi hôm nay</h2></div><a href="?screen=applications">Xem tất cả</a></div>
+            <div class="work-list">
+              <a class="work-row" href="?screen=applications"><span class="work-icon plum">ĐĐ</span><span><b>12 đơn đang chờ duyệt</b><small>4 đơn đã chờ quá 24 giờ</small></span><strong>12</strong><i>›</i></a>
+              <a class="work-row" href="?screen=billing"><span class="work-icon amber">CP</span><span><b>7 hóa đơn đã quá hạn</b><small>Tổng công nợ 18.450.000 ₫</small></span><strong>7</strong><i>›</i></a>
+              <a class="work-row" href="?screen=maintenance"><span class="work-icon red">SC</span><span><b>5 sự cố ưu tiên cao</b><small>2 sự cố chưa được phân công</small></span><strong>5</strong><i>›</i></a>
+              <a class="work-row" href="#"><span class="work-icon blue">TB</span><span><b>Thông báo lịch cắt nước</b><small>Đã lên lịch gửi lúc 18:00</small></span><span class="status neutral">Đã lên lịch</span><i>›</i></a>
+            </div>
+          </section>
+
+          <section class="occupancy-panel panel">
+            <div class="section-heading"><div><p class="eyebrow">CÔNG SUẤT</p><h2>Lấp đầy theo tòa</h2></div><button class="text-button">Chi tiết</button></div>
+            <div class="occupancy-summary"><div class="ring" style="--value:89"><span><b>89%</b><small>toàn cơ sở</small></span></div><div><b>Còn 138 chỗ</b><p>Tòa C có nhiều lựa chọn nhất cho kỳ này.</p></div></div>
+            <div class="bar-list">
+              <div><span><b>Tòa A</b><small>304 / 320</small></span><i><em style="width:95%"></em></i><strong>95%</strong></div>
+              <div><span><b>Tòa B</b><small>282 / 320</small></span><i><em style="width:88%"></em></i><strong>88%</strong></div>
+              <div><span><b>Tòa C</b><small>258 / 320</small></span><i><em style="width:81%"></em></i><strong>81%</strong></div>
+              <div><span><b>Tòa D</b><small>298 / 320</small></span><i><em style="width:93%"></em></i><strong>93%</strong></div>
+            </div>
+          </section>
+
+          <section class="fee-panel panel">
+            <div class="section-heading"><div><p class="eyebrow">THU PHÍ THÁNG 09</p><h2>Tiến độ thu</h2></div><span class="status success">Đúng tiến độ</span></div>
+            <div class="fee-progress"><div><strong>412.800.000 ₫</strong><span>trên 480.200.000 ₫</span></div><b>86%</b></div>
+            <div class="progress"><i style="width:86%"></i></div>
+            <div class="fee-legend"><span><i class="paid"></i>Đã thu <b>412,8 tr</b></span><span><i class="unpaid"></i>Chưa thu <b>48,9 tr</b></span><span><i class="overdue"></i>Quá hạn <b>18,5 tr</b></span></div>
+          </section>
+
+          <section class="activity-panel panel">
+            <div class="section-heading"><div><p class="eyebrow">TRỰC TIẾP</p><h2>Hoạt động gần đây</h2></div><span class="live-indicator"><i></i>Đang cập nhật</span></div>
+            <div class="activity-list">
+              <div><span class="avatar small">HT</span><p><b>Hoàng Tuấn</b> xác nhận sinh viên nhận phòng <strong>A-301</strong><small>8 phút trước</small></p></div>
+              <div><span class="avatar small mint">NA</span><p><b>Ngọc Anh</b> ghi nhận thanh toán <strong>1.250.000 ₫</strong><small>21 phút trước</small></p></div>
+              <div><span class="avatar small gold">KT</span><p><b>Kỹ thuật</b> hoàn tất sự cố <strong>#SC-0284</strong><small>38 phút trước</small></p></div>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section class="screen screen-rooms" data-page="rooms">
+        <div class="page-heading compact">
+          <div><p class="eyebrow">QUẢN LÝ LƯU TRÚ</p><h1>Phòng ở</h1><p>320 phòng, 1.280 chỗ tại 4 tòa nhà.</p></div>
+          <button class="button primary">＋ Thêm phòng</button>
+        </div>
+        <div class="filter-bar">
+          <label class="search-field"><span>⌕</span><input placeholder="Tìm mã phòng"></label>
+          <button class="filter-button">Tất cả tòa nhà <span>⌄</span></button>
+          <button class="filter-button">Tất cả tầng <span>⌄</span></button>
+          <button class="filter-button">Còn chỗ <span class="filter-count">46</span><span>⌄</span></button>
+          <button class="filter-button">Trạng thái <span>⌄</span></button>
+          <button class="text-button clear-filter">Xóa lọc</button>
+        </div>
+        <div class="split-layout room-layout">
+          <section class="table-panel panel flush">
+            <div class="table-toolbar"><span>Hiển thị <b>46 phòng còn chỗ</b></span><button class="text-button">Sắp xếp: Chỗ trống nhiều nhất⌄</button></div>
+            <table>
+              <thead><tr><th>PHÒNG</th><th>TÒA · TẦNG</th><th>SỨC CHỨA</th><th>GIÁ / THÁNG</th><th>TRẠNG THÁI</th></tr></thead>
+              <tbody>
+                <tr class="selected"><td><div class="room-id"><span>A3</span><b>A-301<small>Nam</small></b></div></td><td>Tòa A · Tầng 3</td><td><b>6 / 8</b><small class="capacity-note">Còn 2 chỗ</small></td><td>1.200.000 ₫</td><td><span class="status success">Đang hoạt động</span></td></tr>
+                <tr><td><div class="room-id"><span>C2</span><b>C-205<small>Nữ</small></b></div></td><td>Tòa C · Tầng 2</td><td><b>5 / 8</b><small class="capacity-note good-text">Còn 3 chỗ</small></td><td>1.150.000 ₫</td><td><span class="status success">Đang hoạt động</span></td></tr>
+                <tr><td><div class="room-id"><span>B5</span><b>B-512<small>Nam</small></b></div></td><td>Tòa B · Tầng 5</td><td><b>3 / 4</b><small class="capacity-note">Còn 1 chỗ</small></td><td>1.450.000 ₫</td><td><span class="status success">Đang hoạt động</span></td></tr>
+                <tr><td><div class="room-id"><span>D1</span><b>D-108<small>Nữ</small></b></div></td><td>Tòa D · Tầng 1</td><td><b>7 / 8</b><small class="capacity-note">Còn 1 chỗ</small></td><td>1.100.000 ₫</td><td><span class="status warning">Sắp bảo trì</span></td></tr>
+                <tr><td><div class="room-id"><span>C4</span><b>C-402<small>Nữ</small></b></div></td><td>Tòa C · Tầng 4</td><td><b>2 / 6</b><small class="capacity-note good-text">Còn 4 chỗ</small></td><td>1.300.000 ₫</td><td><span class="status success">Đang hoạt động</span></td></tr>
+                <tr><td><div class="room-id"><span>A1</span><b>A-106<small>Nam</small></b></div></td><td>Tòa A · Tầng 1</td><td><b>0 / 6</b><small class="capacity-note">Tạm ngưng</small></td><td>1.300.000 ₫</td><td><span class="status danger">Đang bảo trì</span></td></tr>
+              </tbody>
+            </table>
+            <div class="pagination"><span>1–6 trong 46 phòng</span><div><button disabled>‹</button><button class="active">1</button><button>2</button><button>3</button><button>›</button></div></div>
+          </section>
+
+          <aside class="detail-panel panel room-detail">
+            <div class="detail-header"><div><span class="room-code">A-301</span><span class="status success">Đang hoạt động</span><h2>Phòng 8 người · Nam</h2><p>Tòa A, tầng 3</p></div><button class="icon-button">•••</button></div>
+            <div class="room-vitals"><div><small>CHỖ ĐANG DÙNG</small><b>6 / 8</b></div><div><small>CÒN TRỐNG</small><b class="good-text">2 chỗ</b></div><div><small>GIÁ Ở</small><b>1,2 tr<small>/tháng</small></b></div></div>
+            <div class="bed-map" aria-label="Sơ đồ giường phòng A-301">
+              <div class="bed occupied">01<span>MP</span></div><div class="bed occupied">02<span>QT</span></div><div class="bed occupied">03<span>TN</span></div><div class="bed free">04<span>Trống</span></div>
+              <div class="room-center"><span>CỬA</span><i>BÀN SINH HOẠT</i><span>WC</span></div>
+              <div class="bed occupied">05<span>ĐH</span></div><div class="bed occupied">06<span>NV</span></div><div class="bed occupied">07<span>PK</span></div><div class="bed free">08<span>Trống</span></div>
+            </div>
+            <div class="detail-section"><div class="section-heading"><h3>Tiện nghi</h3><button class="text-button">Chỉnh sửa</button></div><div class="amenities"><span>Wi-Fi</span><span>Điều hòa</span><span>Nóng lạnh</span><span>Tủ cá nhân</span><span>Ban công</span></div></div>
+            <div class="notice-inline"><span>i</span><p><b>Kiểm tra điều hòa định kỳ</b><small>Lịch dự kiến 15/09, không ảnh hưởng tiếp nhận sinh viên.</small></p></div>
+            <div class="detail-actions"><button class="button secondary">Xem lịch sử</button><button class="button primary">Quản lý lưu trú</button></div>
+          </aside>
+        </div>
+      </section>
+
+      <section class="screen screen-student" data-page="student">
+        <div class="student-hero">
+          <div><p class="eyebrow">ĐĂNG KÝ HỌC KỲ I, 2026–2027</p><h1>Tìm chỗ ở phù hợp với bạn</h1><p>Còn 138 chỗ. Hồ sơ được xét theo thứ tự gửi và điều kiện lưu trú.</p></div>
+          <div class="student-application"><span class="status info">Đang xét duyệt</span><b>Đơn #DK-2026-0184</b><small>Phòng ưu tiên: A-301</small><a href="#">Theo dõi đơn ›</a></div>
+        </div>
+        <div class="student-filter">
+          <label><span>Tòa nhà</span><button>Tất cả tòa nhà <i>⌄</i></button></label>
+          <label><span>Loại phòng</span><button>Phòng nam <i>⌄</i></button></label>
+          <label><span>Khoảng giá</span><button>Đến 1.500.000 ₫ <i>⌄</i></button></label>
+          <label><span>Tiện nghi</span><button>Bất kỳ <i>⌄</i></button></label>
+          <button class="button primary">Tìm phòng</button>
+        </div>
+        <div class="student-content">
+          <div class="room-results">
+            <div class="results-head"><div><h2>Phòng đang còn chỗ</h2><p>18 kết quả phù hợp với bạn</p></div><button class="filter-button">Sắp xếp: Phù hợp nhất ⌄</button></div>
+            <article class="student-room featured">
+              <div class="room-visual visual-a"><span class="match-badge">Phù hợp nhất</span><div class="visual-building"><i></i><i></i><i></i><i></i><i></i><i></i></div><small>TÒA A · TẦNG 3</small></div>
+              <div class="student-room-body"><div class="room-title"><div><h3>Phòng A-301</h3><p>Phòng nam · 8 người</p></div><button class="bookmark" aria-label="Lưu phòng">♡</button></div><div class="amenities"><span>Wi-Fi</span><span>Điều hòa</span><span>Nóng lạnh</span><span>＋2</span></div><div class="vacancy-line"><span><i></i><b>Còn 2 chỗ</b></span><small>Có thể nhận phòng từ 15/09</small></div><div class="room-price"><div><strong>1.200.000 ₫</strong><small>/ tháng</small></div><button class="button primary apply-button" data-demo-toast="Đã chọn phòng A-301">Chọn phòng</button></div></div>
+            </article>
+            <article class="student-room">
+              <div class="room-visual visual-c"><div class="visual-building"><i></i><i></i><i></i><i></i><i></i><i></i></div><small>TÒA C · TẦNG 2</small></div>
+              <div class="student-room-body"><div class="room-title"><div><h3>Phòng C-205</h3><p>Phòng nam · 8 người</p></div><button class="bookmark">♡</button></div><div class="amenities"><span>Wi-Fi</span><span>Nóng lạnh</span><span>Ban công</span></div><div class="vacancy-line"><span><i></i><b>Còn 3 chỗ</b></span><small>Có thể nhận phòng ngay</small></div><div class="room-price"><div><strong>1.150.000 ₫</strong><small>/ tháng</small></div><button class="button secondary">Xem chi tiết</button></div></div>
+            </article>
+            <article class="student-room compact-room">
+              <div class="room-visual visual-b"><div class="visual-building"><i></i><i></i><i></i><i></i></div><small>TÒA B · TẦNG 5</small></div>
+              <div class="student-room-body"><div class="room-title"><div><h3>Phòng B-512</h3><p>Phòng nam · 4 người</p></div><button class="bookmark">♡</button></div><div class="amenities"><span>Wi-Fi</span><span>Điều hòa</span><span>WC riêng</span></div><div class="vacancy-line"><span><i></i><b>Còn 1 chỗ</b></span><small>Có thể nhận phòng từ 20/09</small></div><div class="room-price"><div><strong>1.450.000 ₫</strong><small>/ tháng</small></div><button class="button secondary">Xem chi tiết</button></div></div>
+            </article>
+          </div>
+          <aside class="apply-summary panel">
+            <p class="eyebrow">HỒ SƠ CỦA BẠN</p><h2>Sẵn sàng đăng ký</h2>
+            <div class="profile-completion"><span><b>92%</b><small>hoàn tất</small></span><div class="progress"><i style="width:92%"></i></div></div>
+            <ul class="check-list"><li class="done">Thông tin cá nhân</li><li class="done">Thông tin liên hệ</li><li class="done">Đối tượng ưu tiên</li><li class="pending">Thiếu ảnh thẻ sinh viên</li></ul>
+            <button class="button secondary full">Bổ sung hồ sơ</button>
+            <div class="help-note"><b>Cần hỗ trợ đăng ký?</b><span>028 3896 5501</span><small>Thứ hai đến thứ bảy, 7:30–17:00</small></div>
+          </aside>
+        </div>
+      </section>
+
+      <section class="screen screen-applications" data-page="applications">
+        <div class="page-heading compact">
+          <div><p class="eyebrow">XÉT DUYỆT LƯU TRÚ</p><h1>Đăng ký và chuyển phòng</h1><p>Ưu tiên đơn quá hạn xử lý và yêu cầu có phòng đích sắp đầy.</p></div>
+          <button class="button secondary">Quy tắc xét duyệt</button>
+        </div>
+        <div class="tabs"><button class="active">Đăng ký ở <span>12</span></button><button>Chuyển phòng <span>4</span></button><button>Trả phòng <span>3</span></button><button>Lịch sử</button></div>
+        <div class="approval-layout split-layout">
+          <section class="approval-list panel flush">
+            <div class="table-toolbar"><label class="search-field"><span>⌕</span><input placeholder="Tìm mã đơn, sinh viên"></label><button class="filter-button">Ưu tiên xử lý ⌄</button></div>
+            <div class="approval-head"><span>SINH VIÊN</span><span>NGUYỆN VỌNG</span><span>GỬI LÚC</span></div>
+            <button class="approval-row selected"><span class="student-cell"><i class="avatar">MA</i><b>Trần Minh Anh<small>SV20240128</small></b></span><span><b>A-301</b><small>Nguyện vọng 1</small></span><span><b>08:42</b><small>Hôm qua</small></span><i class="priority-mark">Quá 24h</i></button>
+            <button class="approval-row"><span class="student-cell"><i class="avatar mint">KL</i><b>Nguyễn Khánh Linh<small>SV20230316</small></b></span><span><b>C-205</b><small>Nguyện vọng 1</small></span><span><b>14:20</b><small>Hôm qua</small></span></button>
+            <button class="approval-row"><span class="student-cell"><i class="avatar gold">NH</i><b>Phạm Ngọc Huy<small>SV20250542</small></b></span><span><b>B-512</b><small>Nguyện vọng 2</small></span><span><b>09:12</b><small>Hôm nay</small></span></button>
+            <button class="approval-row"><span class="student-cell"><i class="avatar blue-avatar">TT</i><b>Lê Thanh Tùng<small>SV20221086</small></b></span><span><b>A-408</b><small>Nguyện vọng 1</small></span><span><b>10:34</b><small>Hôm nay</small></span></button>
+            <button class="approval-row"><span class="student-cell"><i class="avatar rose">HV</i><b>Vũ Hoài Vy<small>SV20240724</small></b></span><span><b>D-206</b><small>Nguyện vọng 3</small></span><span><b>11:08</b><small>Hôm nay</small></span></button>
+          </section>
+          <aside class="decision-panel panel">
+            <div class="decision-head"><div><span class="status warning">Chờ duyệt · Quá 24 giờ</span><h2>Đơn #DK-2026-0184</h2><p>Gửi lúc 08:42, 08/09/2026</p></div><button class="icon-button">•••</button></div>
+            <div class="student-identity"><span class="avatar large">MA</span><div><h3>Trần Minh Anh</h3><p>SV20240128 · Công nghệ thông tin</p><a href="#">Xem hồ sơ sinh viên ›</a></div></div>
+            <div class="facts-grid"><div><small>GIỚI TÍNH</small><b>Nam</b></div><div><small>KHÓA</small><b>2024</b></div><div><small>DIỆN ƯU TIÊN</small><b>Không</b></div><div><small>NỢ QUÁ HẠN</small><b class="good-text">Không có</b></div></div>
+            <div class="preference-list"><p class="eyebrow">NGUYỆN VỌNG PHÒNG</p><div class="preference chosen"><span>1</span><div><b>A-301 · Tòa A</b><small>Phòng nam 8 người · 1.200.000 ₫/tháng</small></div><em>Còn 2 chỗ</em></div><div class="preference"><span>2</span><div><b>C-205 · Tòa C</b><small>Phòng nam 8 người · 1.150.000 ₫/tháng</small></div><em>Còn 3 chỗ</em></div></div>
+            <div class="rule-check"><span>✓</span><div><b>Đủ điều kiện phân phòng</b><p>Không có lưu trú hiện tại, hồ sơ hợp lệ, phòng A-301 còn chỗ.</p></div></div>
+            <label class="note-field"><span>Ghi chú nội bộ <small>Không hiển thị cho sinh viên</small></span><textarea placeholder="Thêm ghi chú nếu cần…"></textarea></label>
+            <div class="decision-actions"><button class="button danger-outline">Từ chối</button><button class="button secondary">Yêu cầu bổ sung</button><button class="button primary" data-demo-toast="Đã duyệt đơn #DK-2026-0184">Duyệt và giữ chỗ</button></div>
+            <p class="transaction-note">Hệ thống kiểm tra lại chỗ trống ngay khi duyệt để tránh vượt sức chứa.</p>
+          </aside>
+        </div>
+      </section>
+
+      <section class="screen screen-billing" data-page="billing">
+        <div class="page-heading compact">
+          <div><p class="eyebrow">TÀI CHÍNH LƯU TRÚ</p><h1>Hóa đơn và thu phí</h1><p>Theo dõi kỳ tháng 09/2026, hạn thanh toán 15/09/2026.</p></div>
+          <div class="heading-actions"><button class="button secondary">Xuất đối soát</button><button class="button primary">＋ Lập hóa đơn kỳ mới</button></div>
+        </div>
+        <div class="billing-summary">
+          <div class="billing-total"><small>TỔNG PHẢI THU</small><strong>480.200.000 ₫</strong><span>1.126 hóa đơn</span></div>
+          <div class="billing-segment"><span class="segment-label"><i class="paid"></i>ĐÃ THU</span><strong>412,8 tr</strong><small>964 hóa đơn · 86%</small></div>
+          <div class="billing-segment"><span class="segment-label"><i class="unpaid"></i>CHƯA THU</span><strong>48,9 tr</strong><small>155 hóa đơn · 10%</small></div>
+          <div class="billing-segment alert"><span class="segment-label"><i class="overdue"></i>QUÁ HẠN</span><strong>18,5 tr</strong><small>7 hóa đơn · 4%</small></div>
+        </div>
+        <div class="filter-bar billing-filters"><label class="search-field"><span>⌕</span><input placeholder="Tìm sinh viên, mã hóa đơn"></label><button class="filter-button">Kỳ 09/2026 ⌄</button><button class="filter-button">Tất cả trạng thái ⌄</button><button class="filter-button">Tất cả tòa ⌄</button><button class="text-button clear-filter">Xóa lọc</button></div>
+        <div class="billing-layout split-layout">
+          <section class="table-panel panel flush">
+            <table>
+              <thead><tr><th>HÓA ĐƠN</th><th>SINH VIÊN</th><th>PHÒNG</th><th>PHẢI THU</th><th>CÒN NỢ</th><th>TRẠNG THÁI</th></tr></thead>
+              <tbody>
+                <tr class="selected"><td><b>#HD-0926-0841</b><small>Hạn 15/09</small></td><td><b>Trần Minh Anh</b><small>SV20240128</small></td><td>A-301</td><td>1.545.000 ₫</td><td><b class="danger-text">1.545.000 ₫</b></td><td><span class="status danger">Quá hạn 2 ngày</span></td></tr>
+                <tr><td><b>#HD-0926-0836</b><small>Hạn 15/09</small></td><td><b>Nguyễn Khánh Linh</b><small>SV20230316</small></td><td>C-205</td><td>1.482.000 ₫</td><td><b>482.000 ₫</b></td><td><span class="status warning">Thanh toán một phần</span></td></tr>
+                <tr><td><b>#HD-0926-0829</b><small>Hạn 15/09</small></td><td><b>Phạm Ngọc Huy</b><small>SV20250542</small></td><td>B-512</td><td>1.795.000 ₫</td><td><b class="good-text">0 ₫</b></td><td><span class="status success">Đã thanh toán</span></td></tr>
+                <tr><td><b>#HD-0926-0818</b><small>Hạn 15/09</small></td><td><b>Lê Thanh Tùng</b><small>SV20221086</small></td><td>A-408</td><td>1.416.000 ₫</td><td><b>1.416.000 ₫</b></td><td><span class="status neutral">Chưa thanh toán</span></td></tr>
+                <tr><td><b>#HD-0926-0804</b><small>Hạn 15/09</small></td><td><b>Vũ Hoài Vy</b><small>SV20240724</small></td><td>D-206</td><td>1.380.000 ₫</td><td><b class="good-text">0 ₫</b></td><td><span class="status success">Đã thanh toán</span></td></tr>
+              </tbody>
+            </table>
+            <div class="pagination"><span>1–5 trong 1.126 hóa đơn</span><div><button disabled>‹</button><button class="active">1</button><button>2</button><button>3</button><button>…</button><button>226</button><button>›</button></div></div>
+          </section>
+          <aside class="invoice-panel panel">
+            <div class="invoice-head"><div><span class="status danger">Quá hạn 2 ngày</span><h2>#HD-0926-0841</h2><p>Kỳ tháng 09/2026</p></div><button class="icon-button">•••</button></div>
+            <div class="invoice-person"><div><small>SINH VIÊN</small><b>Trần Minh Anh</b><span>SV20240128 · Phòng A-301</span></div><div><small>HẠN THANH TOÁN</small><b class="danger-text">15/09/2026</b></div></div>
+            <div class="invoice-lines"><div><span>Tiền phòng</span><b>1.200.000 ₫</b></div><div><span>Điện <small>86 kWh × 3.500 ₫</small></span><b>301.000 ₫</b></div><div><span>Nước <small>2,2 m³ × 20.000 ₫</small></span><b>44.000 ₫</b></div><div><span>Phí dịch vụ</span><b>0 ₫</b></div><div class="invoice-total"><span>Tổng phải thu</span><b>1.545.000 ₫</b></div><div><span>Đã thanh toán</span><b>0 ₫</b></div><div class="invoice-debt"><span>Còn nợ</span><b>1.545.000 ₫</b></div></div>
+            <div class="reminder-note"><span>↗</span><p><b>Đã nhắc phí hôm nay lúc 08:00</b><small>Qua thông báo trong ứng dụng và email.</small></p></div>
+            <div class="detail-actions"><button class="button secondary">Gửi nhắc phí</button><button class="button primary" data-demo-toast="Đã mở biểu mẫu ghi nhận thanh toán">Ghi nhận thanh toán</button></div>
+          </aside>
+        </div>
+      </section>
+
+      <section class="screen screen-maintenance" data-page="maintenance">
+        <div class="page-heading compact">
+          <div><p class="eyebrow">CƠ SỞ VẬT CHẤT</p><h1>Yêu cầu sửa chữa</h1><p>24 yêu cầu đang mở, 5 yêu cầu ưu tiên cao.</p></div>
+          <button class="button primary">＋ Tạo yêu cầu</button>
+        </div>
+        <div class="maintenance-tabs"><button class="active">Tất cả <span>24</span></button><button>Chưa phân công <span>2</span></button><button>Đang xử lý <span>13</span></button><button>Chờ xác nhận <span>4</span></button><button>Quá hạn <span>5</span></button></div>
+        <div class="maintenance-layout split-layout">
+          <section class="ticket-list panel flush">
+            <div class="table-toolbar"><label class="search-field"><span>⌕</span><input placeholder="Tìm mã, phòng, nội dung"></label><button class="filter-button">Ưu tiên cao trước ⌄</button></div>
+            <button class="ticket-row selected"><span class="ticket-priority high">Cao</span><span><b>#SC-0289 · Rò rỉ nước dưới lavabo</b><small>Phòng C-205 · Điện nước</small></span><span><b>Đang xử lý</b><small>Cập nhật 12 phút trước</small></span></button>
+            <button class="ticket-row"><span class="ticket-priority urgent">Khẩn</span><span><b>#SC-0292 · Mất điện toàn phòng</b><small>Phòng A-408 · Điện nước</small></span><span><b>Chưa phân công</b><small>Tạo 26 phút trước</small></span></button>
+            <button class="ticket-row"><span class="ticket-priority medium">Vừa</span><span><b>#SC-0286 · Điều hòa không mát</b><small>Phòng B-512 · Thiết bị</small></span><span><b>Chờ linh kiện</b><small>Cập nhật 1 giờ trước</small></span></button>
+            <button class="ticket-row"><span class="ticket-priority medium">Vừa</span><span><b>#SC-0284 · Bản lề tủ bị bung</b><small>Phòng D-206 · Nội thất</small></span><span><b>Chờ xác nhận</b><small>Cập nhật 2 giờ trước</small></span></button>
+            <button class="ticket-row"><span class="ticket-priority low">Thấp</span><span><b>#SC-0279 · Đèn hành lang chập chờn</b><small>Tòa C · Khu vực chung</small></span><span><b>Đã lên lịch</b><small>Ngày mai, 08:30</small></span></button>
+          </section>
+          <aside class="ticket-detail panel">
+            <div class="ticket-detail-head"><div><span class="ticket-priority high">Ưu tiên cao</span><h2>Rò rỉ nước dưới lavabo</h2><p>#SC-0289 · Phòng C-205</p></div><button class="icon-button">•••</button></div>
+            <div class="ticket-meta"><div><small>NGƯỜI GỬI</small><b>Nguyễn Khánh Linh</b><span>SV20230316</span></div><div><small>THỜI GIAN</small><b>08/09, 19:42</b><span>14 giờ trước</span></div><div><small>PHÂN LOẠI</small><b>Điện nước</b><span>Trong phòng</span></div></div>
+            <div class="issue-content"><div class="issue-photo"><span class="pipe"></span><span class="water-drop d1"></span><span class="water-drop d2"></span><small>Ảnh do sinh viên cung cấp</small></div><p>Nước rỉ liên tục từ khớp nối dưới lavabo, sàn khu vệ sinh bị ướt. Đã khóa van nhỏ nhưng vẫn còn rò.</p></div>
+            <div class="assignment"><span class="avatar mint">NT</span><div><small>ĐANG PHỤ TRÁCH</small><b>Nguyễn Văn Thành · Tổ điện nước</b><span>Dự kiến hoàn tất trước 16:00 hôm nay</span></div><button class="text-button">Đổi người</button></div>
+            <div class="timeline"><div class="complete"><i>✓</i><span><b>Tiếp nhận yêu cầu</b><small>08/09, 19:42 · Hệ thống</small></span></div><div class="complete"><i>✓</i><span><b>Đã phân công xử lý</b><small>09/09, 07:35 · Nguyễn Thị Lan</small></span></div><div class="current"><i>3</i><span><b>Đang xử lý</b><small>Thợ kỹ thuật đang thay khớp nối · 09:18</small><em>“Đã khóa van tổng khu vực, dự kiến xong trong 40 phút.”</em></span></div><div><i>4</i><span><b>Chờ xác nhận hoàn thành</b><small>Sinh viên sẽ nhận thông báo để phản hồi</small></span></div></div>
+            <div class="ticket-actions"><button class="button secondary">Thêm cập nhật</button><button class="button primary">Đánh dấu hoàn thành</button></div>
+          </aside>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <nav class="mobile-bottom-nav"><a href="#"><span>⌂</span>Trang chủ</a><a class="active" href="?screen=student"><span>⌕</span>Tìm phòng</a><a href="#"><span>▣</span>Hóa đơn</a><a href="#"><span>☻</span>Cá nhân</a></nav>
+  <div id="demo-toast" class="demo-toast" role="status" aria-live="polite"><span>✓</span><b></b></div>
+  <script src="app.js"></script>
+</body>
+</html>

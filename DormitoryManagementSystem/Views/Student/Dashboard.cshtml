@@ -1,0 +1,77 @@
+@model StudentDashboardViewModel
+@{
+    Layout = "_StudentLayout";
+    string Money(decimal value) => value.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("vi-VN"));
+    string Date(DateOnly value) => value.ToString("dd/MM/yyyy");
+}
+
+<section class="student-page-head dashboard-head">
+    <div><p class="student-kicker">Học kỳ I · 2026–2027</p><h1>Chào @Model.Student.FullName.Split(' ').Last(), hôm nay ở KTX thế nào?</h1><p>Mọi việc liên quan đến phòng @Model.CurrentStay.RoomCode được tập hợp tại đây.</p></div>
+    <span class="student-date"><svg><use href="#s-calendar" /></svg>Thứ Tư, 09/09/2026</span>
+</section>
+
+@if (Model.NextInvoice is not null)
+{
+    <section class="student-focus-card">
+        <span class="focus-icon"><svg><use href="#s-wallet" /></svg></span>
+        <div class="focus-copy"><span>Việc cần làm trước @Date(Model.NextInvoice.DueDate)</span><h2>Hóa đơn @Model.NextInvoice.PeriodName.ToLowerInvariant()</h2><p>@Model.NextInvoice.Code · Tiền phòng, điện, nước và dịch vụ</p></div>
+        <div class="focus-amount"><small>Cần thanh toán</small><strong>@Money(Model.NextInvoice.Balance) đ</strong></div>
+        <a asp-action="Invoices">Xem hóa đơn <svg><use href="#s-arrow" /></svg></a>
+    </section>
+}
+
+<div class="student-dashboard-grid">
+    <div class="student-dashboard-primary">
+        <section class="student-section">
+            <header class="student-section-head"><div><p>Chỗ ở hiện tại</p><h2>Thẻ phòng của bạn</h2></div><span class="live-status"><i></i>Đang lưu trú</span></header>
+            <article class="room-pass">
+                <div class="room-pass-code"><small>@Model.CurrentStay.BuildingName · Tầng @Model.CurrentStay.FloorNumber</small><strong>@Model.CurrentStay.RoomCode</strong><span>Phòng @Model.CurrentStay.Capacity người · @Model.CurrentStay.Roommates bạn cùng phòng</span></div>
+                <dl><div><dt>Giá phòng</dt><dd>@Money(Model.CurrentStay.MonthlyPrice) đ<small>/tháng</small></dd></div><div><dt>Nhận phòng</dt><dd>@Model.CurrentStay.StartedAt.ToLocalTime().ToString("dd/MM/yyyy")</dd></div></dl>
+                <div class="room-pass-amenities">@foreach (var amenity in Model.CurrentStay.Amenities.Take(4)) { <span>@amenity</span> }</div>
+                <span class="room-pass-mark"><svg><use href="#s-bed" /></svg></span>
+            </article>
+        </section>
+
+        <section class="student-section">
+            <header class="student-section-head"><div><p>Tiến độ gần đây</p><h2>Việc của bạn</h2></div><a asp-action="Applications">Xem tất cả</a></header>
+            <div class="student-activity-list">
+                @if (Model.ActiveRequest is not null)
+                {
+                    <a asp-action="Applications" class="student-activity"><span class="activity-icon teal"><svg><use href="#s-file" /></svg></span><span><strong>@Model.ActiveRequest.TypeLabel · @Model.ActiveRequest.TargetRoomCode</strong><small>@Model.ActiveRequest.Code · @Model.ActiveRequest.StatusLabel</small></span><span class="activity-status @Model.ActiveRequest.StatusClass">@Model.ActiveRequest.StatusLabel</span><svg><use href="#s-chevron" /></svg></a>
+                }
+                else
+                {
+                    <a asp-action="Rooms" class="student-activity"><span class="activity-icon teal"><svg><use href="#s-search" /></svg></span><span><strong>Bạn muốn chuyển phòng?</strong><small>Xem các phòng phù hợp đang còn chỗ</small></span><span class="activity-status neutral">Tìm phòng</span><svg><use href="#s-chevron" /></svg></a>
+                }
+                @if (Model.ActiveRepair is not null)
+                {
+                    <a asp-action="Repairs" class="student-activity"><span class="activity-icon orange"><svg><use href="#s-tool" /></svg></span><span><strong>@Model.ActiveRepair.Title</strong><small>@Model.ActiveRepair.Code · Cập nhật @Model.ActiveRepair.UpdatedAt.ToLocalTime().ToString("dd/MM, HH:mm")</small></span><span class="activity-status @Model.ActiveRepair.StatusClass">@Model.ActiveRepair.StatusLabel</span><svg><use href="#s-chevron" /></svg></a>
+                }
+            </div>
+        </section>
+    </div>
+
+    <aside class="student-dashboard-aside">
+        <section class="student-section quick-actions">
+            <header class="student-section-head"><div><p>Lối tắt</p><h2>Làm nhanh</h2></div></header>
+            <div><a asp-action="Rooms"><span><svg><use href="#s-search" /></svg></span><strong>Tìm phòng còn chỗ</strong><small>Dành cho yêu cầu chuyển phòng</small></a><a asp-action="Repairs" asp-fragment="new-request"><span><svg><use href="#s-tool" /></svg></span><strong>Báo sự cố</strong><small>Phòng, điện nước, thiết bị</small></a><a asp-action="Invoices"><span><svg><use href="#s-receipt" /></svg></span><strong>Xem công nợ</strong><small>@(Model.NextInvoice is null ? "Không có khoản cần thanh toán" : $"Còn {Money(Model.NextInvoice.Balance)} đ")</small></a></div>
+        </section>
+
+        <section class="student-section notification-panel">
+            <header class="student-section-head"><div><p>Cập nhật cho bạn</p><h2>Thông báo mới</h2></div><span>@Model.UnreadNotificationCount chưa đọc</span></header>
+            @if (Model.Notifications.Count == 0)
+            {
+                <div class="student-empty compact"><strong>Chưa có thông báo</strong><p>Cập nhật mới sẽ xuất hiện tại đây.</p></div>
+            }
+            else
+            {
+                <div class="student-notification-list">
+                    @foreach (var notice in Model.Notifications)
+                    {
+                        <a href="@notice.TargetUrl" class="@(notice.IsUnread ? "unread" : "")"><i></i><span><strong>@notice.Title</strong><small>@notice.Body</small><time>@notice.CreatedAt.ToLocalTime().ToString("dd/MM, HH:mm")</time></span></a>
+                    }
+                </div>
+            }
+        </section>
+    </aside>
+</div>

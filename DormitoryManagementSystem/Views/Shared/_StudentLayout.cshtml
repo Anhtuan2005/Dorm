@@ -1,0 +1,110 @@
+@using Microsoft.AspNetCore.Identity
+@inject UserManager<ApplicationUser> UserManager
+@{
+    var activeNav = ViewData["ActiveStudentNav"]?.ToString() ?? string.Empty;
+    var currentUser = await UserManager.GetUserAsync(User);
+    var fullName = currentUser?.FullName ?? "Sinh viên";
+    var initials = string.Concat(fullName.Split(' ', StringSplitOptions.RemoveEmptyEntries).TakeLast(2).Select(x => x[0]));
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0F766E" />
+    <title>@ViewData["Title"] · Cổng sinh viên NẾP KTX</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/student.css" asp-append-version="true" />
+</head>
+<body class="student-body">
+    <svg class="svg-sprite" aria-hidden="true">
+        <symbol id="s-home" viewBox="0 0 24 24"><path d="m3 11 9-8 9 8v9a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></symbol>
+        <symbol id="s-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></symbol>
+        <symbol id="s-bed" viewBox="0 0 24 24"><path d="M3 5v16M3 16h18v5M7 16v-5a2 2 0 0 1 2-2h8a4 4 0 0 1 4 4v3M7 9V6h5a2 2 0 0 1 2 2v1"/></symbol>
+        <symbol id="s-file" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M8 13h8M8 17h6"/></symbol>
+        <symbol id="s-receipt" viewBox="0 0 24 24"><path d="M5 3h14v18l-3-2-4 2-4-2-3 2zM8 8h8M8 12h8M8 16h5"/></symbol>
+        <symbol id="s-tool" viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 0-5-5l2.2 2.2-2.8 2.8-2.2-2.2a4 4 0 0 0 5 5L20 17.2a2 2 0 0 1-2.8 2.8l-8.1-8.1"/></symbol>
+        <symbol id="s-bell" viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></symbol>
+        <symbol id="s-logout" viewBox="0 0 24 24"><path d="M10 17l5-5-5-5M15 12H3M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/></symbol>
+        <symbol id="s-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></symbol>
+        <symbol id="s-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.6 9a2.6 2.6 0 1 1 4.5 1.8c-1.2 1-2.1 1.4-2.1 3M12 18h.01"/></symbol>
+        <symbol id="s-message" viewBox="0 0 24 24"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></symbol>
+        <symbol id="s-close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+        <symbol id="s-send" viewBox="0 0 24 24"><path d="m22 2-7 20-4-9-9-4zM22 2 11 13"/></symbol>
+        <symbol id="s-chevron" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+        <symbol id="s-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
+        <symbol id="s-calendar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></symbol>
+        <symbol id="s-wallet" viewBox="0 0 24 24"><path d="M3 6a3 3 0 0 1 3-3h13v4H6a3 3 0 0 0 0 6h15v8H6a3 3 0 0 1-3-3zM17 9h4v4h-4a2 2 0 0 1 0-4z"/></symbol>
+        <symbol id="s-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+        <symbol id="s-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+        <symbol id="s-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></symbol>
+        <symbol id="s-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+        <symbol id="s-building" viewBox="0 0 24 24"><path d="M4 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16M16 9h2a2 2 0 0 1 2 2v10M8 7h4M8 11h4M8 15h4M8 19h4M2 21h20"/></symbol>
+    </svg>
+
+    <div class="student-shell">
+        <aside class="student-sidebar" data-student-sidebar>
+            <a class="student-brand" asp-controller="Student" asp-action="Dashboard"><strong>NẾP KTX</strong><span>Cổng sinh viên</span></a>
+            <p class="student-nav-label">Việc của tôi</p>
+            <nav class="student-nav">
+                <a class="@(activeNav == "dashboard" ? "active" : "")" asp-controller="Student" asp-action="Dashboard"><svg><use href="#s-home" /></svg><span>Trang chủ</span></a>
+                <a class="@(activeNav == "rooms" ? "active" : "")" asp-controller="Student" asp-action="Rooms"><svg><use href="#s-search" /></svg><span>Tìm phòng</span></a>
+                <a class="@(activeNav == "applications" ? "active" : "")" asp-controller="Student" asp-action="Applications"><svg><use href="#s-file" /></svg><span>Đăng ký của tôi</span></a>
+                <a class="@(activeNav == "invoices" ? "active" : "")" asp-controller="Student" asp-action="Invoices"><svg><use href="#s-receipt" /></svg><span>Hóa đơn</span><b>1</b></a>
+                <a class="@(activeNav == "repairs" ? "active" : "")" asp-controller="Student" asp-action="Repairs"><svg><use href="#s-tool" /></svg><span>Yêu cầu hỗ trợ</span></a>
+            </nav>
+            <button class="student-help-card" type="button" data-chat-open><span><svg><use href="#s-message" /></svg></span><span><strong>Cần hỗ trợ?</strong><small>Hỏi trợ lý AI của KTX</small></span></button>
+            <div class="student-account">
+                <span class="student-avatar">@initials</span>
+                <span><strong>@fullName</strong><small>@currentUser?.Email</small></span>
+                <form asp-controller="Account" asp-action="Logout" method="post"><button type="submit" aria-label="Đăng xuất" title="Đăng xuất"><svg><use href="#s-logout" /></svg></button></form>
+            </div>
+        </aside>
+
+        <header class="student-topbar">
+            <button class="student-mobile-menu" type="button" data-student-menu aria-label="Mở menu"><svg><use href="#s-menu" /></svg></button>
+            <div class="student-breadcrumb"><span>Cổng sinh viên</span><strong>@ViewData["Title"]</strong></div>
+            <a class="student-mobile-brand" asp-controller="Student" asp-action="Dashboard">NẾP KTX</a>
+            <button class="student-notification" type="button" data-student-notifications aria-label="Thông báo"><svg><use href="#s-bell" /></svg><span>2</span></button>
+            <span class="student-top-avatar">@initials</span>
+        </header>
+
+        <main class="student-main">
+            @if (TempData["Success"] is string success)
+            {
+                <div class="student-flash success" role="status"><svg><use href="#s-check" /></svg><span>@success</span><button type="button" data-flash-close aria-label="Đóng"><svg><use href="#s-close" /></svg></button></div>
+            }
+            @if (TempData["Error"] is string error)
+            {
+                <div class="student-flash error" role="alert"><svg><use href="#s-help" /></svg><span>@error</span><button type="button" data-flash-close aria-label="Đóng"><svg><use href="#s-close" /></svg></button></div>
+            }
+            @RenderBody()
+        </main>
+
+        <nav class="student-bottom-nav" aria-label="Điều hướng sinh viên trên di động">
+            <a class="@(activeNav == "dashboard" ? "active" : "")" asp-controller="Student" asp-action="Dashboard"><svg><use href="#s-home" /></svg><span>Trang chủ</span></a>
+            <a class="@(activeNav == "rooms" ? "active" : "")" asp-controller="Student" asp-action="Rooms"><svg><use href="#s-search" /></svg><span>Tìm phòng</span></a>
+            <a class="@(activeNav == "invoices" ? "active" : "")" asp-controller="Student" asp-action="Invoices"><svg><use href="#s-receipt" /></svg><span>Hóa đơn</span></a>
+            <a class="@(activeNav == "repairs" ? "active" : "")" asp-controller="Student" asp-action="Repairs"><svg><use href="#s-tool" /></svg><span>Hỗ trợ</span></a>
+        </nav>
+        <div class="student-scrim" data-student-scrim></div>
+    </div>
+
+    <button class="ai-launcher" type="button" data-chat-open aria-label="Mở trợ lý AI"><svg><use href="#s-message" /></svg><span>Hỗ trợ</span></button>
+    <dialog class="ai-assistant" data-ai-assistant aria-labelledby="ai-title">
+        <header><span class="ai-mark"><svg><use href="#s-message" /></svg></span><span><strong id="ai-title">Trợ lý AI NẾP KTX</strong><small>Chỉ dùng tài liệu đã xác nhận · Dữ liệu demo</small></span><button type="button" data-chat-close aria-label="Đóng trợ lý"><svg><use href="#s-close" /></svg></button></header>
+        <div class="ai-messages" data-chat-messages>
+            <div class="ai-message assistant"><p>Chào bạn, mình có thể hướng dẫn nội quy, phí, chuyển phòng và cách báo sự cố.</p></div>
+            <div class="ai-suggestions">
+                <button type="button" data-chat-question="Đăng ký phòng thế nào?">Đăng ký phòng thế nào?</button>
+                <button type="button" data-chat-question="Chuyển phòng cần làm gì?">Chuyển phòng cần làm gì?</button>
+                <button type="button" data-chat-question="Báo sự cố ở đâu?">Báo sự cố ở đâu?</button>
+            </div>
+        </div>
+        <form class="ai-composer" data-chat-form><input type="text" data-chat-input maxlength="240" placeholder="Hỏi về KTX..." aria-label="Câu hỏi cho trợ lý AI" /><button type="submit" aria-label="Gửi câu hỏi"><svg><use href="#s-send" /></svg></button></form>
+    </dialog>
+
+    <script src="~/js/student.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

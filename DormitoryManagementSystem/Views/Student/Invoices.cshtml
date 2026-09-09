@@ -1,0 +1,25 @@
+@model StudentInvoicesViewModel
+@{
+    Layout = "_StudentLayout";
+    string Money(decimal value) => value.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("vi-VN"));
+}
+
+<section class="student-page-head"><div><p class="student-kicker">Tài chính cá nhân</p><h1>Hóa đơn và công nợ</h1><p>Kiểm tra từng khoản phí, hạn thanh toán và lịch sử các kỳ trước.</p></div></section>
+
+<section class="invoice-overview">
+    <div><span class="overview-icon"><svg><use href="#s-wallet" /></svg></span><span><small>Tổng cần thanh toán</small><strong>@Money(Model.OutstandingBalance) đ</strong></span></div>
+    <div><small>Kỳ đang mở</small><strong>@Model.Invoices.Count(x => x.NeedsPayment) hóa đơn</strong></div>
+    <div><small>Đã thanh toán</small><strong>@Model.Invoices.Count(x => !x.NeedsPayment) kỳ</strong></div>
+    <button type="button" data-demo-message="Thanh toán trực tuyến chưa được bật. Vui lòng thanh toán tại văn phòng KTX hoặc theo thông tin chuyển khoản trên thông báo chính thức.">Hướng dẫn thanh toán</button>
+</section>
+
+<div class="student-invoice-list">
+    @foreach (var invoice in Model.Invoices)
+    {
+        <article class="student-invoice-card">
+            <header><div><span class="invoice-status @invoice.StatusClass">@invoice.StatusLabel</span><h2>@invoice.PeriodName</h2><p>@invoice.Code · Hạn @invoice.DueDate.ToString("dd/MM/yyyy")</p></div><div class="invoice-total"><small>@(invoice.NeedsPayment ? "Còn phải trả" : "Tổng hóa đơn")</small><strong>@Money(invoice.NeedsPayment ? invoice.Balance : invoice.TotalAmount) đ</strong></div></header>
+            <details open="@invoice.NeedsPayment"><summary>Chi tiết các khoản phí <svg><use href="#s-chevron" /></svg></summary><div class="invoice-lines">@foreach (var line in invoice.Lines) { <div><span>@line.Description</span><strong>@Money(line.Amount) đ</strong></div> }<div class="invoice-line-total"><span>Tổng cộng</span><strong>@Money(invoice.TotalAmount) đ</strong></div>@if (invoice.PaidAmount > 0) { <div><span>Đã thanh toán</span><strong>-@Money(invoice.PaidAmount) đ</strong></div> }</div></details>
+            @if (invoice.NeedsPayment) { <footer><p><svg><use href="#s-calendar" /></svg>Thanh toán đúng hạn để không ảnh hưởng quyền đăng ký.</p><button type="button" data-demo-message="Chức năng thanh toán trực tuyến sẽ được triển khai ở sprint Thu phí. Hóa đơn hiện được tra cứu từ dữ liệu thật.">Thanh toán</button></footer> }
+        </article>
+    }
+</div>

@@ -1,0 +1,83 @@
+@using Microsoft.AspNetCore.Identity
+@inject UserManager<ApplicationUser> UserManager
+@{
+    var activeNav = ViewData["ActiveNav"]?.ToString() ?? string.Empty;
+    var currentUser = User.Identity?.IsAuthenticated == true ? await UserManager.GetUserAsync(User) : null;
+    var fullName = currentUser?.FullName ?? "Nguyễn Thị Lan";
+    var initials = string.Join("", fullName.Split(' ', StringSplitOptions.RemoveEmptyEntries).TakeLast(2).Select(x => x[0]));
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0F766E" />
+    <title>@ViewData["Title"] · NẾP KTX</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body class="app-body">
+    <svg class="svg-sprite" aria-hidden="true">
+        <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></symbol>
+        <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+        <symbol id="i-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+        <symbol id="i-home" viewBox="0 0 24 24"><path d="m3 11 9-8 9 8v9a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></symbol>
+        <symbol id="i-bed" viewBox="0 0 24 24"><path d="M3 5v16M3 16h18v5M7 16v-5a2 2 0 0 1 2-2h8a4 4 0 0 1 4 4v3M7 9V6h5a2 2 0 0 1 2 2v1"/></symbol>
+        <symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+        <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M8 13h8M8 17h6"/></symbol>
+        <symbol id="i-coin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M16 8.5c-.9-.8-2.1-1.2-4-1.2-2.1 0-3.5 1-3.5 2.6 0 1.7 1.5 2.3 3.5 2.6s3.5.9 3.5 2.6c0 1.6-1.4 2.6-3.5 2.6-1.9 0-3.1-.4-4-1.2M12 5v14"/></symbol>
+        <symbol id="i-tool" viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 0-5-5l2.2 2.2-2.8 2.8-2.2-2.2a4 4 0 0 0 5 5L20 17.2a2 2 0 0 1-2.8 2.8l-8.1-8.1"/></symbol>
+        <symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20V7"/></symbol>
+        <symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.6v-.2h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z"/></symbol>
+        <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></symbol>
+        <symbol id="i-building" viewBox="0 0 24 24"><path d="M4 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16M16 9h2a2 2 0 0 1 2 2v10M8 7h4M8 11h4M8 15h4M8 19h4M2 21h20"/></symbol>
+        <symbol id="i-bell" viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></symbol>
+        <symbol id="i-logout" viewBox="0 0 24 24"><path d="M10 17l5-5-5-5M15 12H3M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/></symbol>
+        <symbol id="i-filter" viewBox="0 0 24 24"><path d="M3 5h18l-7 8v6l-4 2v-8z"/></symbol>
+        <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+        <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+        <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+        <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
+        <symbol id="i-more" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></symbol>
+    </svg>
+
+    <div class="app-shell" data-app-shell>
+        <aside class="sidebar" aria-label="Điều hướng chính">
+            <div class="brand-row">
+                <a class="brand" asp-controller="Rooms" asp-action="Map" aria-label="NẾP KTX - Trang chủ"><span class="brand-name">NẾP KTX</span><span class="brand-subtitle">Quản lý ký túc xá</span></a>
+                <button class="icon-button sidebar-toggle" type="button" data-sidebar-toggle aria-label="Thu gọn thanh điều hướng" aria-expanded="true"><svg><use href="#i-chevron" /></svg></button>
+            </div>
+            <nav class="main-nav">
+                <a href="#" data-demo-message="Màn hình Tổng quan sẽ được triển khai sau khi duyệt Sơ đồ phòng."><svg><use href="#i-home" /></svg><span>Tổng quan</span></a>
+                <a class="@(activeNav == "rooms" ? "active" : "")" asp-controller="Rooms" asp-action="Map"><svg><use href="#i-bed" /></svg><span>Phòng ở</span></a>
+                <a href="#" data-demo-message="Màn hình Sinh viên thuộc giai đoạn tiếp theo."><svg><use href="#i-users" /></svg><span>Sinh viên</span></a>
+                <a href="#" data-demo-message="Màn hình Đơn đăng ký thuộc giai đoạn tiếp theo."><svg><use href="#i-file" /></svg><span>Đơn đăng ký</span><b class="nav-count">4</b></a>
+                <a href="#" data-demo-message="Màn hình Thu phí thuộc giai đoạn tiếp theo."><svg><use href="#i-coin" /></svg><span>Thu phí</span></a>
+                <a href="#" data-demo-message="Màn hình Sự cố thuộc giai đoạn tiếp theo."><svg><use href="#i-tool" /></svg><span>Sự cố</span><b class="nav-count danger">2</b></a>
+                <a href="#" data-demo-message="Màn hình Báo cáo thuộc giai đoạn tiếp theo."><svg><use href="#i-chart" /></svg><span>Báo cáo</span></a>
+            </nav>
+            <nav class="main-nav nav-bottom"><a href="#" data-demo-message="Màn hình Cài đặt thuộc giai đoạn tiếp theo."><svg><use href="#i-settings" /></svg><span>Cài đặt</span></a></nav>
+        </aside>
+
+        <header class="topbar">
+            <button class="icon-button mobile-menu" type="button" data-mobile-menu aria-label="Mở menu"><svg><use href="#i-menu" /></svg></button>
+            <a class="mobile-brand" asp-controller="Rooms" asp-action="Map">NẾP KTX</a>
+            <label class="global-search"><svg><use href="#i-search" /></svg><input type="search" placeholder="Tìm phòng, sinh viên..." aria-label="Tìm kiếm toàn hệ thống" data-global-search /></label>
+            <button class="facility-select" type="button" data-demo-message="Hiện dữ liệu đang hiển thị cho Cơ sở Thủ Đức."><svg><use href="#i-building" /></svg><span>Cơ sở Thủ Đức</span><svg class="small"><use href="#i-down" /></svg></button>
+            <button class="icon-button notification-button" type="button" data-demo-message="Bạn có 3 thông báo mới." aria-label="3 thông báo mới"><svg><use href="#i-bell" /></svg><span class="notification-badge">3</span></button>
+            <div class="account-menu"><span class="avatar">@initials</span><span class="account-copy"><strong>@fullName</strong><small>Quản lý KTX</small></span><form asp-controller="Account" asp-action="Logout" method="post"><button class="icon-button" type="submit" title="Đăng xuất" aria-label="Đăng xuất"><svg><use href="#i-logout" /></svg></button></form></div>
+        </header>
+
+        <main class="main-content">@RenderBody()</main>
+        <nav class="mobile-bottom-nav" aria-label="Điều hướng di động">
+            <a href="#" data-demo-message="Màn hình Tổng quan thuộc giai đoạn tiếp theo."><svg><use href="#i-home" /></svg><span>Tổng quan</span></a>
+            <a class="active" asp-controller="Rooms" asp-action="Map"><svg><use href="#i-bed" /></svg><span>Phòng</span></a>
+            <a href="#" data-demo-message="Màn hình Đơn đăng ký thuộc giai đoạn tiếp theo."><svg><use href="#i-file" /></svg><span>Đơn</span></a>
+            <a href="#" data-demo-message="Màn hình Tài khoản thuộc giai đoạn tiếp theo."><svg><use href="#i-users" /></svg><span>Tài khoản</span></a>
+        </nav>
+        <div class="sidebar-scrim" data-sidebar-scrim></div>
+    </div>
+    <div class="toast" role="status" aria-live="polite" data-toast></div>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

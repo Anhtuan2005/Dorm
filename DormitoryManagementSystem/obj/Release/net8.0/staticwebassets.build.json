@@ -1,0 +1,537 @@
+{
+  "Version": 1,
+  "Hash": "9WdRNTZeMJTWFSCIF9HbB/rMvFr92CTMk8eK/MWgCJ4=",
+  "Source": "DormitoryManagementSystem",
+  "BasePath": "_content/DormitoryManagementSystem",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [
+    {
+      "Name": "DormitoryManagementSystem\\wwwroot",
+      "Source": "DormitoryManagementSystem",
+      "ContentRoot": "E:\\DormPrj\\DormitoryManagementSystem\\wwwroot\\",
+      "BasePath": "_content/DormitoryManagementSystem",
+      "Pattern": "**"
+    }
+  ],
+  "Assets": [
+    {
+      "Identity": "E:\\DormPrj\\DormitoryManagementSystem\\wwwroot\\css\\site.css",
+      "SourceId": "DormitoryManagementSystem",
+      "SourceType": "Discovered",
+      "ContentRoot": "E:\\DormPrj\\DormitoryManagementSystem\\wwwroot\\",
+      "BasePath": "_content/DormitoryManagementSystem",
+      "RelativePath": "css/site#[.{fingerprint}]?.css",
+      "AssetKind": "All",
+      "AssetMode": "All",
+      "AssetRole": "Primary",
+      "AssetMergeBehavior": "",
+      "AssetMergeSource": "",
+      "RelatedAsset": "",
+      "AssetTraitName": "",
+      "AssetTraitValue": "",
+      "Fingerprint": "bc4wlm95rj",
+      "Integrity": "BQUP4F6w/NP3DIEq93/4OMVRJGI8nx5MWCHNQt+aQE8=",
+      "CopyToOutputDirectory": "Never",
+      "CopyToPublishDirectory": "PreserveNewest",
+      "OriginalItemSpec": "wwwroot\\css\\site.css"
+    },
+    {
+      "Identity": "E:\\DormPrj\\DormitoryManagementSystem\\wwwroot\\css\\student.css",
+      "SourceId": "DormitoryManagementSystem",
+      "SourceType": "Discovered",
+      "ContentRoot": "E:\\DormPrj\\DormitoryManagementSystem\\wwwroot\\",
+      "BasePath": "_content/DormitoryManagementSystem",
+      "RelativePath": "css/student#[.{fingerprint}]?.css",
+      "AssetKind": "All",
+      "AssetMode": "All",
+      "AssetRole": "Primary",
+      "AssetMergeBehavior": "",
+      "AssetMergeSource": "",
+      "RelatedAsset": "",
+      "AssetTraitName": "",
+      "AssetTraitValue": "",
+      "Fingerprint": "23cr23zzx1",
+      "Integrity": "7pO9Foliu5R4mh2SLfaMcde1ORygZjhNxBGDzknqV5c=",
+      "CopyToOutputDirectory": "Never",
+      "CopyToPublishDirectory": "PreserveNewest",
+      "OriginalItemSpec": "wwwroot\\css\\student.css"
+    },
+    {
+      "Identity": "E:\\DormPrj\\DormitoryManagementSystem\\wwwroot\\favicon.ico",
+      "SourceId": "DormitoryManagementSystem",
+      "SourceType": "Discovered",
+      "ContentRoot": "E:\\DormPrj\\DormitoryManagementSystem\\wwwroot\\",
+      "BasePath": "_content/DormitoryManagementSystem",
+      "RelativePath": "favicon#[.{fingerprint}]?.ico",
+      "AssetKind": "All",
+      "AssetMode": "All",
+      "AssetRole": "Primary",
+      "AssetMergeBehavior": "",
+      "AssetMergeSource": "",
+      "RelatedAsset": "",
+      "AssetTraitName": "",
+      "AssetTraitValue": "",
+      "Fingerprint": "61n19gt1b8",
+      "Integrity": "Jtxf9L+5ITKRc1gIRl4VbUpGkRNfOBXjYTdhJD4facM=",
+      "CopyToOutputDirectory": "Never",
+      "CopyToPublishDirectory": "PreserveNewest",
+      "OriginalItemSpec": "wwwroot\\favicon.ico"
+    },
+    {
+      "Identity": "E:\\DormPrj\\DormitoryManagementSystem\\wwwroot\\js\\site.js",
+      "SourceId": "DormitoryManagementSystem",
+      "SourceType": "Discovered",
+      "ContentRoot": "E:\\DormPrj\\DormitoryManagementSystem\\wwwroot\\",
+      "BasePath": "_content/DormitoryManagementSystem",
+      "RelativePath": "js/site#[.{fingerprint}]?.js",
+      "AssetKind": "All",
+      "AssetMode": "All",
+      "AssetRole": "Primary",
+      "AssetMergeBehavior": "",
+      "AssetMergeSource": "",
+      "RelatedAsset": "",
+      "AssetTraitName": "",
+      "AssetTraitValue": "",
+      "Fingerprint": "ytcd0wtpnq",
+      "Integrity": "yu3ZesgdTRDu/Dk25henp0yYdqZ7HIesnnLGUaJxaf8=",
+      "CopyToOutputDirectory": "Never",
+      "CopyToPublishDirectory": "PreserveNewest",
+      "OriginalItemSpec": "wwwroot\\js\\site.js"
+    },
+    {
+      "Identity": "E:\\DormPrj\\DormitoryManagementSystem\\wwwroot\\js\\student.js",
+      "SourceId": "DormitoryManagementSystem",
+      "SourceType": "Discovered",
+      "ContentRoot": "E:\\DormPrj\\DormitoryManagementSystem\\wwwroot\\",
+      "BasePath": "_content/DormitoryManagementSystem",
+      "RelativePath": "js/student#[.{fingerprint}]?.js",
+      "AssetKind": "All",
+      "AssetMode": "All",
+      "AssetRole": "Primary",
+      "AssetMergeBehavior": "",
+      "AssetMergeSource": "",
+      "RelatedAsset": "",
+      "AssetTraitName": "",
+      "AssetTraitValue": "",
+      "Fingerprint": "94dfl7byg4",
+      "Integrity": "1y5GQF0qehb4/hKa3nRbBxYhgY3qYKCqu80Oa31eExI=",
+      "CopyToOutputDirectory": "Never",
+      "CopyToPublishDirectory": "PreserveNewest",
+      "OriginalItemSpec": "wwwroot\\js\\student.js"
+    }
+  ],
+  "Endpoints": [
+    {
+      "Route": "css/site.bc4wlm95rj.css",
+      "AssetFile": "E:\\DormPrj\\DormitoryManagementSystem\\wwwroot\\css\\site.css",
+      "Selectors": [],
+      "ResponseHeaders": [
+        {
+          "Name": "Accept-Ranges",
+          "Value": "bytes"
+        },
+        {
+          "Name": "Content-Length",
+          "Value": "30765"
+        },
+        {
+          "Name": "Content-Type",
+          "Value": "text/css"
+        },
+        {
+          "Name": "ETag",
+          "Value": "\"BQUP4F6w/NP3DIEq93/4OMVRJGI8nx5MWCHNQt+aQE8=\""
+        },
+        {
+          "Name": "Last-Modified",
+          "Value": "Wed, 09 Sep 2026 16:03:16 GMT"
+        },
+        {
+          "Name": "Cache-Control",
+          "Value": "max-age=31536000, immutable"
+        }
+      ],
+      "EndpointProperties": [
+        {
+          "Name": "fingerprint",
+          "Value": "bc4wlm95rj"
+        },
+        {
+          "Name": "label",
+          "Value": "css/site.css"
+        },
+        {
+          "Name": "integrity",
+          "Value": "sha256-BQUP4F6w/NP3DIEq93/4OMVRJGI8nx5MWCHNQt+aQE8="
+        }
+      ]
+    },
+    {
+      "Route": "css/site.css",
+      "AssetFile": "E:\\DormPrj\\DormitoryManagementSystem\\wwwroot\\css\\site.css",
+      "Selectors": [],
+      "ResponseHeaders": [
+        {
+          "Name": "Accept-Ranges",
+          "Value": "bytes"
+        },
+        {
+          "Name": "Content-Length",
+          "Value": "30765"
+        },
+        {
+          "Name": "Content-Type",
+          "Value": "text/css"
+        },
+        {
+          "Name": "ETag",
+          "Value": "\"BQUP4F6w/NP3DIEq93/4OMVRJGI8nx5MWCHNQt+aQE8=\""
+        },
+        {
+          "Name": "Last-Modified",
+          "Value": "Wed, 09 Sep 2026 16:03:16 GMT"
+        },
+        {
+          "Name": "Cache-Control",
+          "Value": "no-cache"
+        }
+      ],
+      "EndpointProperties": [
+        {
+          "Name": "integrity",
+          "Value": "sha256-BQUP4F6w/NP3DIEq93/4OMVRJGI8nx5MWCHNQt+aQE8="
+        }
+      ]
+    },
+    {
+      "Route": "css/student.23cr23zzx1.css",
+      "AssetFile": "E:\\DormPrj\\DormitoryManagementSystem\\wwwroot\\css\\student.css",
+      "Selectors": [],
+      "ResponseHeaders": [
+        {
+          "Name": "Accept-Ranges",
+          "Value": "bytes"
+        },
+        {
+          "Name": "Content-Length",
+          "Value": "47549"
+        },
+        {
+          "Name": "Content-Type",
+          "Value": "text/css"
+        },
+        {
+          "Name": "ETag",
+          "Value": "\"7pO9Foliu5R4mh2SLfaMcde1ORygZjhNxBGDzknqV5c=\""
+        },
+        {
+          "Name": "Last-Modified",
+          "Value": "Wed, 09 Sep 2026 16:46:45 GMT"
+        },
+        {
+          "Name": "Cache-Control",
+          "Value": "max-age=31536000, immutable"
+        }
+      ],
+      "EndpointProperties": [
+        {
+          "Name": "fingerprint",
+          "Value": "23cr23zzx1"
+        },
+        {
+          "Name": "label",
+          "Value": "css/student.css"
+        },
+        {
+          "Name": "integrity",
+          "Value": "sha256-7pO9Foliu5R4mh2SLfaMcde1ORygZjhNxBGDzknqV5c="
+        }
+      ]
+    },
+    {
+      "Route": "css/student.css",
+      "AssetFile": "E:\\DormPrj\\DormitoryManagementSystem\\wwwroot\\css\\student.css",
+      "Selectors": [],
+      "ResponseHeaders": [
+        {
+          "Name": "Accept-Ranges",
+          "Value": "bytes"
+        },
+        {
+          "Name": "Content-Length",
+          "Value": "47549"
+        },
+        {
+          "Name": "Content-Type",
+          "Value": "text/css"
+        },
+        {
+          "Name": "ETag",
+          "Value": "\"7pO9Foliu5R4mh2SLfaMcde1ORygZjhNxBGDzknqV5c=\""
+        },
+        {
+          "Name": "Last-Modified",
+          "Value": "Wed, 09 Sep 2026 16:46:45 GMT"
+        },
+        {
+          "Name": "Cache-Control",
+          "Value": "no-cache"
+        }
+      ],
+      "EndpointProperties": [
+        {
+          "Name": "integrity",
+          "Value": "sha256-7pO9Foliu5R4mh2SLfaMcde1ORygZjhNxBGDzknqV5c="
+        }
+      ]
+    },
+    {
+      "Route": "favicon.61n19gt1b8.ico",
+      "AssetFile": "E:\\DormPrj\\DormitoryManagementSystem\\wwwroot\\favicon.ico",
+      "Selectors": [],
+      "ResponseHeaders": [
+        {
+          "Name": "Accept-Ranges",
+          "Value": "bytes"
+        },
+        {
+          "Name": "Content-Length",
+          "Value": "5430"
+        },
+        {
+          "Name": "Content-Type",
+          "Value": "image/x-icon"
+        },
+        {
+          "Name": "ETag",
+          "Value": "\"Jtxf9L+5ITKRc1gIRl4VbUpGkRNfOBXjYTdhJD4facM=\""
+        },
+        {
+          "Name": "Last-Modified",
+          "Value": "Wed, 09 Sep 2026 15:17:12 GMT"
+        },
+        {
+          "Name": "Cache-Control",
+          "Value": "max-age=31536000, immutable"
+        }
+      ],
+      "EndpointProperties": [
+        {
+          "Name": "fingerprint",
+          "Value": "61n19gt1b8"
+        },
+        {
+          "Name": "label",
+          "Value": "favicon.ico"
+        },
+        {
+          "Name": "integrity",
+          "Value": "sha256-Jtxf9L+5ITKRc1gIRl4VbUpGkRNfOBXjYTdhJD4facM="
+        }
+      ]
+    },
+    {
+      "Route": "favicon.ico",
+      "AssetFile": "E:\\DormPrj\\DormitoryManagementSystem\\wwwroot\\favicon.ico",
+      "Selectors": [],
+      "ResponseHeaders": [
+        {
+          "Name": "Accept-Ranges",
+          "Value": "bytes"
+        },
+        {
+          "Name": "Content-Length",
+          "Value": "5430"
+        },
+        {
+          "Name": "Content-Type",
+          "Value": "image/x-icon"
+        },
+        {
+          "Name": "ETag",
+          "Value": "\"Jtxf9L+5ITKRc1gIRl4VbUpGkRNfOBXjYTdhJD4facM=\""
+        },
+        {
+          "Name": "Last-Modified",
+          "Value": "Wed, 09 Sep 2026 15:17:12 GMT"
+        },
+        {
+          "Name": "Cache-Control",
+          "Value": "max-age=3600, must-revalidate"
+        }
+      ],
+      "EndpointProperties": [
+        {
+          "Name": "integrity",
+          "Value": "sha256-Jtxf9L+5ITKRc1gIRl4VbUpGkRNfOBXjYTdhJD4facM="
+        }
+      ]
+    },
+    {
+      "Route": "js/site.js",
+      "AssetFile": "E:\\DormPrj\\DormitoryManagementSystem\\wwwroot\\js\\site.js",
+      "Selectors": [],
+      "ResponseHeaders": [
+        {
+          "Name": "Accept-Ranges",
+          "Value": "bytes"
+        },
+        {
+          "Name": "Content-Length",
+          "Value": "3397"
+        },
+        {
+          "Name": "Content-Type",
+          "Value": "text/javascript"
+        },
+        {
+          "Name": "ETag",
+          "Value": "\"yu3ZesgdTRDu/Dk25henp0yYdqZ7HIesnnLGUaJxaf8=\""
+        },
+        {
+          "Name": "Last-Modified",
+          "Value": "Wed, 09 Sep 2026 16:03:16 GMT"
+        },
+        {
+          "Name": "Cache-Control",
+          "Value": "no-cache"
+        }
+      ],
+      "EndpointProperties": [
+        {
+          "Name": "integrity",
+          "Value": "sha256-yu3ZesgdTRDu/Dk25henp0yYdqZ7HIesnnLGUaJxaf8="
+        }
+      ]
+    },
+    {
+      "Route": "js/site.ytcd0wtpnq.js",
+      "AssetFile": "E:\\DormPrj\\DormitoryManagementSystem\\wwwroot\\js\\site.js",
+      "Selectors": [],
+      "ResponseHeaders": [
+        {
+          "Name": "Accept-Ranges",
+          "Value": "bytes"
+        },
+        {
+          "Name": "Content-Length",
+          "Value": "3397"
+        },
+        {
+          "Name": "Content-Type",
+          "Value": "text/javascript"
+        },
+        {
+          "Name": "ETag",
+          "Value": "\"yu3ZesgdTRDu/Dk25henp0yYdqZ7HIesnnLGUaJxaf8=\""
+        },
+        {
+          "Name": "Last-Modified",
+          "Value": "Wed, 09 Sep 2026 16:03:16 GMT"
+        },
+        {
+          "Name": "Cache-Control",
+          "Value": "max-age=31536000, immutable"
+        }
+      ],
+      "EndpointProperties": [
+        {
+          "Name": "fingerprint",
+          "Value": "ytcd0wtpnq"
+        },
+        {
+          "Name": "label",
+          "Value": "js/site.js"
+        },
+        {
+          "Name": "integrity",
+          "Value": "sha256-yu3ZesgdTRDu/Dk25henp0yYdqZ7HIesnnLGUaJxaf8="
+        }
+      ]
+    },
+    {
+      "Route": "js/student.94dfl7byg4.js",
+      "AssetFile": "E:\\DormPrj\\DormitoryManagementSystem\\wwwroot\\js\\student.js",
+      "Selectors": [],
+      "ResponseHeaders": [
+        {
+          "Name": "Accept-Ranges",
+          "Value": "bytes"
+        },
+        {
+          "Name": "Content-Length",
+          "Value": "8736"
+        },
+        {
+          "Name": "Content-Type",
+          "Value": "text/javascript"
+        },
+        {
+          "Name": "ETag",
+          "Value": "\"1y5GQF0qehb4/hKa3nRbBxYhgY3qYKCqu80Oa31eExI=\""
+        },
+        {
+          "Name": "Last-Modified",
+          "Value": "Wed, 09 Sep 2026 16:42:30 GMT"
+        },
+        {
+          "Name": "Cache-Control",
+          "Value": "max-age=31536000, immutable"
+        }
+      ],
+      "EndpointProperties": [
+        {
+          "Name": "fingerprint",
+          "Value": "94dfl7byg4"
+        },
+        {
+          "Name": "label",
+          "Value": "js/student.js"
+        },
+        {
+          "Name": "integrity",
+          "Value": "sha256-1y5GQF0qehb4/hKa3nRbBxYhgY3qYKCqu80Oa31eExI="
+        }
+      ]
+    },
+    {
+      "Route": "js/student.js",
+      "AssetFile": "E:\\DormPrj\\DormitoryManagementSystem\\wwwroot\\js\\student.js",
+      "Selectors": [],
+      "ResponseHeaders": [
+        {
+          "Name": "Accept-Ranges",
+          "Value": "bytes"
+        },
+        {
+          "Name": "Content-Length",
+          "Value": "8736"
+        },
+        {
+          "Name": "Content-Type",
+          "Value": "text/javascript"
+        },
+        {
+          "Name": "ETag",
+          "Value": "\"1y5GQF0qehb4/hKa3nRbBxYhgY3qYKCqu80Oa31eExI=\""
+        },
+        {
+          "Name": "Last-Modified",
+          "Value": "Wed, 09 Sep 2026 16:42:30 GMT"
+        },
+        {
+          "Name": "Cache-Control",
+          "Value": "no-cache"
+        }
+      ],
+      "EndpointProperties": [
+        {
+          "Name": "integrity",
+          "Value": "sha256-1y5GQF0qehb4/hKa3nRbBxYhgY3qYKCqu80Oa31eExI="
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+@model StudentApplicationsViewModel
+@{
+    Layout = "_StudentLayout";
+}
+
+<section class="student-page-head"><div><p class="student-kicker">Hồ sơ lưu trú</p><h1>Đăng ký của tôi</h1><p>Theo dõi quyết định và lịch sử các yêu cầu đăng ký, chuyển hoặc trả phòng.</p></div><a class="student-primary page-action" asp-action="Rooms"><svg><use href="#s-plus" /></svg>Tạo yêu cầu mới</a></section>
+
+@if (Model.Requests.Count == 0)
+{
+    <section class="student-empty"><span><svg><use href="#s-file" /></svg></span><h2>Bạn chưa có đơn nào</h2><p>Tìm phòng còn chỗ để bắt đầu yêu cầu đăng ký hoặc chuyển phòng.</p><a asp-action="Rooms">Tìm phòng phù hợp</a></section>
+}
+else
+{
+    <div class="application-list">
+        @foreach (var request in Model.Requests)
+        {
+            <article class="application-card @(request.CanCancel ? "current" : "")">
+                <header><div><span class="request-status @request.StatusClass">@request.StatusLabel</span><h2>@request.TypeLabel @(request.TargetRoomCode is null ? "" : $"· Phòng {request.TargetRoomCode}")</h2><p>@request.Code · Gửi lúc @request.SubmittedAt.ToLocalTime().ToString("dd/MM/yyyy, HH:mm")</p></div>@if (request.CanCancel) { <form asp-action="CancelHousingRequest" method="post" data-confirm="Bạn chắc chắn muốn hủy đơn @request.Code?"><input type="hidden" name="id" value="@request.Id" /><button type="submit" class="student-danger-text">Hủy đơn</button></form> }</header>
+                <div class="application-timeline">
+                    <div class="done"><i><svg><use href="#s-check" /></svg></i><span><strong>Đã gửi hồ sơ</strong><small>@request.SubmittedAt.ToLocalTime().ToString("dd/MM/yyyy")</small></span></div>
+                    <div class="@(request.StatusClass is "reviewing" or "approved" or "rejected" ? "done" : "")"><i>@if (request.StatusClass is "reviewing" or "approved" or "rejected") { <svg><use href="#s-check" /></svg> }</i><span><strong>Ban quản lý xét duyệt</strong><small>@(request.StatusClass == "submitted" ? "Đang chờ tiếp nhận" : "Đã xem hồ sơ")</small></span></div>
+                    <div class="@(request.StatusClass == "approved" ? "done" : request.StatusClass == "rejected" ? "failed" : "")"><i>@if (request.StatusClass == "approved") { <svg><use href="#s-check" /></svg> }</i><span><strong>Kết quả</strong><small>@(request.DecisionReason ?? "Chưa có kết quả")</small></span></div>
+                </div>
+                <details><summary>Thông tin đơn</summary><dl><div><dt>Loại yêu cầu</dt><dd>@request.TypeLabel</dd></div><div><dt>Phòng mong muốn</dt><dd>@(request.TargetRoomCode ?? "Không áp dụng")</dd></div><div><dt>Lý do</dt><dd>@request.StudentReason</dd></div></dl></details>
+            </article>
+        }
+    </div>
+}

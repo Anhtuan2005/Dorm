@@ -1,0 +1,35 @@
+@model LoginViewModel
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Đăng nhập · NẾP KTX</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body class="auth-body">
+    <main class="auth-shell">
+        <section class="auth-intro">
+            <span class="brand-name">NẾP KTX</span>
+            <div><h1>Vận hành ký túc xá rõ ràng hơn mỗi ngày.</h1><p>Theo dõi chỗ ở, hồ sơ, công nợ và sự cố trong một hệ thống thống nhất.</p></div>
+            <small>Cơ sở Thủ Đức · Cổng quản lý nội bộ</small>
+        </section>
+        <section class="auth-panel">
+            <h2>Chào mừng trở lại</h2>
+            <p>Đăng nhập bằng tài khoản quản lý KTX.</p>
+            <form class="auth-form" asp-action="Login" method="post">
+                <input asp-for="ReturnUrl" type="hidden" />
+                <div asp-validation-summary="ModelOnly"></div>
+                <label class="auth-field">Email<input asp-for="Email" autocomplete="username" /><span asp-validation-for="Email"></span></label>
+                <label class="auth-field">Mật khẩu<input asp-for="Password" autocomplete="current-password" /><span asp-validation-for="Password"></span></label>
+                <label class="auth-check"><input asp-for="RememberMe" /> Duy trì đăng nhập trên thiết bị này</label>
+                <button class="auth-submit" type="submit">Đăng nhập</button>
+            </form>
+            <div class="demo-credentials"><strong>Tài khoản demo</strong><br />manager@nepktx.local · Demo@123</div>
+        </section>
+    </main>
+</body>
+</html>

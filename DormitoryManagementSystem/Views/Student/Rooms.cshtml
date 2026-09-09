@@ -1,0 +1,54 @@
+@model StudentRoomSearchViewModel
+@{
+    Layout = "_StudentLayout";
+    string Money(decimal value) => value.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("vi-VN"));
+}
+
+<section class="student-page-head room-search-head"><div><p class="student-kicker">Chuyển phòng · Học kỳ I</p><h1>Tìm một chỗ ở phù hợp hơn</h1><p>Chỉ hiển thị phòng nam còn chỗ và phù hợp hồ sơ của bạn.</p></div><div class="current-room-chip"><span>Phòng hiện tại</span><strong>@Model.CurrentRoomCode</strong></div></section>
+
+@if (Model.ActiveRequest is not null)
+{
+    <section class="active-request-banner"><span><svg><use href="#s-clock" /></svg></span><div><small>Bạn đang có đơn chờ xử lý</small><strong>@Model.ActiveRequest.Code · @Model.ActiveRequest.TargetRoomCode</strong></div><span class="request-status @Model.ActiveRequest.StatusClass">@Model.ActiveRequest.StatusLabel</span><a asp-action="Applications">Theo dõi đơn <svg><use href="#s-arrow" /></svg></a></section>
+}
+
+<form class="student-room-filters" method="get" asp-action="Rooms">
+    <label><span>Tòa nhà</span><select name="Building"><option value="">Tất cả tòa phù hợp</option>@foreach (var building in Model.Buildings) { <option value="@building" selected="@(Model.Query.Building == building)">Tòa @building</option> }</select></label>
+    <label><span>Khoảng giá</span><select name="MaxPrice"><option value="">Tất cả mức giá</option><option value="1250000" selected="@(Model.Query.MaxPrice == 1250000)">Đến 1.250.000 đ</option><option value="1350000" selected="@(Model.Query.MaxPrice == 1350000)">Đến 1.350.000 đ</option></select></label>
+    <label><span>Tiện nghi</span><select name="Amenity"><option value="">Bất kỳ</option>@foreach (var amenity in Model.Amenities) { <option value="@amenity" selected="@(Model.Query.Amenity == amenity)">@amenity</option> }</select></label>
+    <label><span>Sắp xếp</span><select name="Sort"><option value="availability" selected="@(Model.Query.Sort == "availability")">Nhiều chỗ trước</option><option value="price" selected="@(Model.Query.Sort == "price")">Giá thấp trước</option><option value="building" selected="@(Model.Query.Sort == "building")">Theo tòa</option></select></label>
+    <button type="submit"><svg><use href="#s-search" /></svg>Tìm phòng</button>
+</form>
+
+<section class="student-results-head"><div><h2>Phòng đang còn chỗ</h2><p>@Model.Rooms.Count kết quả phù hợp hồ sơ</p></div><a asp-action="Rooms">Xóa bộ lọc</a></section>
+
+@if (Model.Rooms.Count == 0)
+{
+    <section class="student-empty"><span><svg><use href="#s-search" /></svg></span><h2>Không tìm thấy phòng phù hợp</h2><p>Thử bỏ bớt tiện nghi hoặc tăng khoảng giá để xem thêm lựa chọn.</p><a asp-action="Rooms">Xóa bộ lọc</a></section>
+}
+else
+{
+    <div class="student-room-list">
+        @foreach (var room in Model.Rooms)
+        {
+            <article class="student-room-card">
+                <div class="room-door"><span>@room.MatchReason</span><strong>@room.Code</strong><small>@room.BuildingName · Tầng @room.FloorNumber</small><i><svg><use href="#s-building" /></svg></i></div>
+                <div class="room-card-content">
+                    <header><div><h3>Phòng @room.Code</h3><p>Phòng @room.RoomType.ToLowerInvariant() · @room.Capacity người</p></div><span class="availability"><i></i>Còn @room.Assignable chỗ</span></header>
+                    <div class="room-amenities">@foreach (var amenity in room.Amenities.Take(4)) { <span>@amenity</span> }</div>
+                    <div class="room-occupancy"><span><i style="width:@((room.Occupied * 100) / room.Capacity)%"></i></span><small>@room.Occupied/@room.Capacity đang ở</small></div>
+                    <footer><strong>@Money(room.MonthlyPrice) đ<small>/tháng</small></strong>@if (Model.ActiveRequest is null) { <button type="button" data-apply-room data-room-id="@room.Id" data-room-code="@room.Code">Chọn phòng</button> } else { <button type="button" disabled>Đang có đơn chờ</button> }</footer>
+                </div>
+            </article>
+        }
+    </div>
+}
+
+<dialog class="student-dialog" data-application-dialog aria-labelledby="application-title">
+    <form method="post" asp-action="SubmitHousingRequest">
+        <header><div><p>Yêu cầu chuyển phòng</p><h2 id="application-title">Chọn phòng <span data-selected-room></span></h2></div><button type="button" data-dialog-close aria-label="Đóng"><svg><use href="#s-close" /></svg></button></header>
+        <input type="hidden" name="TargetRoomId" data-selected-room-id />
+        <div class="dialog-note"><svg><use href="#s-file" /></svg><p>Gửi đơn không đồng nghĩa giữ chỗ. Ban quản lý sẽ kiểm tra điều kiện và phản hồi trong mục “Đăng ký của tôi”.</p></div>
+        <label class="student-form-field"><span>Lý do chuyển phòng</span><textarea name="Reason" rows="5" minlength="10" maxlength="600" required placeholder="Ví dụ: Cần chuyển gần khu học tập hơn..."></textarea><small>Từ 10 đến 600 ký tự</small></label>
+        <footer><button type="button" class="student-secondary" data-dialog-close>Để sau</button><button type="submit" class="student-primary">Gửi đơn chuyển phòng</button></footer>
+    </form>
+</dialog>

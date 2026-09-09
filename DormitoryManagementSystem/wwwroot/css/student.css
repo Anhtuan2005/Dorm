@@ -1,0 +1,503 @@
+:root {
+  --campus-ink: #17233f;
+  --campus-copy: #34445e;
+  --campus-muted: #6a7890;
+  --campus-teal: #0f766e;
+  --campus-teal-dark: #0b5f59;
+  --campus-teal-soft: #e5f5f2;
+  --campus-paper: #f5f7f6;
+  --campus-card: #ffffff;
+  --campus-line: rgba(49, 75, 69, .14);
+  --campus-inset: #f0f4f3;
+  --campus-orange: #c85c16;
+  --campus-orange-soft: #fff4e8;
+  --campus-red: #c93434;
+  --campus-red-soft: #fff0f0;
+  --student-sidebar: 232px;
+  --student-topbar: 66px;
+  --student-radius-sm: 6px;
+  --student-radius-md: 10px;
+  --student-shadow: 0 0 0 1px rgba(28, 54, 49, .04), 0 8px 24px rgba(32, 66, 60, .05);
+}
+
+html { -webkit-font-smoothing: antialiased; }
+.student-body { min-height: 100vh; background: var(--campus-paper); color: var(--campus-copy); font-variant-numeric: tabular-nums; }
+.student-body button, .student-body a { transition: color 150ms cubic-bezier(.23,1,.32,1), background-color 150ms cubic-bezier(.23,1,.32,1), border-color 150ms cubic-bezier(.23,1,.32,1), opacity 150ms cubic-bezier(.23,1,.32,1), transform 120ms cubic-bezier(.23,1,.32,1); }
+.student-body button:active, .student-body a:active { transform: scale(.98); }
+.student-shell { min-height: 100vh; padding: var(--student-topbar) 0 0 var(--student-sidebar); }
+.student-sidebar { position: fixed; z-index: 40; inset: 0 auto 0 0; width: var(--student-sidebar); padding: 0 14px 14px; display: flex; flex-direction: column; background: #fff; border-right: 1px solid var(--campus-line); }
+.student-brand { height: var(--student-topbar); padding: 12px 9px; display: flex; flex-direction: column; justify-content: center; text-decoration: none; color: var(--campus-teal); border-bottom: 1px solid transparent; }
+.student-brand strong { font-size: 23px; line-height: 1; letter-spacing: -.55px; }
+.student-brand span { margin-top: 5px; color: #5d7478; font-size: 11px; }
+.student-nav-label { margin: 25px 12px 8px; color: #89949f; font-size: 10px; font-weight: 750; letter-spacing: .12em; text-transform: uppercase; }
+.student-nav { display: grid; gap: 4px; }
+.student-nav a { min-height: 46px; padding: 0 11px; display: flex; align-items: center; gap: 12px; border-radius: 7px; color: #354661; text-decoration: none; font-size: 13px; font-weight: 600; }
+.student-nav a svg { width: 19px; height: 19px; }
+.student-nav a:hover { color: var(--campus-teal); background: #f1f7f5; }
+.student-nav a.active { color: var(--campus-teal); background: var(--campus-teal-soft); font-weight: 750; }
+.student-nav a b { min-width: 20px; height: 20px; padding: 0 5px; margin-left: auto; display: grid; place-items: center; border-radius: 999px; color: var(--campus-orange); background: var(--campus-orange-soft); font-size: 10px; }
+.student-help-card { width: 100%; min-height: 62px; padding: 10px; margin-top: auto; display: flex; align-items: center; gap: 10px; text-align: left; border: 1px solid var(--campus-line); border-radius: 9px; background: #f8fbfa; cursor: pointer; }
+.student-help-card:hover { border-color: rgba(15,118,110,.28); background: var(--campus-teal-soft); }
+.student-help-card > span:first-child { width: 34px; height: 34px; display: grid; flex: 0 0 auto; place-items: center; border-radius: 50%; color: var(--campus-teal); background: #fff; }
+.student-help-card svg { width: 17px; }
+.student-help-card > span:last-child { display: flex; flex-direction: column; }
+.student-help-card strong { color: var(--campus-ink); font-size: 12px; }
+.student-help-card small { color: var(--campus-muted); font-size: 10px; }
+.student-account { min-height: 65px; padding: 13px 8px 0; margin-top: 12px; display: grid; grid-template-columns: 34px minmax(0,1fr) 28px; align-items: center; gap: 8px; border-top: 1px solid var(--campus-line); }
+.student-avatar, .student-top-avatar { display: grid; place-items: center; border-radius: 50%; color: var(--campus-teal-dark); background: var(--campus-teal-soft); font-size: 10px; font-weight: 800; }
+.student-avatar { width: 34px; height: 34px; }
+.student-account > span:nth-child(2) { min-width: 0; display: flex; flex-direction: column; }
+.student-account strong, .student-account small { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.student-account strong { color: var(--campus-ink); font-size: 11px; }
+.student-account small { color: var(--campus-muted); font-size: 9px; }
+.student-account form { margin: 0; }
+.student-account button { width: 28px; height: 32px; display: grid; place-items: center; border: 0; border-radius: 6px; color: var(--campus-muted); background: transparent; cursor: pointer; }
+.student-account button:hover { color: var(--campus-red); background: var(--campus-red-soft); }
+.student-account svg { width: 17px; }
+
+.student-topbar { position: fixed; z-index: 30; top: 0; right: 0; left: var(--student-sidebar); height: var(--student-topbar); padding: 0 34px; display: flex; align-items: center; gap: 14px; background: rgba(255,255,255,.96); border-bottom: 1px solid var(--campus-line); backdrop-filter: blur(12px); }
+.student-breadcrumb { margin-right: auto; display: flex; align-items: center; gap: 7px; color: var(--campus-muted); font-size: 12px; }
+.student-breadcrumb span::after { content: "/"; margin-left: 7px; color: #adb5be; }
+.student-breadcrumb strong { color: var(--campus-ink); }
+.student-notification { position: relative; width: 42px; height: 42px; display: grid; place-items: center; border: 1px solid var(--campus-line); border-radius: 8px; color: var(--campus-ink); background: #fff; cursor: pointer; }
+.student-notification span { position: absolute; top: -6px; right: -5px; width: 19px; height: 19px; display: grid; place-items: center; border: 2px solid #fff; border-radius: 50%; color: #fff; background: var(--campus-red); font-size: 9px; font-weight: 800; }
+.student-top-avatar { width: 38px; height: 38px; }
+.student-mobile-menu, .student-mobile-brand, .student-bottom-nav { display: none; }
+
+.student-main { width: min(1230px, calc(100vw - var(--student-sidebar))); min-height: calc(100vh - var(--student-topbar)); padding: 26px 32px 56px; margin: 0 auto; }
+.student-flash { min-height: 48px; padding: 8px 9px 8px 14px; margin-bottom: 16px; display: grid; grid-template-columns: 22px 1fr 34px; align-items: center; gap: 9px; border-radius: 8px; font-size: 12px; }
+.student-flash.success { color: var(--campus-teal-dark); background: var(--campus-teal-soft); }
+.student-flash.error { color: #9f2828; background: var(--campus-red-soft); }
+.student-flash > svg { width: 18px; }
+.student-flash button { width: 34px; height: 34px; display: grid; place-items: center; border: 0; border-radius: 6px; color: inherit; background: transparent; cursor: pointer; }
+.student-flash button:hover { background: rgba(255,255,255,.55); }
+.student-flash button svg { width: 16px; }
+
+.student-page-head { min-height: 88px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+.student-page-head > div:first-child { min-width: 0; }
+.student-kicker { margin: 0 0 4px; color: var(--campus-teal); font-size: 10px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+.student-page-head h1 { margin: 0 0 5px; color: var(--campus-ink); font-size: 28px; line-height: 1.2; letter-spacing: -.55px; text-wrap: balance; }
+.student-page-head p:last-child { margin: 0; color: var(--campus-muted); font-size: 13px; text-wrap: pretty; }
+.student-date { min-height: 38px; padding: 0 11px; display: flex; align-items: center; gap: 8px; color: #53627a; border: 1px solid var(--campus-line); border-radius: 7px; background: #fff; font-size: 11px; white-space: nowrap; }
+.student-date svg { width: 17px; color: var(--campus-teal); }
+
+.student-focus-card { min-height: 105px; padding: 16px 18px; margin-bottom: 24px; display: grid; grid-template-columns: 48px minmax(250px,1fr) auto auto; align-items: center; gap: 16px; border-radius: var(--student-radius-md); color: #fff; background: var(--campus-teal); box-shadow: 0 8px 24px rgba(15,118,110,.16); }
+.focus-icon { width: 48px; height: 48px; display: grid; place-items: center; border-radius: 9px; background: rgba(255,255,255,.14); }
+.focus-icon svg { width: 24px; }
+.focus-copy > span { color: #c7ebe6; font-size: 10px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+.focus-copy h2 { margin: 2px 0; font-size: 19px; }
+.focus-copy p { margin: 0; color: #d8f2ee; font-size: 11px; }
+.focus-amount { padding: 0 22px; display: flex; flex-direction: column; align-items: flex-end; border-inline: 1px solid rgba(255,255,255,.2); }
+.focus-amount small { color: #c7ebe6; font-size: 10px; }
+.focus-amount strong { font-size: 22px; letter-spacing: -.3px; }
+.student-focus-card > a { min-height: 42px; padding: 0 15px; display: flex; align-items: center; gap: 7px; border-radius: 7px; color: var(--campus-teal-dark); background: #fff; text-decoration: none; font-size: 12px; font-weight: 750; }
+.student-focus-card > a:hover { background: #edf9f7; }
+.student-focus-card > a svg { width: 15px; }
+
+.student-dashboard-grid { display: grid; grid-template-columns: minmax(0,1.5fr) minmax(310px,.8fr); gap: 20px; }
+.student-dashboard-primary, .student-dashboard-aside { display: grid; align-content: start; gap: 20px; }
+.student-section { padding: 17px; border: 1px solid var(--campus-line); border-radius: var(--student-radius-md); background: #fff; box-shadow: var(--student-shadow); }
+.student-section-head { min-height: 44px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.student-section-head p { margin: 0 0 2px; color: var(--campus-muted); font-size: 10px; text-transform: uppercase; letter-spacing: .06em; }
+.student-section-head h2 { margin: 0; color: var(--campus-ink); font-size: 17px; letter-spacing: -.2px; }
+.student-section-head > a { color: var(--campus-teal); font-size: 11px; font-weight: 700; }
+.live-status { display: flex; align-items: center; gap: 6px; color: var(--campus-teal); font-size: 10px; font-weight: 700; }
+.live-status i { width: 7px; height: 7px; border-radius: 50%; background: #1ca77e; box-shadow: 0 0 0 3px #dff4ed; }
+.room-pass { position: relative; min-height: 183px; padding: 21px 22px; overflow: hidden; display: grid; grid-template-columns: minmax(210px,1fr) minmax(210px,.9fr); align-content: center; column-gap: 32px; border-radius: 9px; color: #fff; background: #1b4d49; }
+.room-pass::before { content: ""; position: absolute; top: 0; bottom: 0; left: 10px; border-left: 1px dashed rgba(255,255,255,.22); }
+.room-pass-code { position: relative; z-index: 1; display: flex; flex-direction: column; }
+.room-pass-code small { color: #b9d9d5; font-size: 10px; font-weight: 650; letter-spacing: .06em; text-transform: uppercase; }
+.room-pass-code strong { margin: 4px 0 0; font-size: 42px; line-height: 1; letter-spacing: -1.2px; }
+.room-pass-code span { margin-top: 9px; color: #d4e9e6; font-size: 11px; }
+.room-pass dl { position: relative; z-index: 1; margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-self: center; }
+.room-pass dl div { padding: 10px 11px; border-radius: 7px; background: rgba(255,255,255,.08); }
+.room-pass dt { color: #b9d9d5; font-size: 9px; text-transform: uppercase; }
+.room-pass dd { margin: 4px 0 0; font-size: 13px; font-weight: 750; }
+.room-pass dd small { margin-left: 2px; color: #c5dfdc; font-size: 8px; font-weight: 500; }
+.room-pass-amenities { position: relative; z-index: 1; grid-column: 1/-1; margin-top: 16px; display: flex; gap: 6px; }
+.room-pass-amenities span { padding: 4px 8px; border-radius: 999px; color: #d7ece9; background: rgba(255,255,255,.09); font-size: 9px; }
+.room-pass-mark { position: absolute; right: -22px; bottom: -27px; color: rgba(255,255,255,.07); }
+.room-pass-mark svg { width: 130px; height: 130px; stroke-width: 1; }
+
+.student-activity-list { display: grid; gap: 8px; }
+.student-activity { min-height: 64px; padding: 8px 10px; display: grid; grid-template-columns: 39px minmax(140px,1fr) auto 16px; align-items: center; gap: 10px; border: 1px solid var(--campus-line); border-radius: 8px; color: inherit; text-decoration: none; }
+.student-activity:hover { border-color: rgba(15,118,110,.28); background: #f9fbfa; }
+.activity-icon { width: 39px; height: 39px; display: grid; place-items: center; border-radius: 8px; }
+.activity-icon svg { width: 19px; }
+.activity-icon.teal { color: var(--campus-teal); background: var(--campus-teal-soft); }
+.activity-icon.orange { color: var(--campus-orange); background: var(--campus-orange-soft); }
+.student-activity > span:nth-child(2) { min-width: 0; display: flex; flex-direction: column; }
+.student-activity strong { color: var(--campus-ink); font-size: 11px; }
+.student-activity small { margin-top: 3px; color: var(--campus-muted); font-size: 9px; }
+.student-activity > svg { width: 14px; }
+.activity-status, .request-status, .invoice-status, .repair-status { display: inline-flex; align-items: center; width: fit-content; padding: 4px 8px; border-radius: 999px; font-size: 9px; font-weight: 750; white-space: nowrap; }
+.activity-status.neutral, .request-status.cancelled { color: #637184; background: #eef2f3; }
+.activity-status.submitted, .request-status.submitted { color: #3564a5; background: #edf4ff; }
+.activity-status.reviewing, .request-status.reviewing { color: #a85310; background: var(--campus-orange-soft); }
+.activity-status.approved, .request-status.approved { color: var(--campus-teal); background: var(--campus-teal-soft); }
+.activity-status.rejected, .request-status.rejected { color: var(--campus-red); background: var(--campus-red-soft); }
+.activity-status.progress, .repair-status.progress, .repair-status.assigned { color: #3564a5; background: #edf4ff; }
+.repair-status.new { color: #6f5aa8; background: #f3efff; }
+.repair-status.waiting { color: #a85310; background: var(--campus-orange-soft); }
+.repair-status.resolved, .repair-status.closed { color: var(--campus-teal); background: var(--campus-teal-soft); }
+
+.quick-actions > div { display: grid; gap: 7px; }
+.quick-actions a { min-height: 62px; padding: 8px; display: grid; grid-template-columns: 38px minmax(0,1fr); grid-template-rows: auto auto; align-items: center; column-gap: 10px; border-radius: 7px; color: inherit; text-decoration: none; }
+.quick-actions a:hover { background: var(--campus-inset); }
+.quick-actions a > span { grid-row: 1/3; width: 38px; height: 38px; display: grid; place-items: center; border: 1px solid var(--campus-line); border-radius: 8px; color: var(--campus-teal); background: #fff; }
+.quick-actions a svg { width: 18px; }
+.quick-actions strong { align-self: end; color: var(--campus-ink); font-size: 11px; }
+.quick-actions small { align-self: start; color: var(--campus-muted); font-size: 9px; }
+.notification-panel .student-section-head > span { color: var(--campus-muted); font-size: 9px; }
+.student-notification-list { display: grid; }
+.student-notification-list a { position: relative; min-height: 80px; padding: 11px 5px; display: grid; grid-template-columns: 8px 1fr; gap: 7px; border-bottom: 1px solid var(--campus-line); color: inherit; text-decoration: none; }
+.student-notification-list a:last-child { border-bottom: 0; }
+.student-notification-list a:hover { background: #fafcfb; }
+.student-notification-list a > i { width: 6px; height: 6px; margin-top: 5px; border-radius: 50%; background: transparent; }
+.student-notification-list a.unread > i { background: var(--campus-teal); box-shadow: 0 0 0 3px var(--campus-teal-soft); }
+.student-notification-list a > span { display: flex; flex-direction: column; }
+.student-notification-list strong { color: var(--campus-ink); font-size: 10px; }
+.student-notification-list small { margin-top: 3px; color: var(--campus-muted); font-size: 9px; line-height: 1.4; }
+.student-notification-list time { margin-top: 5px; color: #99a2af; font-size: 8px; }
+
+.current-room-chip { min-width: 130px; padding: 9px 13px; display: flex; flex-direction: column; border-left: 3px solid var(--campus-teal); background: #fff; box-shadow: var(--student-shadow); }
+.current-room-chip span { color: var(--campus-muted); font-size: 9px; }
+.current-room-chip strong { color: var(--campus-ink); font-size: 17px; }
+.active-request-banner { min-height: 70px; padding: 12px 16px; margin-bottom: 16px; display: grid; grid-template-columns: 38px minmax(180px,1fr) auto auto; align-items: center; gap: 12px; border: 1px solid #e7d9c8; border-radius: 9px; background: #fffaf3; }
+.active-request-banner > span:first-child { width: 38px; height: 38px; display: grid; place-items: center; border-radius: 8px; color: var(--campus-orange); background: var(--campus-orange-soft); }
+.active-request-banner svg { width: 18px; }
+.active-request-banner div { display: flex; flex-direction: column; }
+.active-request-banner small { color: #8c7058; font-size: 9px; }
+.active-request-banner strong { color: var(--campus-ink); font-size: 11px; }
+.active-request-banner a { display: flex; align-items: center; gap: 4px; color: var(--campus-teal); font-size: 10px; font-weight: 750; }
+.active-request-banner a svg { width: 14px; }
+
+.student-room-filters { min-height: 82px; padding: 12px; margin-bottom: 20px; display: grid; grid-template-columns: 1fr 1fr 1fr 1fr auto; align-items: end; gap: 8px; border: 1px solid var(--campus-line); border-radius: var(--student-radius-md); background: #fff; box-shadow: var(--student-shadow); }
+.student-room-filters label { min-width: 0; display: grid; gap: 5px; }
+.student-room-filters label > span, .student-form-field > span { color: #5d6b80; font-size: 9px; font-weight: 700; }
+.student-room-filters select, .student-form-field input, .student-form-field select, .student-form-field textarea { width: 100%; min-width: 0; border: 1px solid var(--campus-line); border-radius: var(--student-radius-sm); outline: 0; color: var(--campus-ink); background: var(--campus-inset); }
+.student-room-filters select { height: 40px; padding: 0 9px; font-size: 10px; }
+.student-room-filters select:focus, .student-form-field input:focus, .student-form-field select:focus, .student-form-field textarea:focus { border-color: var(--campus-teal); box-shadow: 0 0 0 3px rgba(15,118,110,.1); }
+.student-room-filters > button { min-height: 40px; padding: 0 14px; display: flex; align-items: center; justify-content: center; gap: 7px; border: 1px solid var(--campus-teal); border-radius: 6px; color: #fff; background: var(--campus-teal); font-size: 11px; font-weight: 750; cursor: pointer; }
+.student-room-filters > button:hover { background: var(--campus-teal-dark); }
+.student-room-filters > button svg { width: 16px; }
+.student-results-head { min-height: 45px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+.student-results-head h2 { margin: 0; color: var(--campus-ink); font-size: 17px; }
+.student-results-head p { margin: 2px 0 0; color: var(--campus-muted); font-size: 9px; }
+.student-results-head a { color: var(--campus-teal); font-size: 10px; font-weight: 700; }
+.student-room-list { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.student-room-card { min-height: 194px; display: grid; grid-template-columns: 145px minmax(0,1fr); overflow: hidden; border: 1px solid var(--campus-line); border-radius: var(--student-radius-md); background: #fff; box-shadow: var(--student-shadow); }
+.room-door { position: relative; padding: 15px; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; color: #fff; background: #255c57; }
+.room-door > span { position: absolute; top: 12px; left: 12px; padding: 4px 7px; border-radius: 999px; color: var(--campus-teal-dark); background: #fff; font-size: 8px; font-weight: 800; }
+.room-door > strong { position: relative; z-index: 1; font-size: 22px; letter-spacing: -.4px; }
+.room-door > small { position: relative; z-index: 1; color: #d3e7e4; font-size: 8px; text-transform: uppercase; }
+.room-door > i { position: absolute; top: 48px; right: 12px; color: rgba(255,255,255,.15); }
+.room-door > i svg { width: 76px; height: 76px; stroke-width: 1; }
+.room-card-content { min-width: 0; padding: 14px; display: flex; flex-direction: column; }
+.room-card-content header { display: flex; justify-content: space-between; gap: 8px; }
+.room-card-content h3 { margin: 0; color: var(--campus-ink); font-size: 15px; }
+.room-card-content header p { margin: 2px 0 0; color: var(--campus-muted); font-size: 9px; }
+.availability { display: flex; align-items: center; gap: 5px; color: var(--campus-teal); font-size: 9px; font-weight: 750; white-space: nowrap; }
+.availability i { width: 6px; height: 6px; border-radius: 50%; background: #1ca77e; }
+.room-amenities { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 4px; }
+.room-amenities span { padding: 3px 6px; border: 1px solid var(--campus-line); border-radius: 999px; color: #56647a; background: #f8faf9; font-size: 8px; }
+.room-occupancy { margin-top: 12px; display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 8px; }
+.room-occupancy > span { height: 5px; overflow: hidden; border-radius: 99px; background: #e7eeec; }
+.room-occupancy > span i { height: 100%; display: block; border-radius: inherit; background: var(--campus-teal); }
+.room-occupancy small { color: var(--campus-muted); font-size: 8px; }
+.room-card-content footer { padding-top: 12px; margin-top: auto; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--campus-line); }
+.room-card-content footer > strong { color: var(--campus-ink); font-size: 14px; }
+.room-card-content footer > strong small { margin-left: 2px; color: var(--campus-muted); font-size: 8px; font-weight: 500; }
+.room-card-content footer button { min-height: 34px; padding: 0 11px; border: 1px solid var(--campus-teal); border-radius: 6px; color: #fff; background: var(--campus-teal); font-size: 9px; font-weight: 750; cursor: pointer; }
+.room-card-content footer button:hover { background: var(--campus-teal-dark); }
+.room-card-content footer button:disabled { cursor: not-allowed; color: #85918f; border-color: #dfe6e4; background: #edf1f0; }
+
+.student-empty { min-height: 360px; padding: 30px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; border: 1px solid var(--campus-line); border-radius: 10px; background: #fff; }
+.student-empty.compact { min-height: 150px; border: 0; }
+.student-empty > span { width: 48px; height: 48px; margin-bottom: 12px; display: grid; place-items: center; border-radius: 50%; color: var(--campus-teal); background: var(--campus-teal-soft); }
+.student-empty svg { width: 21px; }
+.student-empty h2 { margin: 0 0 5px; color: var(--campus-ink); font-size: 18px; }
+.student-empty p { max-width: 420px; margin: 0 0 13px; color: var(--campus-muted); font-size: 11px; }
+.student-empty a, .student-empty button { min-height: 38px; padding: 0 13px; display: grid; place-items: center; border: 1px solid var(--campus-teal); border-radius: 6px; color: #fff; background: var(--campus-teal); text-decoration: none; font-size: 10px; font-weight: 750; cursor: pointer; }
+
+.student-primary, .student-secondary { min-height: 42px; padding: 0 14px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; border-radius: 7px; font-size: 11px; font-weight: 750; text-decoration: none; cursor: pointer; }
+.student-primary { color: #fff; border: 1px solid var(--campus-teal); background: var(--campus-teal); }
+.student-primary:hover { color: #fff; background: var(--campus-teal-dark); }
+.student-secondary { color: var(--campus-ink); border: 1px solid var(--campus-line); background: #fff; }
+.student-primary svg, .student-secondary svg { width: 17px; }
+.page-action { flex: 0 0 auto; }
+
+.application-list, .student-invoice-list, .repair-list { display: grid; gap: 14px; }
+.application-card, .student-invoice-card, .repair-card { padding: 18px; border: 1px solid var(--campus-line); border-radius: var(--student-radius-md); background: #fff; box-shadow: var(--student-shadow); }
+.application-card.current { border-left: 3px solid var(--campus-teal); }
+.application-card > header, .student-invoice-card > header, .repair-card > header { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; }
+.application-card h2, .student-invoice-card h2, .repair-card h2 { margin: 7px 0 2px; color: var(--campus-ink); font-size: 17px; }
+.application-card header p, .student-invoice-card header p, .repair-card header p { margin: 0; color: var(--campus-muted); font-size: 9px; }
+.student-danger-text { min-height: 36px; padding: 0 8px; border: 0; border-radius: 6px; color: var(--campus-red); background: transparent; font-size: 10px; font-weight: 700; cursor: pointer; }
+.student-danger-text:hover { background: var(--campus-red-soft); }
+.application-timeline { padding: 19px 5px 15px; display: grid; grid-template-columns: repeat(3,1fr); }
+.application-timeline > div { position: relative; display: grid; grid-template-columns: 27px 1fr; align-items: start; gap: 8px; }
+.application-timeline > div:not(:last-child)::after { content: ""; position: absolute; top: 13px; left: 27px; right: -2px; height: 1px; background: #dce4e2; }
+.application-timeline i { z-index: 1; width: 27px; height: 27px; display: grid; place-items: center; border: 1px solid #d5dfdc; border-radius: 50%; color: #fff; background: #fff; }
+.application-timeline .done i { border-color: var(--campus-teal); background: var(--campus-teal); }
+.application-timeline .failed i { border-color: var(--campus-red); background: var(--campus-red); }
+.application-timeline i svg { width: 14px; }
+.application-timeline span { z-index: 1; padding-right: 10px; display: flex; flex-direction: column; background: #fff; }
+.application-timeline strong { color: var(--campus-ink); font-size: 10px; }
+.application-timeline small { margin-top: 2px; color: var(--campus-muted); font-size: 8px; }
+.application-card details, .student-invoice-card details { border-top: 1px solid var(--campus-line); }
+.application-card summary, .student-invoice-card summary { min-height: 40px; display: flex; align-items: center; color: var(--campus-teal); font-size: 10px; font-weight: 700; cursor: pointer; list-style: none; }
+.application-card summary::-webkit-details-marker, .student-invoice-card summary::-webkit-details-marker { display: none; }
+.application-card dl { margin: 0; display: grid; grid-template-columns: 1fr 1fr 2fr; gap: 10px; }
+.application-card dl div { padding: 10px; border-radius: 6px; background: var(--campus-inset); }
+.application-card dt { color: var(--campus-muted); font-size: 8px; }
+.application-card dd { margin: 3px 0 0; color: var(--campus-ink); font-size: 10px; }
+
+.invoice-overview { min-height: 92px; padding: 14px 17px; margin-bottom: 18px; display: grid; grid-template-columns: 1.5fr .75fr .75fr auto; align-items: center; gap: 18px; border: 1px solid var(--campus-line); border-radius: var(--student-radius-md); background: #fff; box-shadow: var(--student-shadow); }
+.invoice-overview > div { min-height: 47px; padding-right: 18px; display: flex; flex-direction: column; justify-content: center; border-right: 1px solid var(--campus-line); }
+.invoice-overview > div:first-child { display: grid; grid-template-columns: 45px 1fr; align-items: center; column-gap: 11px; }
+.overview-icon { grid-row: 1/3; width: 45px; height: 45px; display: grid; place-items: center; border-radius: 9px; color: var(--campus-teal); background: var(--campus-teal-soft); }
+.overview-icon svg { width: 22px; }
+.invoice-overview small { color: var(--campus-muted); font-size: 9px; }
+.invoice-overview strong { color: var(--campus-ink); font-size: 16px; }
+.invoice-overview > div:first-child strong { font-size: 22px; }
+.invoice-overview button { min-height: 39px; padding: 0 12px; border: 1px solid var(--campus-line); border-radius: 6px; color: var(--campus-ink); background: #fff; font-size: 10px; font-weight: 700; cursor: pointer; }
+.invoice-overview button:hover { border-color: rgba(15,118,110,.3); color: var(--campus-teal); }
+.invoice-status.paid { color: var(--campus-teal); background: var(--campus-teal-soft); }
+.invoice-status.issued, .invoice-status.partial { color: #a85310; background: var(--campus-orange-soft); }
+.invoice-status.overdue { color: var(--campus-red); background: var(--campus-red-soft); }
+.invoice-total { display: flex; flex-direction: column; align-items: flex-end; }
+.invoice-total small { color: var(--campus-muted); font-size: 9px; }
+.invoice-total strong { margin-top: 2px; color: var(--campus-ink); font-size: 20px; }
+.student-invoice-card summary { justify-content: space-between; }
+.student-invoice-card summary svg { width: 14px; transform: rotate(90deg); }
+.student-invoice-card details[open] summary svg { transform: rotate(-90deg); }
+.invoice-lines { padding: 8px 0; display: grid; gap: 8px; }
+.invoice-lines > div { display: flex; justify-content: space-between; gap: 20px; color: var(--campus-muted); font-size: 10px; }
+.invoice-lines strong { color: var(--campus-ink); }
+.invoice-lines .invoice-line-total { padding-top: 8px; border-top: 1px dashed #d7dfdd; color: var(--campus-ink); font-weight: 750; }
+.student-invoice-card > footer { padding-top: 12px; margin-top: 4px; display: flex; align-items: center; justify-content: space-between; gap: 15px; border-top: 1px solid var(--campus-line); }
+.student-invoice-card > footer p { margin: 0; display: flex; align-items: center; gap: 7px; color: var(--campus-muted); font-size: 9px; }
+.student-invoice-card > footer p svg { width: 15px; color: var(--campus-orange); }
+.student-invoice-card > footer button { min-height: 38px; padding: 0 14px; border: 1px solid var(--campus-teal); border-radius: 6px; color: #fff; background: var(--campus-teal); font-size: 10px; font-weight: 750; cursor: pointer; }
+
+.repair-guidance { min-height: 66px; padding: 12px 14px; margin-bottom: 18px; display: flex; align-items: center; gap: 12px; border: 1px solid #f0d8c3; border-radius: 9px; background: var(--campus-orange-soft); }
+.repair-guidance > span { width: 36px; height: 36px; display: grid; place-items: center; flex: 0 0 auto; border-radius: 50%; color: var(--campus-orange); background: #fff; }
+.repair-guidance svg { width: 18px; }
+.repair-guidance strong { color: #753f18; font-size: 11px; }
+.repair-guidance p { margin: 2px 0 0; color: #8a6649; font-size: 9px; }
+.repair-guidance a { color: #753f18; font-weight: 750; }
+.repair-meta { min-width: 145px; display: flex; flex-direction: column; align-items: flex-end; }
+.repair-meta small { color: var(--campus-muted); font-size: 8px; }
+.repair-meta strong { margin: 2px 0 5px; color: var(--campus-ink); font-size: 11px; }
+.repair-description { padding: 11px 12px; margin: 15px 0; border-radius: 7px; color: #53627a; background: var(--campus-inset); font-size: 10px; }
+.repair-timeline { display: grid; gap: 0; }
+.repair-timeline > div { position: relative; min-height: 54px; display: grid; grid-template-columns: 28px minmax(170px,1fr) auto; gap: 9px; }
+.repair-timeline > div:not(:last-child)::after { content: ""; position: absolute; top: 28px; bottom: 0; left: 13px; width: 1px; background: #cfdad7; }
+.repair-timeline i { z-index: 1; width: 28px; height: 28px; display: grid; place-items: center; border-radius: 50%; color: #fff; background: var(--campus-teal); }
+.repair-timeline i svg { width: 14px; }
+.repair-timeline span { display: flex; flex-direction: column; }
+.repair-timeline strong { color: var(--campus-ink); font-size: 10px; }
+.repair-timeline small { margin-top: 2px; color: var(--campus-muted); font-size: 9px; }
+.repair-timeline time { color: #909aa8; font-size: 8px; }
+
+.student-dialog { width: min(520px, calc(100vw - 32px)); padding: 0; border: 0; border-radius: 12px; color: var(--campus-copy); background: #fff; box-shadow: 0 24px 80px rgba(20,44,39,.22); }
+.student-dialog::backdrop, .ai-assistant::backdrop { background: rgba(17,35,44,.38); backdrop-filter: blur(2px); }
+.student-dialog[open] { animation: student-dialog-in 180ms cubic-bezier(.23,1,.32,1); }
+@keyframes student-dialog-in { from { opacity: 0; transform: translateY(8px) scale(.98); } to { opacity: 1; transform: none; } }
+.student-dialog form { margin: 0; }
+.student-dialog header { min-height: 76px; padding: 16px 18px; display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid var(--campus-line); }
+.student-dialog header p { margin: 0 0 2px; color: var(--campus-teal); font-size: 9px; font-weight: 750; text-transform: uppercase; letter-spacing: .08em; }
+.student-dialog header h2 { margin: 0; color: var(--campus-ink); font-size: 19px; }
+.student-dialog header button { width: 38px; height: 38px; display: grid; place-items: center; border: 0; border-radius: 7px; color: var(--campus-muted); background: transparent; cursor: pointer; }
+.student-dialog header button:hover { background: var(--campus-inset); }
+.student-dialog header svg { width: 18px; }
+.dialog-note { padding: 11px 18px; display: flex; gap: 9px; color: #53627a; background: #f3f8f7; }
+.dialog-note svg { width: 18px; flex: 0 0 auto; color: var(--campus-teal); }
+.dialog-note p { margin: 0; font-size: 10px; }
+.student-form-field { padding: 15px 18px 0; display: grid; gap: 6px; }
+.student-form-field input, .student-form-field select { height: 42px; padding: 0 11px; }
+.student-form-field textarea { padding: 10px 11px; resize: vertical; line-height: 1.45; }
+.student-form-field small { color: var(--campus-muted); font-size: 8px; }
+.student-dialog > form > footer { padding: 17px 18px; display: flex; justify-content: flex-end; gap: 8px; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; }
+.form-grid .student-form-field:first-child { padding-right: 5px; }
+.form-grid .student-form-field:last-child { padding-left: 5px; }
+
+.ai-launcher { position: fixed; z-index: 55; right: 24px; bottom: 24px; min-height: 44px; padding: 0 14px; display: flex; align-items: center; gap: 8px; border: 1px solid var(--campus-teal); border-radius: 999px; color: #fff; background: var(--campus-teal); box-shadow: 0 7px 20px rgba(15,118,110,.23); font-size: 11px; font-weight: 750; cursor: pointer; }
+.ai-launcher:hover { background: var(--campus-teal-dark); }
+.ai-launcher svg { width: 18px; }
+.ai-assistant { position: fixed; inset: auto 24px 76px auto; width: min(370px, calc(100vw - 28px)); height: min(610px, calc(100vh - 110px)); padding: 0; overflow: hidden; border: 0; border-radius: 13px; color: var(--campus-copy); background: #fff; box-shadow: 0 22px 70px rgba(22,48,43,.25); }
+.ai-assistant[open] { display: grid; grid-template-rows: auto 1fr auto; animation: ai-in 200ms cubic-bezier(.23,1,.32,1); transform-origin: bottom right; }
+@keyframes ai-in { from { opacity: 0; transform: translateY(8px) scale(.97); } to { opacity: 1; transform: none; } }
+.ai-assistant > header { min-height: 69px; padding: 11px 12px; display: grid; grid-template-columns: 39px 1fr 36px; align-items: center; gap: 9px; color: #fff; background: var(--campus-teal); }
+.ai-mark { width: 39px; height: 39px; display: grid; place-items: center; border-radius: 9px; background: rgba(255,255,255,.14); }
+.ai-mark svg { width: 19px; }
+.ai-assistant header > span:nth-child(2) { display: flex; flex-direction: column; }
+.ai-assistant header strong { font-size: 12px; }
+.ai-assistant header small { color: #cceae6; font-size: 8px; }
+.ai-assistant header button { width: 36px; height: 36px; display: grid; place-items: center; border: 0; border-radius: 7px; color: #fff; background: transparent; cursor: pointer; }
+.ai-assistant header button:hover { background: rgba(255,255,255,.12); }
+.ai-assistant header button svg { width: 17px; }
+.ai-messages { padding: 14px; overflow: auto; display: flex; flex-direction: column; gap: 9px; background: #f7faf9; }
+.ai-message { max-width: 88%; padding: 10px 11px; border-radius: 9px; font-size: 10px; line-height: 1.5; }
+.ai-message p { margin: 0; }
+.ai-message.assistant { align-self: flex-start; border: 1px solid var(--campus-line); border-top-left-radius: 3px; background: #fff; }
+.ai-message.user { align-self: flex-end; border-bottom-right-radius: 3px; color: #fff; background: var(--campus-teal); }
+.ai-message.typing { color: var(--campus-muted); }
+.ai-source { padding-top: 7px; margin-top: 7px; display: block; border-top: 1px solid var(--campus-line); color: var(--campus-muted); font-size: 8px; }
+.ai-link { min-height: 31px; padding: 0 9px; margin-top: 8px; display: inline-flex; align-items: center; gap: 5px; border-radius: 5px; color: #fff; background: var(--campus-teal); text-decoration: none; font-size: 9px; font-weight: 700; }
+.ai-suggestions { display: flex; flex-wrap: wrap; gap: 6px; }
+.ai-suggestions button { min-height: 31px; padding: 0 9px; border: 1px solid rgba(15,118,110,.25); border-radius: 999px; color: var(--campus-teal); background: #fff; font-size: 8px; cursor: pointer; }
+.ai-suggestions button:hover { background: var(--campus-teal-soft); }
+.ai-composer { min-height: 58px; padding: 8px; display: grid; grid-template-columns: 1fr 40px; gap: 7px; border-top: 1px solid var(--campus-line); background: #fff; }
+.ai-composer input { min-width: 0; padding: 0 11px; border: 1px solid var(--campus-line); border-radius: 7px; outline: 0; color: var(--campus-ink); background: var(--campus-inset); font-size: 10px; }
+.ai-composer input:focus { border-color: var(--campus-teal); box-shadow: 0 0 0 3px rgba(15,118,110,.1); }
+.ai-composer button { width: 40px; height: 40px; display: grid; place-items: center; border: 1px solid var(--campus-teal); border-radius: 7px; color: #fff; background: var(--campus-teal); cursor: pointer; }
+.ai-composer button svg { width: 17px; }
+.student-scrim { display: none; }
+.student-toast { position: fixed; z-index: 90; right: 24px; bottom: 82px; max-width: min(380px, calc(100vw - 32px)); padding: 12px 14px; border: 1px solid rgba(15,118,110,.22); border-radius: 8px; color: var(--campus-ink); background: #fff; box-shadow: 0 14px 42px rgba(20,44,39,.18); font-size: 10px; line-height: 1.5; opacity: 0; pointer-events: none; transform: translateY(8px); transition: opacity 160ms ease, transform 160ms ease; }
+.student-toast.show { opacity: 1; transform: none; }
+
+/* Readable operational type scale: labels stay compact, working content stays 13–15px. */
+.focus-copy > span, .focus-amount small, .student-section-head p, .live-status { font-size: 11px; }
+.focus-copy p, .student-date { font-size: 12px; }
+.student-section-head h2 { font-size: 18px; }
+.room-pass-code small, .room-pass dt { font-size: 11px; }
+.room-pass-code span, .room-pass-amenities span { font-size: 12px; }
+.room-pass dd { font-size: 14px; }
+.room-pass dd small { font-size: 10px; }
+.student-activity strong, .quick-actions strong { font-size: 13px; }
+.student-activity small, .quick-actions small, .student-notification-list small { font-size: 11px; }
+.student-notification-list strong { font-size: 12px; }
+.student-notification-list time, .notification-panel .student-section-head > span { font-size: 10px; }
+.activity-status, .request-status, .invoice-status, .repair-status { font-size: 10px; }
+.student-room-filters label > span, .student-form-field > span { font-size: 11px; }
+.student-room-filters select { font-size: 13px; }
+.student-room-filters > button { font-size: 13px; }
+.student-results-head p { font-size: 11px; }
+.student-results-head a { font-size: 12px; }
+.room-door > span, .room-door > small { font-size: 10px; }
+.room-card-content h3 { font-size: 16px; }
+.room-card-content header p, .availability { font-size: 11px; }
+.room-amenities span, .room-occupancy small { font-size: 10px; }
+.room-card-content footer > strong { font-size: 16px; }
+.room-card-content footer > strong small { font-size: 10px; }
+.room-card-content footer button { font-size: 12px; }
+.student-empty p, .student-empty a, .student-empty button, .student-primary, .student-secondary { font-size: 12px; }
+.application-card header p, .student-invoice-card header p, .repair-card header p { font-size: 11px; }
+.application-timeline strong, .application-card dd, .invoice-lines > div, .repair-timeline strong { font-size: 12px; }
+.application-timeline small, .application-card dt, .application-card summary, .student-invoice-card summary, .repair-timeline small { font-size: 10px; }
+.invoice-overview small, .invoice-overview button, .student-invoice-card > footer p, .student-invoice-card > footer button { font-size: 11px; }
+.repair-guidance strong, .repair-meta strong { font-size: 12px; }
+.repair-guidance p, .repair-description { font-size: 11px; }
+.repair-meta small, .repair-timeline time { font-size: 10px; }
+.student-dialog header p, .dialog-note p, .student-form-field small { font-size: 11px; }
+.student-form-field input, .student-form-field select, .student-form-field textarea { font-size: 13px; }
+.ai-assistant header strong { font-size: 13px; }
+.ai-assistant header small { font-size: 10px; }
+.ai-message, .ai-composer input { font-size: 13px; }
+.ai-source { font-size: 10px; }
+.ai-link, .ai-suggestions button { font-size: 11px; }
+.student-toast { font-size: 13px; }
+
+@media (max-width: 980px) {
+  :root { --student-topbar: 62px; }
+  .student-shell { padding: var(--student-topbar) 0 68px; }
+  .student-sidebar { width: 255px; transform: translateX(-100%); box-shadow: 10px 0 35px rgba(21,43,39,.16); transition: transform 180ms cubic-bezier(.23,1,.32,1); }
+  .student-sidebar.open { transform: none; }
+  .student-scrim.open { position: fixed; z-index: 35; inset: 0; display: block; background: rgba(20,40,46,.35); }
+  .student-topbar { left: 0; height: var(--student-topbar); padding: 0 15px; }
+  .student-mobile-menu { width: 40px; height: 40px; display: grid; place-items: center; border: 0; border-radius: 7px; color: var(--campus-ink); background: transparent; }
+  .student-mobile-menu svg { width: 21px; }
+  .student-breadcrumb { display: none; }
+  .student-mobile-brand { display: block; margin-right: auto; color: var(--campus-teal); text-decoration: none; font-size: 20px; font-weight: 800; letter-spacing: -.4px; }
+  .student-notification { width: 38px; height: 38px; border: 0; }
+  .student-top-avatar { width: 36px; height: 36px; }
+  .student-main { width: 100%; min-height: 0; padding: 18px 16px 40px; }
+  .student-bottom-nav { position: fixed; z-index: 50; right: 0; bottom: 0; left: 0; height: 68px; display: grid; grid-template-columns: repeat(4,1fr); border-top: 1px solid var(--campus-line); background: rgba(255,255,255,.97); backdrop-filter: blur(10px); }
+  .student-bottom-nav a { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; color: #607087; text-decoration: none; font-size: 9px; }
+  .student-bottom-nav a svg { width: 20px; }
+  .student-bottom-nav a.active { color: var(--campus-teal); font-weight: 750; }
+  .student-bottom-nav a.active::before { content: ""; position: absolute; top: 0; width: 42px; height: 3px; border-radius: 0 0 3px 3px; background: var(--campus-teal); }
+  .student-page-head { min-height: 84px; margin-bottom: 16px; align-items: flex-start; }
+  .student-page-head h1 { font-size: 23px; }
+  .student-page-head p:last-child { font-size: 11px; }
+  .student-date { display: none; }
+  .student-focus-card { padding: 15px; grid-template-columns: 42px 1fr; grid-template-rows: auto auto auto; gap: 10px 12px; }
+  .focus-icon { width: 42px; height: 42px; }
+  .focus-copy h2 { font-size: 16px; }
+  .focus-copy p { font-size: 9px; }
+  .focus-amount { grid-column: 1/3; padding: 10px 0; align-items: flex-start; border-inline: 0; border-block: 1px solid rgba(255,255,255,.2); }
+  .focus-amount strong { font-size: 21px; }
+  .student-focus-card > a { grid-column: 1/3; justify-content: center; }
+  .student-dashboard-grid { grid-template-columns: 1fr; }
+  .room-pass { grid-template-columns: 1fr; min-height: 230px; padding: 20px; }
+  .room-pass dl { margin-top: 18px; }
+  .room-pass-amenities { margin-top: 14px; overflow: hidden; }
+  .student-activity { grid-template-columns: 39px minmax(120px,1fr) 15px; }
+  .student-activity .activity-status { display: none; }
+  .student-dashboard-aside { grid-template-columns: 1fr; }
+  .quick-actions { order: 2; }
+  .notification-panel { order: 1; }
+  .ai-launcher { right: 14px; bottom: 80px; width: 45px; height: 45px; min-height: 45px; padding: 0; justify-content: center; }
+  .ai-launcher span { display: none; }
+  .ai-assistant { inset: 0; width: 100%; height: 100%; max-width: none; max-height: none; border-radius: 0; }
+  .student-toast { right: 12px; bottom: 126px; left: 12px; max-width: none; }
+  .room-search-head .current-room-chip { display: none; }
+  .active-request-banner { grid-template-columns: 38px 1fr auto; }
+  .active-request-banner .request-status { grid-column: 2; }
+  .active-request-banner a { grid-column: 3; grid-row: 1/3; }
+  .student-room-filters { grid-template-columns: 1fr 1fr; }
+  .student-room-filters > button { grid-column: 1/3; min-height: 44px; }
+  .student-room-list { grid-template-columns: 1fr; }
+  .student-room-card { grid-template-columns: 125px 1fr; }
+  .room-door { padding: 12px; }
+  .room-card-content { padding: 12px; }
+  .room-amenities span:nth-child(n+4) { display: none; }
+  .application-card > header, .student-invoice-card > header, .repair-card > header { gap: 10px; }
+  .application-timeline { grid-template-columns: 1fr; gap: 5px; }
+  .application-timeline > div { min-height: 56px; }
+  .application-timeline > div:not(:last-child)::after { right: auto; bottom: -7px; left: 13px; width: 1px; height: auto; }
+  .application-card dl { grid-template-columns: 1fr; }
+  .invoice-overview { grid-template-columns: 1fr 1fr; }
+  .invoice-overview > div:first-child { grid-column: 1/3; border-right: 0; border-bottom: 1px solid var(--campus-line); padding: 0 0 12px; }
+  .invoice-overview > div:nth-child(3) { border-right: 0; }
+  .invoice-overview button { grid-column: 1/3; min-height: 42px; }
+  .repair-meta { min-width: 100px; }
+}
+
+@media (max-width: 520px) {
+  .student-main { padding-inline: 12px; }
+  .dashboard-head h1 { max-width: 350px; }
+  .student-section { padding: 13px; }
+  .room-pass-code strong { font-size: 37px; }
+  .student-room-filters { padding: 10px; }
+  .student-room-card { min-height: 300px; grid-template-columns: 1fr; }
+  .room-door { min-height: 112px; }
+  .room-door > strong { font-size: 24px; }
+  .room-door > i { top: 27px; }
+  .room-card-content { min-height: 180px; }
+  .active-request-banner { grid-template-columns: 36px 1fr; }
+  .active-request-banner a { grid-column: 2; grid-row: auto; }
+  .page-action { min-width: 44px; padding: 0 11px; font-size: 0; }
+  .page-action svg { margin: 0; }
+  .invoice-overview { gap: 12px; }
+  .student-invoice-card, .application-card, .repair-card { padding: 14px; }
+  .invoice-total strong { font-size: 16px; }
+  .student-invoice-card > footer { align-items: flex-end; }
+  .student-invoice-card > footer p { max-width: 180px; }
+  .repair-card > header { flex-direction: column; }
+  .repair-meta { align-items: flex-start; }
+  .repair-timeline > div { grid-template-columns: 28px 1fr; }
+  .repair-timeline time { grid-column: 2; }
+  .form-grid { grid-template-columns: 1fr; }
+  .form-grid .student-form-field:first-child, .form-grid .student-form-field:last-child { padding-inline: 18px; }
+  .student-dialog { width: calc(100vw - 20px); }
+  .student-dialog > form > footer { flex-direction: column-reverse; }
+  .student-dialog > form > footer button { width: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .student-body *, .student-body *::before, .student-body *::after { animation: none !important; transition: none !important; }
+}

@@ -1,0 +1,202 @@
+@model RoomMapViewModel
+@{
+    var selected = Model.SelectedRoom!;
+    var mobileFloor = Model.Query.Floor ?? 3;
+    var mobileFloorData = Model.Floors.FirstOrDefault(x => x.Number == mobileFloor);
+    var previousFloor = mobileFloor <= 1 ? 5 : mobileFloor - 1;
+    var nextFloor = mobileFloor >= 5 ? 1 : mobileFloor + 1;
+    string Money(decimal value) => value.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("vi-VN"));
+}
+
+<div class="room-map-page @(Model.Query.ShowDetail ? "show-mobile-detail" : "")">
+    <section class="map-content" aria-label="Sơ đồ phòng">
+        <div class="page-heading">
+            <div>
+                <p class="eyebrow">Vận hành chỗ ở</p>
+                <h1>Sơ đồ phòng</h1>
+                <p class="capacity-summary">
+                    <strong>@Model.GlobalCapacity.Capacity.ToString("N0")</strong> chỗ
+                    <span>·</span> <strong>@Model.GlobalCapacity.Occupied.ToString("N0")</strong> đang ở
+                    <span>·</span> <strong>@Model.GlobalCapacity.Held</strong> đang giữ
+                    <span>·</span> <strong>@Model.GlobalCapacity.Assignable</strong> có thể xếp
+                    <span>·</span> <strong>@Model.GlobalCapacity.Blocked</strong> tạm khóa
+                </p>
+            </div>
+            <span class="last-updated"><i></i>Cập nhật vừa xong</span>
+        </div>
+
+        <section class="work-alerts" aria-label="Việc cần xử lý">
+            <button type="button" class="work-alert applications" data-demo-message="Danh sách 4 đơn quá hạn sẽ được mở tại màn hình Đơn đăng ký.">
+                <span class="alert-icon"><svg><use href="#i-file" /></svg></span>
+                <span><strong>4 đơn quá hạn xử lý</strong><small>Xem đơn <svg><use href="#i-arrow" /></svg></small></span>
+            </button>
+            <button type="button" class="work-alert invoices" data-demo-message="Danh sách 7 hóa đơn quá hạn sẽ được mở tại màn hình Thu phí.">
+                <span class="alert-icon"><svg><use href="#i-coin" /></svg></span>
+                <span><strong>7 hóa đơn quá hạn · 18.450.000 đ</strong><small>Xem công nợ <svg><use href="#i-arrow" /></svg></small></span>
+            </button>
+            <button type="button" class="work-alert incidents" data-demo-message="Danh sách 2 sự cố khẩn cấp sẽ được mở tại màn hình Sự cố.">
+                <span class="alert-icon"><svg><use href="#i-tool" /></svg></span>
+                <span><strong>2 sự cố khẩn cấp</strong><small>Xem sự cố <svg><use href="#i-arrow" /></svg></small></span>
+            </button>
+        </section>
+
+        <button type="button" class="mobile-work-summary" data-demo-message="4 đơn quá hạn · 7 hóa đơn quá hạn · 2 sự cố khẩn cấp">
+            <span class="alert-icon"><svg><use href="#i-file" /></svg></span>
+            <span><strong>13 việc cần xử lý</strong><small>4 đơn · 7 công nợ · 2 sự cố khẩn</small></span>
+            <svg><use href="#i-chevron" /></svg>
+        </button>
+
+        <nav class="building-tabs" aria-label="Chọn tòa">
+            @foreach (var building in Model.Buildings)
+            {
+                <a class="@(building.Code == Model.Query.Building ? "active" : "")" asp-action="Map" asp-route-Building="@building.Code" asp-route-Room="@($"{building.Code}-302")">
+                    <strong>Tòa @building.Code</strong><small>@building.Capacity.Assignable có thể xếp</small>
+                </a>
+            }
+        </nav>
+
+        <nav class="mobile-floor-stepper" aria-label="Chọn tầng trên di động">
+            <a asp-action="Map" asp-route-Building="@Model.Query.Building" asp-route-Floor="@previousFloor" asp-route-Room="@($"{Model.Query.Building}-{previousFloor}02")" aria-label="Tầng trước"><svg><use href="#i-chevron" /></svg></a>
+            <strong>Tầng @mobileFloor / 5</strong>
+            <a asp-action="Map" asp-route-Building="@Model.Query.Building" asp-route-Floor="@nextFloor" asp-route-Room="@($"{Model.Query.Building}-{nextFloor}02")" aria-label="Tầng sau"><svg><use href="#i-chevron" /></svg></a>
+        </nav>
+
+        <form class="filter-bar" method="get" asp-action="Map" data-filter-form>
+            <input type="hidden" name="Building" value="@Model.Query.Building" />
+            <input type="hidden" name="Room" value="@Model.Query.Room" />
+            <button class="mobile-filter-button" type="button" data-filter-toggle><svg><use href="#i-filter" /></svg>Bộ lọc<svg><use href="#i-down" /></svg></button>
+            <div class="filter-fields" data-filter-fields>
+                <label><span>Tầng</span><select name="Floor" data-auto-submit>
+                    <option value="">Tất cả</option>
+                    @for (var floor = 1; floor <= 5; floor++) { <option value="@floor" selected="@(Model.Query.Floor == floor)">Tầng @floor</option> }
+                </select></label>
+                <label><span>Loại phòng</span><select name="RoomType" data-auto-submit>
+                    <option value="">Tất cả</option>
+                    @foreach (var roomType in Model.RoomTypes) { <option value="@roomType" selected="@(Model.Query.RoomType == roomType)">@roomType</option> }
+                </select></label>
+                <label><span>Khoảng giá</span><select name="MaxPrice" data-auto-submit>
+                    <option value="">Tất cả</option>
+                    <option value="1100000" selected="@(Model.Query.MaxPrice == 1100000)">Đến 1,1 triệu</option>
+                    <option value="1250000" selected="@(Model.Query.MaxPrice == 1250000)">Đến 1,25 triệu</option>
+                    <option value="1350000" selected="@(Model.Query.MaxPrice == 1350000)">Đến 1,35 triệu</option>
+                </select></label>
+                <label><span>Tình trạng</span><select name="Status" data-auto-submit>
+                    <option value="">Tất cả</option>
+                    <option value="available" selected="@(Model.Query.Status == "available")">Còn chỗ</option>
+                    <option value="full" selected="@(Model.Query.Status == "full")">Đã đầy</option>
+                    <option value="held" selected="@(Model.Query.Status == "held")">Đang giữ chỗ</option>
+                    <option value="maintenance" selected="@(Model.Query.Status == "maintenance")">Bảo trì</option>
+                </select></label>
+            </div>
+            <label class="only-available"><input type="checkbox" name="OnlyAvailable" value="true" checked="@Model.Query.OnlyAvailable" data-auto-submit /><span class="check-box"><svg><use href="#i-check" /></svg></span><span>Chỉ hiện phòng còn chỗ</span></label>
+            <a class="clear-filter" asp-action="Map" asp-route-Building="@Model.Query.Building" asp-route-Room="@($"{Model.Query.Building}-302")">Xóa bộ lọc</a>
+        </form>
+
+        <div class="mobile-map-heading">
+            <h2>Tòa @Model.Query.Building <span>·</span> Tầng @mobileFloor</h2>
+            @if (mobileFloorData is not null)
+            {
+                <p>@mobileFloorData.Rooms.Sum(x => x.Capacity) chỗ · @mobileFloorData.Rooms.Sum(x => x.Occupied) đang ở · @mobileFloorData.Rooms.Sum(x => x.Held) đang giữ · @mobileFloorData.Rooms.Sum(x => x.Assignable) có thể xếp · @mobileFloorData.Rooms.Sum(x => x.Blocked) tạm khóa</p>
+            }
+        </div>
+
+        <section class="building-map">
+            <header class="building-map-header">
+                <h2>@Model.SelectedBuildingName <span>·</span> @Model.SelectedBuildingCapacity.Capacity chỗ</h2>
+                <p>@Model.SelectedBuildingCapacity.Occupied đang ở <span>·</span> @Model.SelectedBuildingCapacity.Held đang giữ <span>·</span> <strong>@Model.SelectedBuildingCapacity.Assignable có thể xếp</strong> <span>·</span> @Model.SelectedBuildingCapacity.Blocked tạm khóa</p>
+            </header>
+
+            @if (Model.VisibleRoomCount == 0)
+            {
+                <div class="empty-state"><span><svg><use href="#i-search" /></svg></span><h3>Không tìm thấy phòng phù hợp</h3><p>Hãy điều chỉnh điều kiện đang chọn hoặc xóa bộ lọc để xem toàn bộ phòng.</p><a asp-action="Map" asp-route-Building="@Model.Query.Building">Xóa bộ lọc</a></div>
+            }
+            else
+            {
+                <div class="floor-list">
+                    @foreach (var floor in Model.Floors)
+                    {
+                        <section class="floor-row @(floor.Number == mobileFloor ? "mobile-active" : "")">
+                            <h3>Tầng @floor.Number</h3>
+                            <div class="room-grid">
+                                @foreach (var room in floor.Rooms)
+                                {
+                                    <a class="room-card @room.StatusClass @(room.IsSelected ? "selected" : "")"
+                                       asp-action="Map" asp-route-Building="@Model.Query.Building" asp-route-Room="@room.Code"
+                                       asp-route-Floor="@Model.Query.Floor" asp-route-RoomType="@Model.Query.RoomType"
+                                       asp-route-MaxPrice="@Model.Query.MaxPrice" asp-route-Status="@Model.Query.Status"
+                                       asp-route-OnlyAvailable="@Model.Query.OnlyAvailable" asp-route-ShowDetail="true"
+                                       aria-label="@room.Code, @room.Occupied trên @room.Capacity đang ở, @room.StatusLabel">
+                                        @if (room.IsSelected) { <em>Đang chọn</em> }
+                                        <strong>@room.Code</strong><span>@room.Occupied/@room.Capacity đang ở</span><small>@room.StatusLabel</small>
+                                    </a>
+                                }
+                            </div>
+                        </section>
+                    }
+                </div>
+            }
+        </section>
+    </section>
+
+    <aside class="room-detail" aria-label="Chi tiết phòng @selected.Code" data-room-detail>
+        <header class="detail-heading">
+            <a class="detail-back" asp-action="Map" asp-route-Building="@Model.Query.Building" asp-route-Floor="@mobileFloor" asp-route-Room="@selected.Code" aria-label="Quay lại sơ đồ"><svg><use href="#i-chevron" /></svg></a>
+            <div><p>Chi tiết phòng</p><h2>Phòng @selected.Code</h2></div>
+            <button class="icon-button detail-close" type="button" data-detail-close aria-label="Đóng chi tiết"><svg><use href="#i-close" /></svg></button>
+            <button class="icon-button detail-more" type="button" data-demo-message="Các thao tác bổ sung sẽ xuất hiện tại đây." aria-label="Thao tác khác"><svg><use href="#i-more" /></svg></button>
+        </header>
+        <span class="detail-status @selected.StatusClass">@selected.StatusLabel.Replace(" · không thể xếp", "")</span>
+        <p class="room-price"><strong>@Money(selected.MonthlyPrice) đ</strong> / tháng</p>
+
+        <dl class="capacity-grid">
+            <div><dt>Sức chứa</dt><dd>@selected.Capacity.Capacity</dd></div><div><dt>Đang ở</dt><dd>@selected.Capacity.Occupied</dd></div>
+            <div><dt>Đang giữ</dt><dd>@selected.Capacity.Held</dd></div><div><dt>Có thể xếp</dt><dd class="positive">@selected.Capacity.Assignable</dd></div>
+        </dl>
+
+        @if (selected.Capacity.Blocked > 0)
+        {
+            <div class="room-readiness danger"><svg><use href="#i-tool" /></svg><span><strong>Chưa thể xếp sinh viên</strong> Phòng đang khóa @selected.Capacity.Blocked chỗ để xử lý sự cố.</span></div>
+        }
+        else if (selected.Capacity.Assignable > 0)
+        {
+            <div class="room-readiness"><svg><use href="#i-check" /></svg><span>Phòng sẵn sàng tiếp nhận thêm <strong>@selected.Capacity.Assignable sinh viên</strong>.</span></div>
+        }
+        else if (selected.Capacity.Held > 0)
+        {
+            <div class="room-readiness warning"><svg><use href="#i-file" /></svg><span>Chỗ còn lại đang được giữ cho hồ sơ đã duyệt.</span></div>
+        }
+
+        <div class="detail-tabs" role="tablist"><button class="active" type="button" role="tab" data-tab="students">Sinh viên (@selected.Students.Count)</button><button type="button" role="tab" data-tab="amenities">Tiện nghi</button><button type="button" role="tab" data-tab="incidents">Sự cố / Lịch sử</button></div>
+
+        <section class="tab-panel active" data-panel="students">
+            @if (selected.Students.Count == 0)
+            {
+                <div class="mini-empty"><strong>Phòng chưa có sinh viên</strong><span>Có thể bắt đầu xếp hồ sơ đã duyệt.</span></div>
+            }
+            else
+            {
+                var studentNumber = 0;
+                <ol class="student-list">
+                    @foreach (var student in selected.Students.Take(4))
+                    {
+                        studentNumber++;
+                        <li><span class="student-index">@studentNumber</span><span><strong>@student.FullName</strong><small>@student.StudentCode</small></span><span class="student-faculty">Hồ sơ sinh viên</span><svg><use href="#i-chevron" /></svg></li>
+                    }
+                </ol>
+                @if (selected.Students.Count > 4) { <button class="text-button" type="button" data-demo-message="Danh sách đầy đủ @selected.Students.Count sinh viên sẽ mở tại màn hình Sinh viên.">Xem đủ @selected.Students.Count sinh viên <svg><use href="#i-arrow" /></svg></button> }
+            }
+        </section>
+        <section class="tab-panel" data-panel="amenities"><ul class="amenity-list">@foreach (var amenity in selected.Amenities) { <li><svg><use href="#i-check" /></svg>@amenity</li> }</ul></section>
+        <section class="tab-panel" data-panel="incidents">
+            @if (selected.Incidents.Count == 0) { <div class="mini-empty"><strong>Không có sự cố đang mở</strong><span>Lịch sử sửa chữa sẽ hiển thị tại đây.</span></div> }
+            else { <ul class="incident-list">@foreach (var incident in selected.Incidents) { <li><strong>@incident.Code · @incident.Title</strong><span>@incident.PriorityLabel · @incident.StatusLabel</span></li> }</ul> }
+        </section>
+
+        <footer class="detail-actions">
+            @if (selected.Capacity.Assignable > 0) { <button class="primary-button" type="button" data-demo-message="Luồng xếp sinh viên sẽ được triển khai sau khi bạn duyệt màn hình này."><svg><use href="#i-plus" /></svg>Xếp sinh viên</button> }
+            else if (selected.Capacity.Blocked > 0) { <button class="primary-button danger-button" type="button" data-tab-target="incidents"><svg><use href="#i-tool" /></svg>Xem sự cố đang xử lý</button> }
+            else { <button class="primary-button" type="button" disabled>Phòng hiện đã đủ chỗ</button> }
+            <button class="secondary-button" type="button" data-demo-message="Lịch sử lưu trú sẽ được triển khai cùng module Sinh viên."><svg><use href="#i-file" /></svg>Xem lịch sử lưu trú</button>
+        </footer>
+    </aside>
+</div>
