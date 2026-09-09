@@ -14,6 +14,7 @@ public sealed class DormitoryDbContext(DbContextOptions<DormitoryDbContext> opti
     public DbSet<Stay> Stays => Set<Stay>();
     public DbSet<RoomHold> RoomHolds => Set<RoomHold>();
     public DbSet<HousingRequest> HousingRequests => Set<HousingRequest>();
+    public DbSet<HousingRequestEvent> HousingRequestEvents => Set<HousingRequestEvent>();
     public DbSet<BillingPeriod> BillingPeriods => Set<BillingPeriod>();
     public DbSet<Invoice> Invoices => Set<Invoice>();
     public DbSet<InvoiceLine> InvoiceLines => Set<InvoiceLine>();
@@ -55,7 +56,7 @@ public sealed class DormitoryDbContext(DbContextOptions<DormitoryDbContext> opti
         builder.Entity<HousingRequest>()
             .HasIndex(x => x.StudentProfileId)
             .IsUnique()
-            .HasFilter("[Status] IN (N'Submitted', N'UnderReview')");
+            .HasFilter("[Status] IN (N'Submitted', N'UnderReview', N'NeedsInformation')");
         builder.Entity<HousingRequest>().Property(x => x.Type).HasConversion<string>();
         builder.Entity<HousingRequest>().Property(x => x.Status).HasConversion<string>();
         builder.Entity<HousingRequest>()
@@ -63,6 +64,17 @@ public sealed class DormitoryDbContext(DbContextOptions<DormitoryDbContext> opti
             .WithMany()
             .HasForeignKey(x => x.TargetRoomId)
             .OnDelete(DeleteBehavior.Restrict);
+        builder.Entity<HousingRequest>()
+            .HasOne(x => x.ReviewedByUser)
+            .WithMany()
+            .HasForeignKey(x => x.ReviewedByUserId)
+            .OnDelete(DeleteBehavior.SetNull);
+        builder.Entity<HousingRequestEvent>().Property(x => x.Status).HasConversion<string>();
+        builder.Entity<HousingRequestEvent>()
+            .HasOne(x => x.ActorUser)
+            .WithMany()
+            .HasForeignKey(x => x.ActorUserId)
+            .OnDelete(DeleteBehavior.NoAction);
 
         builder.Entity<BillingPeriod>().HasIndex(x => x.Code).IsUnique();
         builder.Entity<Invoice>().HasIndex(x => x.Code).IsUnique();

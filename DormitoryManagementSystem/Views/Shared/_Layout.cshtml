@@ -5,6 +5,7 @@
     var currentUser = User.Identity?.IsAuthenticated == true ? await UserManager.GetUserAsync(User) : null;
     var fullName = currentUser?.FullName ?? "Nguyễn Thị Lan";
     var initials = string.Join("", fullName.Split(' ', StringSplitOptions.RemoveEmptyEntries).TakeLast(2).Select(x => x[0]));
+    var flashMessage = TempData["Success"] as string ?? TempData["Error"] as string;
 }
 <!DOCTYPE html>
 <html lang="vi">
@@ -49,8 +50,8 @@
             <nav class="main-nav">
                 <a href="#" data-demo-message="Màn hình Tổng quan sẽ được triển khai sau khi duyệt Sơ đồ phòng."><svg><use href="#i-home" /></svg><span>Tổng quan</span></a>
                 <a class="@(activeNav == "rooms" ? "active" : "")" asp-controller="Rooms" asp-action="Map"><svg><use href="#i-bed" /></svg><span>Phòng ở</span></a>
-                <a href="#" data-demo-message="Màn hình Sinh viên thuộc giai đoạn tiếp theo."><svg><use href="#i-users" /></svg><span>Sinh viên</span></a>
-                <a href="#" data-demo-message="Màn hình Đơn đăng ký thuộc giai đoạn tiếp theo."><svg><use href="#i-file" /></svg><span>Đơn đăng ký</span><b class="nav-count">4</b></a>
+                <a class="@(activeNav == "students" ? "active" : "")" asp-controller="Students" asp-action="Index"><svg><use href="#i-users" /></svg><span>Sinh viên</span></a>
+                <a class="@(activeNav == "applications" ? "active" : "")" asp-controller="Applications" asp-action="Index"><svg><use href="#i-file" /></svg><span>Đơn đăng ký</span><b class="nav-count">@await Component.InvokeAsync("ApplicationQueueBadge")</b></a>
                 <a href="#" data-demo-message="Màn hình Thu phí thuộc giai đoạn tiếp theo."><svg><use href="#i-coin" /></svg><span>Thu phí</span></a>
                 <a href="#" data-demo-message="Màn hình Sự cố thuộc giai đoạn tiếp theo."><svg><use href="#i-tool" /></svg><span>Sự cố</span><b class="nav-count danger">2</b></a>
                 <a href="#" data-demo-message="Màn hình Báo cáo thuộc giai đoạn tiếp theo."><svg><use href="#i-chart" /></svg><span>Báo cáo</span></a>
@@ -70,13 +71,13 @@
         <main class="main-content">@RenderBody()</main>
         <nav class="mobile-bottom-nav" aria-label="Điều hướng di động">
             <a href="#" data-demo-message="Màn hình Tổng quan thuộc giai đoạn tiếp theo."><svg><use href="#i-home" /></svg><span>Tổng quan</span></a>
-            <a class="active" asp-controller="Rooms" asp-action="Map"><svg><use href="#i-bed" /></svg><span>Phòng</span></a>
-            <a href="#" data-demo-message="Màn hình Đơn đăng ký thuộc giai đoạn tiếp theo."><svg><use href="#i-file" /></svg><span>Đơn</span></a>
-            <a href="#" data-demo-message="Màn hình Tài khoản thuộc giai đoạn tiếp theo."><svg><use href="#i-users" /></svg><span>Tài khoản</span></a>
+            <a class="@(activeNav == "rooms" ? "active" : "")" asp-controller="Rooms" asp-action="Map"><svg><use href="#i-bed" /></svg><span>Phòng</span></a>
+            <a class="@(activeNav == "applications" ? "active" : "")" asp-controller="Applications" asp-action="Index"><svg><use href="#i-file" /></svg><span>Đơn</span></a>
+            <a class="@(activeNav == "students" ? "active" : "")" asp-controller="Students" asp-action="Index"><svg><use href="#i-users" /></svg><span>Tài khoản</span></a>
         </nav>
         <div class="sidebar-scrim" data-sidebar-scrim></div>
     </div>
-    <div class="toast" role="status" aria-live="polite" data-toast></div>
+    <div class="toast @(flashMessage is null ? "" : "visible")" role="status" aria-live="polite" data-toast>@flashMessage</div>
     <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>

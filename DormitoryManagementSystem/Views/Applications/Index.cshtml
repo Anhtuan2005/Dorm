@@ -1,0 +1,124 @@
+@model ApplicationQueueViewModel
+@{
+    string Money(decimal value) => value.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("vi-VN"));
+    string WaitLabel(int hours) => hours < 24 ? $"{hours} giờ" : $"{hours / 24} ngày {hours % 24} giờ";
+    var selected = Model.SelectedCase;
+}
+
+<div class="applications-page">
+    <header class="operations-heading">
+        <div><p class="operations-kicker">Hàng đợi lưu trú</p><h1>Xử lý đơn đăng ký</h1><p>Ưu tiên đơn quá 24 giờ và xác nhận chỗ trống ngay trước khi xếp phòng.</p></div>
+        <a class="heading-room-link" asp-controller="Rooms" asp-action="Map"><svg><use href="#i-bed" /></svg>Xem sơ đồ phòng</a>
+    </header>
+
+    <nav class="queue-summary" aria-label="Tóm tắt đơn đăng ký">
+        <a class="@(Model.Query.Scope == "attention" && !Model.Query.OverdueOnly ? "active" : "")" asp-action="Index" asp-route-Scope="attention"><span>Đang chờ xử lý</span><strong>@Model.Summary.Active</strong><small>@Model.Summary.New đơn mới</small></a>
+        <a class="urgent @(Model.Query.OverdueOnly ? "active" : "")" asp-action="Index" asp-route-Scope="attention" asp-route-OverdueOnly="true"><span>Quá hạn 24 giờ</span><strong>@Model.Summary.Overdue</strong><small>Cần ưu tiên trước</small></a>
+        <a class="@(Model.Query.Scope == "review" ? "active" : "")" asp-action="Index" asp-route-Scope="review"><span>Đang xét duyệt</span><strong>@Model.Summary.UnderReview</strong><small>Đã có người nhận</small></a>
+        <a class="@(Model.Query.Scope == "info" ? "active" : "")" asp-action="Index" asp-route-Scope="info"><span>Chờ bổ sung</span><strong>@Model.Summary.NeedsInformation</strong><small>Đã báo sinh viên</small></a>
+        <a class="@(Model.Query.Scope == "completed" ? "active" : "")" asp-action="Index" asp-route-Scope="completed"><span>Hoàn tất hôm nay</span><strong>@Model.Summary.CompletedToday</strong><small>Xem lịch sử</small></a>
+    </nav>
+
+    <form class="queue-toolbar" method="get" asp-action="Index" data-filter-form>
+        <input type="hidden" name="Scope" value="@Model.Query.Scope" />
+        <label class="queue-search"><svg><use href="#i-search" /></svg><input name="Search" value="@Model.Query.Search" placeholder="Mã đơn, sinh viên, phòng..." aria-label="Tìm trong hàng đợi" /></label>
+        <label><span>Loại đơn</span><select name="Type" data-auto-submit><option value="">Tất cả loại đơn</option><option value="Registration" selected="@(Model.Query.Type == "Registration")">Đăng ký ở</option><option value="Transfer" selected="@(Model.Query.Type == "Transfer")">Chuyển phòng</option><option value="Checkout" selected="@(Model.Query.Type == "Checkout")">Trả phòng</option></select></label>
+        <button type="submit"><svg><use href="#i-search" /></svg>Tìm</button>
+        @if (!string.IsNullOrWhiteSpace(Model.Query.Search) || !string.IsNullOrWhiteSpace(Model.Query.Type)) { <a asp-action="Index" asp-route-Scope="@Model.Query.Scope">Xóa lọc</a> }
+    </form>
+
+    <div class="application-workbench @(selected is null ? "empty" : "")">
+        <aside class="request-queue" aria-label="Danh sách đơn">
+            <header><span><strong>@Model.Items.Count đơn</strong><small>Sắp theo mức ưu tiên</small></span><i><svg><use href="#i-file" /></svg></i></header>
+            @if (Model.Items.Count == 0)
+            {
+                <div class="queue-empty"><span><svg><use href="#i-check" /></svg></span><strong>Không có đơn phù hợp</strong><p>Thử xóa bộ lọc hoặc chọn nhóm đơn khác.</p><a asp-action="Index">Về đơn cần xử lý</a></div>
+            }
+            else
+            {
+                <div class="request-queue-list">
+                    @foreach (var item in Model.Items)
+                    {
+                        <a class="request-queue-item @(item.IsSelected ? "selected" : "")" asp-action="Index" asp-route-Scope="@Model.Query.Scope" asp-route-Search="@Model.Query.Search" asp-route-Type="@Model.Query.Type" asp-route-OverdueOnly="@Model.Query.OverdueOnly" asp-route-SelectedId="@item.Id">
+                            <span class="queue-avatar">@item.Initials</span>
+                            <span class="queue-person"><strong>@item.StudentName</strong><small>@item.StudentCode · @item.TypeLabel</small></span>
+                            <span class="request-state @item.StatusClass">@item.StatusLabel</span>
+                            <span class="queue-route"><b>@(item.CurrentRoomCode ?? "Chưa xếp")</b><svg><use href="#i-arrow" /></svg><b>@(item.TargetRoomCode ?? "—")</b></span>
+                            <time class="@(item.IsOverdue ? "overdue" : "")">@(item.IsOverdue ? "Quá hạn · " : "Chờ ")@WaitLabel(item.WaitingHours)</time>
+                        </a>
+                    }
+                </div>
+            }
+        </aside>
+
+        @if (selected is not null)
+        {
+            <main class="application-case">
+                <header class="case-header">
+                    <div><span class="request-state @selected.StatusClass">@selected.StatusLabel</span>@if (selected.IsOverdue) { <span class="overdue-stamp">Quá hạn @WaitLabel(selected.WaitingHours)</span> }<h2>@selected.Code</h2><p>@selected.TypeLabel · Gửi @selected.SubmittedAt.ToLocalTime().ToString("dd/MM/yyyy, HH:mm")</p></div>
+                    <a asp-controller="Students" asp-action="Index" asp-route-SelectedId="@selected.StudentId" class="case-more" aria-label="Mở hồ sơ sinh viên"><svg><use href="#i-more" /></svg></a>
+                </header>
+
+                <section class="case-student">
+                    <span class="case-avatar">@selected.Initials</span>
+                    <div><p>Sinh viên</p><h3>@selected.StudentName</h3><small>@selected.StudentCode · @selected.Faculty</small></div>
+                    <dl><div><dt>Loại phòng</dt><dd>@selected.Gender</dd></div><div><dt>Điện thoại</dt><dd>@selected.PhoneNumber</dd></div><div><dt>Tài khoản</dt><dd>@(selected.Email ?? "Chưa cấp")</dd></div></dl>
+                </section>
+
+                <section class="student-reason"><p>Lý do sinh viên</p><blockquote>“@selected.StudentReason”</blockquote></section>
+
+                <section class="placement-proof">
+                    <header><div><p>Kiểm tra xếp phòng</p><h3>Sức chứa được tính lại từ dữ liệu hiện tại</h3></div><span><i></i>Cập nhật vừa xong</span></header>
+                    <div class="placement-route">
+                        <article class="room-proof current"><small>Phòng hiện tại</small>@if (selected.CurrentRoom is null) { <strong>Chưa xếp</strong><p>Sinh viên chưa có lượt lưu trú</p> } else { <strong>@selected.CurrentRoom.Code</strong><p>@selected.CurrentRoom.Occupied/@selected.CurrentRoom.Capacity đang ở · @selected.CurrentRoom.StateLabel</p> }</article>
+                        <span class="placement-arrow"><svg><use href="#i-arrow" /></svg><small>@selected.TypeLabel</small></span>
+                        <article class="room-proof target @(selected.CanApprove ? "ready" : "blocked")"><small>Phòng đề xuất</small>@if (selected.TargetRoom is null) { <strong>Chưa chọn</strong><p>Không thể xếp phòng</p> } else { <strong>@selected.TargetRoom.Code</strong><p>@selected.TargetRoom.BuildingName · Tầng @selected.TargetRoom.FloorNumber</p><span class="room-state @selected.TargetRoom.StateClass">@selected.TargetRoom.StateLabel</span> }</article>
+                    </div>
+                    @if (selected.TargetRoom is not null)
+                    {
+                        <div class="bed-ledger">
+                            <div><small>Sức chứa</small><strong>@selected.TargetRoom.Capacity</strong></div><div><small>Đang ở</small><strong>@selected.TargetRoom.Occupied</strong></div><div><small>Đang giữ</small><strong>@selected.TargetRoom.Held</strong></div><div><small>Tạm khóa</small><strong>@selected.TargetRoom.Blocked</strong></div><div class="assignable"><small>Có thể xếp</small><strong>@selected.TargetRoom.Assignable</strong></div>
+                        </div>
+                    }
+                    @if (selected.ApprovalBlockReason is not null) { <p class="placement-block"><svg><use href="#i-tool" /></svg>@selected.ApprovalBlockReason</p> }
+                </section>
+
+                <section class="case-context">
+                    <div><span><svg><use href="#i-coin" /></svg></span><p>Công nợ hiện tại<small>Không tự động chặn việc xét duyệt</small></p><strong>@Money(selected.OutstandingBalance) đ</strong></div>
+                    <div><span><svg><use href="#i-tool" /></svg></span><p>Sự cố đang mở<small>Yêu cầu do sinh viên báo</small></p><strong>@selected.OpenRepairCount</strong></div>
+                </section>
+
+                <section class="case-audit">
+                    <header><p>Dấu vết xử lý</p><strong>@selected.Events.Count cập nhật</strong></header>
+                    <div>@foreach (var entry in selected.Events) { <article><i class="@entry.StatusClass"><svg><use href="#i-check" /></svg></i><span><strong>@entry.StatusLabel</strong><p>@entry.Note</p><small>@entry.ActorName · @entry.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy, HH:mm")</small></span></article> }</div>
+                </section>
+            </main>
+
+            <aside class="decision-rail">
+                <header><p>Quyết định</p><h2>Hoàn tất hồ sơ</h2><small>Mọi thao tác được ghi vào lịch sử đơn.</small></header>
+                @if (selected.CanDecide)
+                {
+                    @if (selected.CanStartReview)
+                    {
+                        <form asp-action="BeginReview" method="post"><input type="hidden" name="Id" value="@selected.Id" /><input type="hidden" name="RowVersion" value="@selected.RowVersion" /><button class="claim-request" type="submit"><svg><use href="#i-users" /></svg>Nhận xử lý đơn</button></form>
+                    }
+                    <form class="approve-form" asp-action="Approve" method="post" data-confirm="Duyệt đơn và chuyển sinh viên sang phòng @(selected.TargetRoom?.Code)?">
+                        <input type="hidden" name="Id" value="@selected.Id" /><input type="hidden" name="RowVersion" value="@selected.RowVersion" />
+                        <label><span>Ghi chú khi duyệt</span><textarea name="Reason" rows="3" maxlength="600" placeholder="Không bắt buộc"></textarea></label>
+                        <button class="approve-request" type="submit" disabled="@(!selected.CanApprove)"><svg><use href="#i-check" /></svg>Duyệt và xếp phòng</button>
+                        @if (selected.CanApprove) { <small>Phòng còn @selected.TargetRoom!.Assignable chỗ trước khi xếp.</small> } else { <small class="blocked-copy">@selected.ApprovalBlockReason</small> }
+                    </form>
+                    <div class="decision-secondary"><button type="button" data-open-dialog="information-dialog"><svg><use href="#i-file" /></svg>Yêu cầu bổ sung</button><button class="reject" type="button" data-open-dialog="reject-dialog"><svg><use href="#i-close" /></svg>Từ chối đơn</button></div>
+                }
+                else
+                {
+                    <div class="decision-complete"><span><svg><use href="#i-check" /></svg></span><strong>Đơn đã hoàn tất</strong><p>@(selected.DecisionReason ?? "Không có ghi chú quyết định.")</p></div>
+                }
+                <footer><svg><use href="#i-check" /></svg><p>Hệ thống kiểm tra lại sức chứa trong transaction trước khi tạo lượt lưu trú.</p></footer>
+            </aside>
+
+            <dialog class="manager-dialog" id="information-dialog" aria-labelledby="information-title"><form asp-action="RequestInformation" method="post"><header><div><p>Phản hồi sinh viên</p><h2 id="information-title">Yêu cầu bổ sung</h2></div><button type="button" data-dialog-close aria-label="Đóng"><svg><use href="#i-close" /></svg></button></header><input type="hidden" name="Id" value="@selected.Id" /><input type="hidden" name="RowVersion" value="@selected.RowVersion" /><label><span>Nội dung cần bổ sung</span><textarea name="Reason" minlength="8" maxlength="600" rows="5" required placeholder="Nêu rõ giấy tờ hoặc thông tin còn thiếu..."></textarea><small>Nội dung này sẽ xuất hiện trong cổng sinh viên.</small></label><footer><button type="button" data-dialog-close>Hủy</button><button type="submit">Gửi yêu cầu</button></footer></form></dialog>
+            <dialog class="manager-dialog danger" id="reject-dialog" aria-labelledby="reject-title"><form asp-action="Reject" method="post"><header><div><p>Quyết định cuối</p><h2 id="reject-title">Từ chối @selected.Code</h2></div><button type="button" data-dialog-close aria-label="Đóng"><svg><use href="#i-close" /></svg></button></header><input type="hidden" name="Id" value="@selected.Id" /><input type="hidden" name="RowVersion" value="@selected.RowVersion" /><label><span>Lý do từ chối</span><textarea name="Reason" minlength="8" maxlength="600" rows="5" required placeholder="Giải thích ngắn gọn, cụ thể..."></textarea><small>Sinh viên sẽ nhận được lý do này.</small></label><footer><button type="button" data-dialog-close>Quay lại</button><button class="danger-button" type="submit">Xác nhận từ chối</button></footer></form></dialog>
+        }
+    </div>
+</div>

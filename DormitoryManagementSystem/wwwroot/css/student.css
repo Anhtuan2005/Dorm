@@ -134,6 +134,7 @@ html { -webkit-font-smoothing: antialiased; }
 .activity-status.neutral, .request-status.cancelled { color: #637184; background: #eef2f3; }
 .activity-status.submitted, .request-status.submitted { color: #3564a5; background: #edf4ff; }
 .activity-status.reviewing, .request-status.reviewing { color: #a85310; background: var(--campus-orange-soft); }
+.activity-status.needs-info, .request-status.needs-info { color: #934c13; background: var(--campus-orange-soft); }
 .activity-status.approved, .request-status.approved { color: var(--campus-teal); background: var(--campus-teal-soft); }
 .activity-status.rejected, .request-status.rejected { color: var(--campus-red); background: var(--campus-red-soft); }
 .activity-status.progress, .repair-status.progress, .repair-status.assigned { color: #3564a5; background: #edf4ff; }

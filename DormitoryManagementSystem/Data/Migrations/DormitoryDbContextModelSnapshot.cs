@@ -202,6 +202,9 @@ namespace DormitoryManagementSystem.Data.Migrations
                     b.Property<DateTime?>("ReviewedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("ReviewedByUserId")
+                        .HasColumnType("nvarchar(450)");
+
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
                         .IsRequired()
@@ -235,13 +238,50 @@ namespace DormitoryManagementSystem.Data.Migrations
                     b.HasIndex("Code")
                         .IsUnique();
 
+                    b.HasIndex("ReviewedByUserId");
+
                     b.HasIndex("StudentProfileId")
                         .IsUnique()
-                        .HasFilter("[Status] IN (N'Submitted', N'UnderReview')");
+                        .HasFilter("[Status] IN (N'Submitted', N'UnderReview', N'NeedsInformation')");
 
                     b.HasIndex("TargetRoomId");
 
                     b.ToTable("HousingRequests");
+                });
+
+            modelBuilder.Entity("DormitoryManagementSystem.Models.HousingRequestEvent", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("ActorUserId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<long>("HousingRequestId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Note")
+                        .IsRequired()
+                        .HasMaxLength(600)
+                        .HasColumnType("nvarchar(600)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActorUserId");
+
+                    b.HasIndex("HousingRequestId");
+
+                    b.ToTable("HousingRequestEvents");
                 });
 
             modelBuilder.Entity("DormitoryManagementSystem.Models.Invoice", b =>
@@ -769,6 +809,11 @@ namespace DormitoryManagementSystem.Data.Migrations
 
             modelBuilder.Entity("DormitoryManagementSystem.Models.HousingRequest", b =>
                 {
+                    b.HasOne("DormitoryManagementSystem.Models.ApplicationUser", "ReviewedByUser")
+                        .WithMany()
+                        .HasForeignKey("ReviewedByUserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("DormitoryManagementSystem.Models.StudentProfile", "StudentProfile")
                         .WithMany("HousingRequests")
                         .HasForeignKey("StudentProfileId")
@@ -780,9 +825,29 @@ namespace DormitoryManagementSystem.Data.Migrations
                         .HasForeignKey("TargetRoomId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.Navigation("ReviewedByUser");
+
                     b.Navigation("StudentProfile");
 
                     b.Navigation("TargetRoom");
+                });
+
+            modelBuilder.Entity("DormitoryManagementSystem.Models.HousingRequestEvent", b =>
+                {
+                    b.HasOne("DormitoryManagementSystem.Models.ApplicationUser", "ActorUser")
+                        .WithMany()
+                        .HasForeignKey("ActorUserId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("DormitoryManagementSystem.Models.HousingRequest", "HousingRequest")
+                        .WithMany("Events")
+                        .HasForeignKey("HousingRequestId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ActorUser");
+
+                    b.Navigation("HousingRequest");
                 });
 
             modelBuilder.Entity("DormitoryManagementSystem.Models.Invoice", b =>
@@ -982,6 +1047,11 @@ namespace DormitoryManagementSystem.Data.Migrations
             modelBuilder.Entity("DormitoryManagementSystem.Models.Floor", b =>
                 {
                     b.Navigation("Rooms");
+                });
+
+            modelBuilder.Entity("DormitoryManagementSystem.Models.HousingRequest", b =>
+                {
+                    b.Navigation("Events");
                 });
 
             modelBuilder.Entity("DormitoryManagementSystem.Models.Invoice", b =>

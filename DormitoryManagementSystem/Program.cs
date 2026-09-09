@@ -56,6 +56,8 @@ builder.Services.ConfigureApplicationCookie(options =>
 
 builder.Services.AddScoped<IRoomMapService, RoomMapService>();
 builder.Services.AddScoped<IStudentPortalService, StudentPortalService>();
+builder.Services.AddScoped<IApplicationManagementService, ApplicationManagementService>();
+builder.Services.AddScoped<IStudentManagementService, StudentManagementService>();
 builder.Services.AddControllersWithViews();
 builder.Services.AddSignalR();
 

@@ -26,10 +26,10 @@
         </div>
 
         <section class="work-alerts" aria-label="Việc cần xử lý">
-            <button type="button" class="work-alert applications" data-demo-message="Danh sách 4 đơn quá hạn sẽ được mở tại màn hình Đơn đăng ký.">
+            <a class="work-alert applications" asp-controller="Applications" asp-action="Index" asp-route-Scope="attention" asp-route-OverdueOnly="true">
                 <span class="alert-icon"><svg><use href="#i-file" /></svg></span>
-                <span><strong>4 đơn quá hạn xử lý</strong><small>Xem đơn <svg><use href="#i-arrow" /></svg></small></span>
-            </button>
+                <span><strong>@Model.OverdueApplicationCount đơn quá hạn xử lý</strong><small>Xem đơn <svg><use href="#i-arrow" /></svg></small></span>
+            </a>
             <button type="button" class="work-alert invoices" data-demo-message="Danh sách 7 hóa đơn quá hạn sẽ được mở tại màn hình Thu phí.">
                 <span class="alert-icon"><svg><use href="#i-coin" /></svg></span>
                 <span><strong>7 hóa đơn quá hạn · 18.450.000 đ</strong><small>Xem công nợ <svg><use href="#i-arrow" /></svg></small></span>
@@ -40,11 +40,11 @@
             </button>
         </section>
 
-        <button type="button" class="mobile-work-summary" data-demo-message="4 đơn quá hạn · 7 hóa đơn quá hạn · 2 sự cố khẩn cấp">
+        <a class="mobile-work-summary" asp-controller="Applications" asp-action="Index" asp-route-Scope="attention">
             <span class="alert-icon"><svg><use href="#i-file" /></svg></span>
-            <span><strong>13 việc cần xử lý</strong><small>4 đơn · 7 công nợ · 2 sự cố khẩn</small></span>
+            <span><strong>@(Model.OverdueApplicationCount + 9) việc cần xử lý</strong><small>@Model.OverdueApplicationCount đơn · 7 công nợ · 2 sự cố khẩn</small></span>
             <svg><use href="#i-chevron" /></svg>
-        </button>
+        </a>
 
         <nav class="building-tabs" aria-label="Chọn tòa">
             @foreach (var building in Model.Buildings)

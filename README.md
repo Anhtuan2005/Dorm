@@ -2,7 +2,7 @@
 
 ASP.NET Core MVC dormitory-management project using Razor Views, handwritten CSS/JavaScript, SQL Server, ASP.NET Core Identity, EF Core, Serilog and SignalR infrastructure.
 
-The current implementation contains the approved Option 2 manager room map and the first student-portal vertical slice. Student room search, housing requests, invoice lookup and repair requests use SQL Server data. The AI assistant is a clearly labelled UI/demo response layer only; model/API integration remains a later extension.
+The current implementation contains the approved Option 2 manager room map, the student portal, and the manager application-review/account-management sprint. Student room search, housing requests, placement decisions, invoice lookup, repair requests and student-account links use SQL Server data. The AI assistant is a clearly labelled UI/demo response layer only; model/API integration remains a later extension.
 
 ## Run locally
 
@@ -50,6 +50,9 @@ Demo student account:
 - `scripts/capture-room-map.cjs`: repeatable desktop/mobile browser capture and smoke checks.
 - `scripts/capture-student-portal.cjs`: visual and authorization regression checks for the student portal.
 - `scripts/smoke-student-workflows.cjs`: submit/cancel housing request, invoice read and repair-submit browser tests with deterministic cleanup.
+- `scripts/capture-application-workflow.cjs`: desktop/mobile visual regression for the manager review desk and student directory.
+- `scripts/smoke-application-transaction.cjs`: end-to-end submit, approve, assign, notify and deterministic rollback verification.
+- `scripts/smoke-student-account-lifecycle.cjs`: account creation, password reset, lock/unlock and role-protected login verification.
 
 ## Student portal checkpoint
 
@@ -59,6 +62,14 @@ Demo student account:
 - Invoice totals and line items are database-backed; online payment remains explicitly out of scope.
 - AI help includes grounded demo answers, source labels, known-function links and a no-information fallback. No API key or external model call is present.
 
-See `docs/IMPLEMENTATION-CHECKPOINT-STUDENT-PORTAL.md` for the implemented flow and verification boundary.
+## Manager application and account checkpoint
+
+- The application queue prioritizes overdue work and keeps the selected case, room-capacity proof and final decision visible in one review desk.
+- Approval rechecks gender policy, current stay, holds, maintenance-blocked beds and live occupancy inside a serializable SQL transaction before creating the new stay.
+- Each transition writes an audit event and a student notification. Stale Razor forms are rejected through the row-version concurrency token.
+- The student directory can link an Identity account to an existing profile, reset its password and lock or unlock access without exposing password data.
+- `Admin` and `DormManager` can access manager workflows; `Student` remains restricted to the student portal.
+
+Generated design previews, screenshots, logs, build outputs and working documents are intentionally ignored by Git. README files and the interface-system contract remain versioned. Keep production secrets in environment variables or .NET User Secrets, never in tracked settings.
 
 The architecture follows the controller-service-view-model separation and startup conventions verified against the user-provided reference repository `Anhtuan2005/E-Lectrical--Commerce-`.

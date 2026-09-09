@@ -9,6 +9,10 @@
   const toast = document.querySelector("[data-toast]");
   let toastTimer;
 
+  if (toast?.textContent.trim()) {
+    toastTimer = window.setTimeout(() => toast.classList.remove("visible"), 4200);
+  }
+
   function showToast(message) {
     if (!toast || !message) return;
     toast.textContent = message;
@@ -38,11 +42,34 @@
     scrim?.classList.add("open");
   });
   scrim?.addEventListener("click", closeMobileMenu);
+  sidebar?.querySelectorAll("a").forEach((link) => link.addEventListener("click", closeMobileMenu));
 
   document.querySelectorAll("[data-demo-message]").forEach((element) => {
     element.addEventListener("click", (event) => {
       event.preventDefault();
       showToast(element.dataset.demoMessage);
+    });
+  });
+
+  document.querySelectorAll("form[data-confirm]").forEach((form) => {
+    form.addEventListener("submit", (event) => {
+      if (!window.confirm(form.dataset.confirm)) event.preventDefault();
+    });
+  });
+
+  document.querySelectorAll("[data-open-dialog]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const dialog = document.getElementById(button.dataset.openDialog);
+      if (dialog instanceof HTMLDialogElement) dialog.showModal();
+    });
+  });
+
+  document.querySelectorAll(".manager-dialog").forEach((dialog) => {
+    dialog.querySelectorAll("[data-dialog-close]").forEach((button) => {
+      button.addEventListener("click", () => dialog.close());
+    });
+    dialog.addEventListener("click", (event) => {
+      if (event.target === dialog) dialog.close();
     });
   });
 

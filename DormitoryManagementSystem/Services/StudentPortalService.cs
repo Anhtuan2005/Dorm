@@ -8,7 +8,7 @@ namespace DormitoryManagementSystem.Services;
 public sealed class StudentPortalService(DormitoryDbContext db) : IStudentPortalService
 {
     private static readonly HousingRequestStatus[] ActiveRequestStatuses =
-        [HousingRequestStatus.Submitted, HousingRequestStatus.UnderReview];
+        [HousingRequestStatus.Submitted, HousingRequestStatus.UnderReview, HousingRequestStatus.NeedsInformation];
 
     private static readonly MaintenanceStatus[] OpenRepairStatuses =
         [MaintenanceStatus.New, MaintenanceStatus.Assigned, MaintenanceStatus.InProgress, MaintenanceStatus.WaitingParts];
@@ -188,7 +188,17 @@ public sealed class StudentPortalService(DormitoryDbContext db) : IStudentPortal
             Type = profile.Stays.Count > 0 ? HousingRequestType.Transfer : HousingRequestType.Registration,
             Status = HousingRequestStatus.Submitted,
             StudentReason = input.Reason.Trim(),
-            SubmittedAt = DateTime.UtcNow
+            SubmittedAt = DateTime.UtcNow,
+            Events =
+            [
+                new HousingRequestEvent
+                {
+                    Status = HousingRequestStatus.Submitted,
+                    Note = "Sinh viên đã gửi yêu cầu.",
+                    ActorUserId = userId,
+                    CreatedAt = DateTime.UtcNow
+                }
+            ]
         };
         db.HousingRequests.Add(request);
 
@@ -216,6 +226,13 @@ public sealed class StudentPortalService(DormitoryDbContext db) : IStudentPortal
 
         request.Status = HousingRequestStatus.Cancelled;
         request.ReviewedAt = DateTime.UtcNow;
+        request.Events.Add(new HousingRequestEvent
+        {
+            Status = HousingRequestStatus.Cancelled,
+            Note = "Sinh viên đã hủy yêu cầu.",
+            ActorUserId = userId,
+            CreatedAt = DateTime.UtcNow
+        });
         await db.SaveChangesAsync(cancellationToken);
         return new(true, $"Đã hủy đơn {request.Code}.");
     }
@@ -355,6 +372,7 @@ public sealed class StudentPortalService(DormitoryDbContext db) : IStudentPortal
         {
             HousingRequestStatus.Submitted => ("Đã gửi", "submitted"),
             HousingRequestStatus.UnderReview => ("Đang xét duyệt", "reviewing"),
+            HousingRequestStatus.NeedsInformation => ("Cần bổ sung", "needs-info"),
             HousingRequestStatus.Approved => ("Đã duyệt", "approved"),
             HousingRequestStatus.Rejected => ("Từ chối", "rejected"),
             _ => ("Đã hủy", "cancelled")

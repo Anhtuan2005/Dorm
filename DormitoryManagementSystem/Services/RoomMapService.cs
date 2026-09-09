@@ -105,7 +105,13 @@ public sealed class RoomMapService(DormitoryDbContext db) : IRoomMapService
             Buildings = buildings,
             Floors = floorMaps,
             RoomTypes = buildingFacts.Select(x => x.Room.RoomType).Distinct().Order().ToList(),
-            SelectedRoom = ToDetail(selectedFact)
+            SelectedRoom = ToDetail(selectedFact),
+            OverdueApplicationCount = await db.HousingRequests.CountAsync(
+                x => (x.Status == HousingRequestStatus.Submitted ||
+                      x.Status == HousingRequestStatus.UnderReview ||
+                      x.Status == HousingRequestStatus.NeedsInformation) &&
+                     x.SubmittedAt < now.AddHours(-24),
+                cancellationToken)
         };
     }
 

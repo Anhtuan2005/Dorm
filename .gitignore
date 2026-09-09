@@ -1,0 +1,68 @@
+# .NET build outputs
+**/bin/
+**/obj/
+
+# Runtime logs and local diagnostics
+**/logs/
+*.log
+*.trace
+
+# IDE and user-specific state
+.vs/
+.vscode/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Generated previews, captures and test artifacts
+artifacts/
+design-preview/**
+!design-preview/**/
+!design-preview/**/README.md
+TestResults/
+coverage/
+*.coverage
+*.trx
+
+# Project notes and exported documents; README files remain versioned
+docs/**
+!docs/**/
+!docs/**/README.md
+*.md
+!README.md
+!**/README.md
+!AGENTS.md
+!**/AGENTS.md
+!CLAUDE.md
+!**/CLAUDE.md
+!.interface-design/system.md
+DESIGN.json
+*.doc
+*.docx
+*.odt
+*.rtf
+*.pdf
+
+# Local settings and secrets
+.env
+.env.*
+!.env.example
+**/appsettings.Local.json
+**/appsettings.*.local.json
+**/secrets.json
+**/*.secrets.json
+*.pfx
+*.p12
+*.pem
+*.key
+
+# OS/editor temporary files
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.tmp
+*.bak
+*.swp
+*~

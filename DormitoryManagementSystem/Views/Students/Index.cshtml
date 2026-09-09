@@ -1,0 +1,75 @@
+@model StudentDirectoryViewModel
+@{
+    var selected = Model.SelectedStudent;
+    string Money(decimal value) => value.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("vi-VN"));
+}
+
+<div class="students-page">
+    <header class="operations-heading">
+        <div><p class="operations-kicker">Hồ sơ và quyền truy cập</p><h1>Sinh viên</h1><p>Tra cứu chỗ ở và quản lý tài khoản cổng sinh viên từ một hồ sơ duy nhất.</p></div>
+        <div class="account-totals"><span><small>Đã có tài khoản</small><strong>@Model.LinkedAccountCount</strong></span><span><small>Chưa liên kết</small><strong>@Model.UnlinkedAccountCount</strong></span></div>
+    </header>
+
+    <form class="student-directory-toolbar" method="get" asp-action="Index" data-filter-form>
+        <label class="queue-search"><svg><use href="#i-search" /></svg><input name="Search" value="@Model.Query.Search" placeholder="Mã sinh viên, họ tên, email..." aria-label="Tìm sinh viên" /></label>
+        <label><span>Tòa hiện tại</span><select name="Building" data-auto-submit><option value="">Tất cả tòa</option>@foreach (var building in Model.Buildings) { <option value="@building" selected="@(Model.Query.Building == building)">Tòa @building</option> }</select></label>
+        <label><span>Tài khoản</span><select name="Account" data-auto-submit><option value="all" selected="@(Model.Query.Account == "all")">Tất cả trạng thái</option><option value="linked" selected="@(Model.Query.Account == "linked")">Đã liên kết</option><option value="unlinked" selected="@(Model.Query.Account == "unlinked")">Chưa liên kết</option><option value="locked" selected="@(Model.Query.Account == "locked")">Đang bị khóa</option></select></label>
+        <button type="submit"><svg><use href="#i-search" /></svg>Tìm</button>
+        @if (!string.IsNullOrWhiteSpace(Model.Query.Search) || !string.IsNullOrWhiteSpace(Model.Query.Building) || Model.Query.Account != "all") { <a asp-action="Index">Xóa lọc</a> }
+    </form>
+
+    <div class="student-directory-workbench">
+        <section class="student-record-list" aria-label="Danh sách sinh viên">
+            <header><div><strong>@Model.Items.Count hồ sơ</strong><small>Hiển thị tối đa 120 kết quả</small></div><svg><use href="#i-users" /></svg></header>
+            @if (Model.Items.Count == 0)
+            {
+                <div class="queue-empty"><span><svg><use href="#i-search" /></svg></span><strong>Không tìm thấy sinh viên</strong><p>Thử thay đổi từ khóa hoặc xóa bộ lọc.</p><a asp-action="Index">Xóa bộ lọc</a></div>
+            }
+            else
+            {
+                <div class="student-record-scroll">
+                    @foreach (var student in Model.Items)
+                    {
+                        <a class="student-record @(student.IsSelected ? "selected" : "")" asp-action="Index" asp-route-Search="@Model.Query.Search" asp-route-Building="@Model.Query.Building" asp-route-Account="@Model.Query.Account" asp-route-SelectedId="@student.Id">
+                            <span class="directory-avatar">@student.Initials</span>
+                            <span><strong>@student.FullName</strong><small>@student.StudentCode · @student.Faculty</small></span>
+                            <span class="directory-room">@(student.RoomCode ?? "Chưa xếp")</span>
+                            <span class="account-state @(student.IsLocked ? "locked" : student.HasAccount ? "linked" : "unlinked")">@(student.IsLocked ? "Đã khóa" : student.HasAccount ? "Có tài khoản" : "Chưa cấp")</span>
+                        </a>
+                    }
+                </div>
+            }
+        </section>
+
+        @if (selected is not null)
+        {
+            <aside class="student-record-detail">
+                <header class="student-profile-cover"><span class="profile-avatar">@selected.Initials</span><div><small>@selected.StudentCode</small><h2>@selected.FullName</h2><p>@selected.Faculty</p></div><span class="account-state @(selected.IsLocked ? "locked" : selected.HasAccount ? "linked" : "unlinked")">@(selected.IsLocked ? "Tài khoản bị khóa" : selected.HasAccount ? "Đã liên kết tài khoản" : "Chưa có tài khoản")</span></header>
+                <div class="student-profile-facts"><div><small>Phòng hiện tại</small><strong>@(selected.RoomCode ?? "Chưa xếp phòng")</strong>@if (selected.StayStartedAt is not null) { <span>Từ @selected.StayStartedAt.Value.ToLocalTime().ToString("dd/MM/yyyy")</span> }</div><div><small>Giới tính hồ sơ</small><strong>@selected.Gender</strong></div><div><small>Điện thoại</small><strong>@selected.PhoneNumber</strong></div><div><small>Email đăng nhập</small><strong>@(selected.Email ?? "Chưa cấp")</strong></div></div>
+                <div class="student-profile-metrics"><a asp-controller="Applications" asp-action="Index" asp-route-Search="@selected.StudentCode"><small>Đơn lưu trú</small><strong>@selected.RequestCount</strong><span>Xem lịch sử <svg><use href="#i-arrow" /></svg></span></a><a href="#" data-demo-message="Module Thu phí sẽ mở chi tiết công nợ của sinh viên."><small>Công nợ</small><strong>@Money(selected.OutstandingBalance) đ</strong><span>Xem hóa đơn <svg><use href="#i-arrow" /></svg></span></a></div>
+                <section class="account-control">
+                    <header><div><p>Truy cập cổng sinh viên</p><h3>Tài khoản người dùng</h3></div><svg><use href="#i-users" /></svg></header>
+                    @if (!selected.HasAccount)
+                    {
+                        <p>Hồ sơ chưa có thông tin đăng nhập. Cấp tài khoản để sinh viên xem phòng, hóa đơn và gửi yêu cầu.</p>
+                        <button class="account-primary" type="button" data-open-dialog="create-account-dialog"><svg><use href="#i-plus" /></svg>Cấp tài khoản</button>
+                    }
+                    else
+                    {
+                        <div class="linked-account"><span><small>Email</small><strong>@selected.Email</strong></span><i class="@(selected.IsLocked ? "locked" : "")">@(selected.IsLocked ? "Đang khóa" : "Đang hoạt động")</i></div>
+                        <div class="account-actions"><button type="button" data-open-dialog="reset-password-dialog">Đặt lại mật khẩu</button><form asp-action="SetAccountLock" method="post" data-confirm="@(selected.IsLocked ? "Mở khóa" : "Khóa") tài khoản @selected.Email?"><input type="hidden" name="studentId" value="@selected.Id" /><input type="hidden" name="locked" value="@(selected.IsLocked ? "false" : "true")" /><button class="@(selected.IsLocked ? "unlock" : "lock")" type="submit">@(selected.IsLocked ? "Mở khóa" : "Khóa tài khoản")</button></form></div>
+                    }
+                </section>
+            </aside>
+
+            @if (!selected.HasAccount)
+            {
+                <dialog class="manager-dialog" id="create-account-dialog" aria-labelledby="create-account-title"><form asp-action="CreateAccount" method="post"><header><div><p>@selected.StudentCode</p><h2 id="create-account-title">Cấp tài khoản sinh viên</h2></div><button type="button" data-dialog-close aria-label="Đóng"><svg><use href="#i-close" /></svg></button></header><input type="hidden" name="StudentId" value="@selected.Id" /><label><span>Email đăng nhập</span><input name="Email" type="email" required maxlength="256" value="@(selected.StudentCode.ToLowerInvariant())@@student.nepktx.local" /></label><label><span>Mật khẩu tạm thời</span><input name="TemporaryPassword" type="password" required minlength="8" autocomplete="new-password" placeholder="Ít nhất 8 ký tự" /><small>Sinh viên nên đổi mật khẩu sau lần đăng nhập đầu.</small></label><footer><button type="button" data-dialog-close>Hủy</button><button type="submit">Cấp tài khoản</button></footer></form></dialog>
+            }
+            else
+            {
+                <dialog class="manager-dialog" id="reset-password-dialog" aria-labelledby="reset-password-title"><form asp-action="ResetPassword" method="post"><header><div><p>@selected.Email</p><h2 id="reset-password-title">Đặt lại mật khẩu</h2></div><button type="button" data-dialog-close aria-label="Đóng"><svg><use href="#i-close" /></svg></button></header><input type="hidden" name="StudentId" value="@selected.Id" /><label><span>Mật khẩu tạm thời mới</span><input name="TemporaryPassword" type="password" required minlength="8" autocomplete="new-password" placeholder="Ít nhất 8 ký tự" /><small>Không hiển thị hoặc gửi mật khẩu qua kênh công khai.</small></label><footer><button type="button" data-dialog-close>Hủy</button><button type="submit">Cập nhật mật khẩu</button></footer></form></dialog>
+            }
+        }
+    </div>
+</div>

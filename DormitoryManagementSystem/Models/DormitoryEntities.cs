@@ -75,7 +75,7 @@ public sealed class RoomHold
 }
 
 public enum HousingRequestType { Registration, Transfer, Checkout }
-public enum HousingRequestStatus { Submitted, UnderReview, Approved, Rejected, Cancelled }
+public enum HousingRequestStatus { Submitted, UnderReview, NeedsInformation, Approved, Rejected, Cancelled }
 
 public sealed class HousingRequest
 {
@@ -91,7 +91,22 @@ public sealed class HousingRequest
     [MaxLength(600)] public string? DecisionReason { get; set; }
     public DateTime SubmittedAt { get; set; }
     public DateTime? ReviewedAt { get; set; }
+    public string? ReviewedByUserId { get; set; }
+    public ApplicationUser? ReviewedByUser { get; set; }
     [Timestamp] public byte[] RowVersion { get; set; } = [];
+    public ICollection<HousingRequestEvent> Events { get; set; } = [];
+}
+
+public sealed class HousingRequestEvent
+{
+    public long Id { get; set; }
+    public long HousingRequestId { get; set; }
+    public HousingRequest HousingRequest { get; set; } = null!;
+    public HousingRequestStatus Status { get; set; }
+    [MaxLength(600)] public string Note { get; set; } = string.Empty;
+    public string? ActorUserId { get; set; }
+    public ApplicationUser? ActorUser { get; set; }
+    public DateTime CreatedAt { get; set; }
 }
 
 public sealed class BillingPeriod

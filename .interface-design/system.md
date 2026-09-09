@@ -35,6 +35,14 @@
 - The AI help launcher remains small and user-initiated. On mobile its dialog becomes a full-screen panel. Answers show a source label and navigation action; unknown questions explicitly defer to dormitory management.
 - Working content targets 13–15px on desktop and keeps compact 10–11px text only for metadata, labels and timestamps.
 
+## Manager review-desk pattern
+
+- Application review uses three coordinated zones: prioritized queue, selected case with live placement proof, and a compact decision rail. It must feel like an operations inbox, not a generic data table.
+- The room transition (`current → target`) and five-part bed ledger (capacity, occupied, held, blocked, assignable) sit immediately before approval. The primary action always states the outcome: “Duyệt và xếp phòng”.
+- Overdue, review and missing-information states are written labels as well as color treatments. Secondary decisions that need an explanation use focused dialogs.
+- Mobile separates scanning the queue from reading the case while preserving the same order of evidence. The fixed bottom navigation must not cover decisions or the case heading.
+- Student account management starts from the durable student profile. Linking, password reset and lock state are grouped in one access-control region rather than mixed into housing facts.
+
 ## Implementation constraints
 
 - ASP.NET Core MVC with Razor Views.

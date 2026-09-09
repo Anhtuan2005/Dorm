@@ -75,6 +75,7 @@ public sealed class RoomMapViewModel
     public required IReadOnlyList<FloorMapViewModel> Floors { get; init; }
     public required IReadOnlyList<string> RoomTypes { get; init; }
     public RoomDetailViewModel? SelectedRoom { get; init; }
+    public int OverdueApplicationCount { get; init; }
     public int VisibleRoomCount => Floors.Sum(x => x.Rooms.Count);
 }
 

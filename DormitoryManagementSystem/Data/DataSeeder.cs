@@ -19,7 +19,7 @@ public static class DataSeeder
                 await roleManager.CreateAsync(new IdentityRole(role));
         }
 
-        await EnsureUserAsync(userManager, "manager@nepktx.local", "Nguyễn Thị Lan", "Demo@123", RoleNames.DormManager);
+        var managerUser = await EnsureUserAsync(userManager, "manager@nepktx.local", "Nguyễn Thị Lan", "Demo@123", RoleNames.DormManager);
         await EnsureUserAsync(userManager, "admin@nepktx.local", "Phạm Đức Minh", "Demo@123", RoleNames.Admin);
         var studentUser = await EnsureUserAsync(userManager, "student@nepktx.local", "Nguyễn Minh An", "Demo@123", RoleNames.Student);
 
@@ -215,7 +215,7 @@ public static class DataSeeder
         await db.SaveChangesAsync();
         }
 
-        await SeedStudentPortalAsync(db, studentUser);
+        await SeedStudentPortalAsync(db, studentUser, managerUser);
     }
 
     private static async Task<ApplicationUser> EnsureUserAsync(
@@ -248,7 +248,8 @@ public static class DataSeeder
 
     private static async Task SeedStudentPortalAsync(
         DormitoryDbContext db,
-        ApplicationUser studentUser)
+        ApplicationUser studentUser,
+        ApplicationUser managerUser)
     {
         var profile = await db.StudentProfiles
             .Include(x => x.Stays.Where(stay => stay.EndedAt == null))
@@ -349,7 +350,13 @@ public static class DataSeeder
                 StudentReason = "Đăng ký lưu trú học kỳ I.",
                 DecisionReason = "Hồ sơ đầy đủ, đã xác nhận nhận phòng.",
                 SubmittedAt = new DateTime(2026, 2, 18, 2, 30, 0, DateTimeKind.Utc),
-                ReviewedAt = new DateTime(2026, 2, 20, 7, 15, 0, DateTimeKind.Utc)
+                ReviewedAt = new DateTime(2026, 2, 20, 7, 15, 0, DateTimeKind.Utc),
+                ReviewedByUserId = managerUser.Id,
+                Events =
+                [
+                    new HousingRequestEvent { Status = HousingRequestStatus.Submitted, Note = "Sinh viên đã gửi yêu cầu.", ActorUserId = studentUser.Id, CreatedAt = new DateTime(2026, 2, 18, 2, 30, 0, DateTimeKind.Utc) },
+                    new HousingRequestEvent { Status = HousingRequestStatus.Approved, Note = "Hồ sơ đầy đủ, đã xác nhận nhận phòng.", ActorUserId = managerUser.Id, CreatedAt = new DateTime(2026, 2, 20, 7, 15, 0, DateTimeKind.Utc) }
+                ]
             });
         }
 
@@ -398,6 +405,81 @@ public static class DataSeeder
                     TargetUrl = "/Student/Repairs",
                     CreatedAt = new DateTime(2026, 9, 9, 1, 35, 0, DateTimeKind.Utc)
                 });
+        }
+
+        await db.SaveChangesAsync();
+        await SeedApplicationQueueAsync(db, managerUser);
+    }
+
+    private static async Task SeedApplicationQueueAsync(DormitoryDbContext db, ApplicationUser managerUser)
+    {
+        var studentProfiles = await db.StudentProfiles
+            .Where(x => new[] { "SV001234", "SV001890", "SV002011", "SV002174", "SV000007", "SV000008" }.Contains(x.StudentCode))
+            .ToDictionaryAsync(x => x.StudentCode);
+        var targetRooms = await db.Rooms
+            .Where(x => new[] { "C-503", "C-504", "C-505", "C-506", "C-507", "C-508" }.Contains(x.Code))
+            .ToDictionaryAsync(x => x.Code);
+
+        var studentDetails = new Dictionary<string, (string Name, string Faculty, string Phone)>
+        {
+            ["SV001234"] = ("Trần Minh An", "Kỹ thuật máy tính", "090 123 4107"),
+            ["SV001890"] = ("Nguyễn Văn Hưng", "Công nghệ thông tin", "090 189 0108"),
+            ["SV002011"] = ("Phạm Gia Hân", "Điện – Điện tử", "090 201 1109"),
+            ["SV002174"] = ("Đỗ Thanh Trúc", "Khoa học dữ liệu", "090 217 4110"),
+            ["SV000007"] = ("Lê Hoàng Duy", "Cơ khí", "090 700 7111"),
+            ["SV000008"] = ("Phan Minh Khoa", "Logistics", "090 800 8112")
+        };
+        foreach (var detail in studentDetails)
+        {
+            if (!studentProfiles.TryGetValue(detail.Key, out var student)) continue;
+            student.FullName = detail.Value.Name;
+            student.Faculty = detail.Value.Faculty;
+            student.PhoneNumber = detail.Value.Phone;
+        }
+
+        var specs = new[]
+        {
+            new { Code = "DK-2026-0107", Student = "SV001234", Room = "C-503", Status = HousingRequestStatus.Submitted, Submitted = new DateTime(2026, 9, 6, 8, 15, 0, DateTimeKind.Utc), Reason = "Muốn chuyển gần khu tự học và phòng còn nhiều chỗ hơn.", Decision = (string?)null },
+            new { Code = "DK-2026-0108", Student = "SV001890", Room = "C-504", Status = HousingRequestStatus.UnderReview, Submitted = new DateTime(2026, 9, 7, 6, 30, 0, DateTimeKind.Utc), Reason = "Cần không gian yên tĩnh để thực hiện đồ án cuối kỳ.", Decision = (string?)"Quản lý đã bắt đầu kiểm tra hồ sơ và sức chứa phòng." },
+            new { Code = "DK-2026-0109", Student = "SV002011", Room = "C-505", Status = HousingRequestStatus.Submitted, Submitted = new DateTime(2026, 9, 8, 1, 45, 0, DateTimeKind.Utc), Reason = "Xin chuyển cùng tòa với nhóm học tập của khoa.", Decision = (string?)null },
+            new { Code = "DK-2026-0110", Student = "SV002174", Room = "C-506", Status = HousingRequestStatus.Submitted, Submitted = new DateTime(2026, 9, 8, 17, 20, 0, DateTimeKind.Utc), Reason = "Phòng mong muốn phù hợp hơn với lịch học buổi tối.", Decision = (string?)null },
+            new { Code = "DK-2026-0111", Student = "SV000007", Room = "C-507", Status = HousingRequestStatus.Submitted, Submitted = new DateTime(2026, 9, 9, 20, 10, 0, DateTimeKind.Utc), Reason = "Muốn chuyển sang tòa gần khu thực hành cơ khí.", Decision = (string?)null },
+            new { Code = "DK-2026-0112", Student = "SV000008", Room = "C-508", Status = HousingRequestStatus.NeedsInformation, Submitted = new DateTime(2026, 9, 9, 20, 45, 0, DateTimeKind.Utc), Reason = "Đăng ký chuyển phòng theo nhu cầu cá nhân.", Decision = (string?)"Vui lòng bổ sung lý do cụ thể và thời gian mong muốn chuyển phòng." }
+        };
+
+        foreach (var spec in specs)
+        {
+            if (await db.HousingRequests.AnyAsync(x => x.Code == spec.Code)) continue;
+            if (!studentProfiles.TryGetValue(spec.Student, out var student) || !targetRooms.TryGetValue(spec.Room, out var room)) continue;
+
+            var request = new HousingRequest
+            {
+                Code = spec.Code,
+                StudentProfileId = student.Id,
+                TargetRoomId = room.Id,
+                Type = HousingRequestType.Transfer,
+                Status = spec.Status,
+                StudentReason = spec.Reason,
+                DecisionReason = spec.Decision,
+                SubmittedAt = spec.Submitted,
+                ReviewedAt = spec.Status == HousingRequestStatus.Submitted ? null : spec.Submitted.AddHours(3),
+                ReviewedByUserId = spec.Status == HousingRequestStatus.Submitted ? null : managerUser.Id,
+                Events =
+                [
+                    new HousingRequestEvent { Status = HousingRequestStatus.Submitted, Note = "Sinh viên đã gửi yêu cầu chuyển phòng.", CreatedAt = spec.Submitted }
+                ]
+            };
+            if (spec.Status != HousingRequestStatus.Submitted)
+            {
+                request.Events.Add(new HousingRequestEvent
+                {
+                    Status = spec.Status,
+                    Note = spec.Decision!,
+                    ActorUserId = managerUser.Id,
+                    CreatedAt = spec.Submitted.AddHours(3)
+                });
+            }
+            db.HousingRequests.Add(request);
         }
 
         await db.SaveChangesAsync();
