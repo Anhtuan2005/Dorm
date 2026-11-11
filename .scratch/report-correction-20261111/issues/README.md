@@ -9,3 +9,5 @@ Các issue dưới đây được quản lý bằng Markdown theo quy ước c�
 | BC-03 | Commit, issue, Pull Request và log kiểm thử | [Chi tiết](03-evidence.md) |
 
 Mốc M6: kế hoạch hoàn thiện 10/11/2026; bổ sung hồ sơ 11/11/2026. Tỷ lệ đóng góp 50% mỗi người là phân công dự kiến của nhóm; hồ sơ không xác nhận giờ làm hoặc công sức lịch sử cá nhân.
+
+Ngày 11/11/2026: cả ba hồ sơ đã được thực hiện và kiểm chứng, chuyển sang `ready-for-human` để nhóm duyệt bản nộp. [PR #1](https://github.com/Anhtuan2005/Dorm/pull/1) còn ở trạng thái Draft. Bản DOCX có 51 trang: nội dung Chương 1–7, sau đó là các đề mục mẫu đã làm trống. Xem [kết quả xác minh tài liệu](../evidence/document-validation.json).

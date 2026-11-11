@@ -3,7 +3,8 @@
 # BC-03 Bổ sung hồ sơ issue Pull Request và kết quả kiểm chứng
 
 Category: enhancement
-Status: ready-for-agent
+Status: ready-for-human
+Resolution: implemented
 Created: 2026-11-11
 Milestone: M6 Hiệu chỉnh hồ sơ bài nộp
 Planned owner: Bùi Phạm Phong Phú và Nguyễn Trương Anh Tuấn
@@ -31,3 +32,5 @@ Kiểm tra URL PR; so sánh phạm vi diff; kiểm tra các liên kết trong DO
 ## Comments
 
 2026-11-11: Issue và PR được tạo để khắc phục thiếu sót của hồ sơ; không hồi tố ngày tạo về thời gian phát triển.
+
+2026-11-11: Đã tạo [PR #1](https://github.com/Anhtuan2005/Dorm/pull/1), liên kết ba hồ sơ BC và dữ liệu kiểm thử thật trong Chương 5. Định danh, thời điểm, kết quả và hash log nằm trong [test-results.json](../evidence/test-results.json). Chỉ đưa tài liệu và hồ sơ kiểm chứng vào PR; không đưa mã ứng dụng đang sửa hoặc cấu hình kết nối. Chuyển sang `ready-for-human` để nhóm xem xét; trạng thái Draft không được coi là đã có code review hoặc phê duyệt.

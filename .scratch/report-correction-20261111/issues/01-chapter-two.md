@@ -3,7 +3,8 @@
 # BC-01 Hoàn thiện quản lý dự án và ước lượng trong Chương 2
 
 Category: enhancement
-Status: ready-for-agent
+Status: ready-for-human
+Resolution: implemented
 Created: 2026-11-11
 Milestone: M6 Hiệu chỉnh hồ sơ bài nộp
 Planned owner: Bùi Phạm Phong Phú và Nguyễn Trương Anh Tuấn
@@ -14,7 +15,7 @@ Bảng 2.2 có sáu giai đoạn nhưng thiếu thời gian và tiêu chí kết
 
 ## Scope
 
-Sửa bản đầy đủ `E:/BAOCAO_CNPMNC (1).docx`. Giữ nội dung Chương 1. Bổ sung lịch kế hoạch không vượt 11/11/2026, sáu milestone, sáu sprint, công việc dự kiến, người phụ trách, đầu ra và điều kiện hoàn tất. Giữ tổng 42 SP của bảy nhóm công việc.
+Sửa bản nguồn `E:/BAOCAO_CNPMNC (1).docx`. Bản nộp giữ nội dung Chương 1–7; phần từ Chương 8 đến hết chỉ giữ đề mục trống theo mẫu. Giữ nguyên nội dung Chương 1. Bổ sung lịch kế hoạch không vượt 11/11/2026, sáu milestone, sáu sprint, công việc dự kiến, người phụ trách, đầu ra và điều kiện hoàn tất. Giữ tổng 42 SP của bảy nhóm công việc.
 
 ## Acceptance criteria
 
@@ -30,3 +31,5 @@ Sửa bản đầy đủ `E:/BAOCAO_CNPMNC (1).docx`. Giữ nội dung Chương 
 ## Comments
 
 2026-11-11: Hồ sơ được tạo bổ sung khi hiệu chỉnh báo cáo; không phải issue đã tồn tại trong các sprint phát triển trước đó.
+
+2026-11-11: Đã hoàn thiện sáu giai đoạn, sáu milestone, sáu sprint và bảng Estimate/Actual tổng 42 SP. Actual liên kết đầu ra đã đối chiếu và kết quả 37 policy tests, 5 SQL integration tests; không ghi giờ công thiếu căn cứ. Đã kiểm tra bản DOCX sau dựng trang. Chuyển sang `ready-for-human` để nhóm đọc và duyệt bản nộp trong [PR #1](https://github.com/Anhtuan2005/Dorm/pull/1); chưa ghi nhận phê duyệt của người dùng hoặc thành viên khác.
