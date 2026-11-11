@@ -42,6 +42,25 @@
 - Overdue, review and missing-information states are written labels as well as color treatments. Secondary decisions that need an explanation use focused dialogs.
 - Mobile separates scanning the queue from reading the case while preserving the same order of evidence. The fixed bottom navigation must not cover decisions or the case heading.
 - Student account management starts from the durable student profile. Linking, password reset and lock state are grouped in one access-control region rather than mixed into housing facts.
+- The signature workflow motif is a compact handoff strip: `Lượt xử lý hiện tại → Việc tiếp theo`. It appears in both manager and student views and moves between the two roles without changing visual grammar.
+- A submitted request exposes “Nhận xử lý đơn” before approval. A missing-information request replaces approval with the reason it is blocked and gives the student an inline response surface.
+- Checkout shows source-stay evidence and says “Duyệt trả phòng”; it never borrows target-room or capacity copy from registration/transfer.
+
+## Maintenance response-desk pattern
+
+- Maintenance uses a three-zone response corridor: prioritized incident queue, selected room evidence, and a narrow dispatch rail. The dominant task is deciding what must be handled now and how much capacity remains safe to assign.
+- Summary counters are actionable filters for open, urgent, unassigned and SLA-breached work. Red is limited to urgent/safety signals; assignment and progress actions remain teal.
+- The room context shows capacity, occupied, held, blocked and assignable counts immediately before the update action. Closing or resolving an incident explicitly explains that blocked beds return to the room.
+- Incident status, priority and assignment are always written labels. Timeline entries record actor, note and time; mobile presents queue and detail in document order with a direct “Cập nhật tiến độ” anchor.
+
+## Operations overview and report pattern
+
+- The manager landing page uses one connected “operations spine”, not a row of interchangeable KPI cards: current capacity is primary, money is secondary and intervention work is the immediate action rail.
+- Capacity always keeps occupied, held, blocked and assignable beds visible together. Finance shows issued, net collected, outstanding and overdue as separate concepts.
+- Building comparison repeats the room-map language and links back to the selected building. Percentages are paired with exact counts and never stand alone.
+- Period reports put native filters directly above the evidence, then read left-to-right from finance to workflow/maintenance outcomes and down to the building reconciliation table.
+- CSV export uses the active report scope. Empty states say what data is absent and provide a clear filter reset where applicable.
+- Operational color is semantic and restrained: teal for healthy/collected/assignable, orange for financial attention and red only for safety, overdue or blocked states.
 
 ## Implementation constraints
 

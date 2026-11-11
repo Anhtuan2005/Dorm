@@ -1,16 +1,16 @@
 const fs = require("fs");
 const path = require("path");
-const { chromium } = require("C:\\Users\\Admin\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\node\\node_modules\\playwright");
-const sharp = require("C:\\Users\\Admin\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\node\\node_modules\\sharp");
+const { chromium } = require("playwright");
+const sharp = require("sharp");
+const { baseUrl, e2ePassword } = require("./e2e-config.cjs");
 
-const baseUrl = "http://127.0.0.1:5189";
 const outputDir = path.resolve(__dirname, "..", "artifacts", "screenshots");
 fs.mkdirSync(outputDir, { recursive: true });
 
 async function signIn(page) {
   await page.goto(`${baseUrl}/Account/Login`, { waitUntil: "networkidle" });
   await page.getByLabel("Email").fill("student@nepktx.local");
-  await page.getByLabel("Mật khẩu").fill("Demo@123");
+  await page.getByLabel("Mật khẩu").fill(e2ePassword);
   await Promise.all([
     page.waitForLoadState("networkidle"),
     page.getByRole("button", { name: "Đăng nhập" }).click()

@@ -44,36 +44,36 @@
     <div class="app-shell" data-app-shell>
         <aside class="sidebar" aria-label="Điều hướng chính">
             <div class="brand-row">
-                <a class="brand" asp-controller="Rooms" asp-action="Map" aria-label="NẾP KTX - Trang chủ"><span class="brand-name">NẾP KTX</span><span class="brand-subtitle">Quản lý ký túc xá</span></a>
+                <a class="brand" asp-controller="Home" asp-action="Index" aria-label="NẾP KTX - Trang chủ"><span class="brand-name">NẾP KTX</span><span class="brand-subtitle">Quản lý ký túc xá</span></a>
                 <button class="icon-button sidebar-toggle" type="button" data-sidebar-toggle aria-label="Thu gọn thanh điều hướng" aria-expanded="true"><svg><use href="#i-chevron" /></svg></button>
             </div>
             <nav class="main-nav">
-                <a href="#" data-demo-message="Màn hình Tổng quan sẽ được triển khai sau khi duyệt Sơ đồ phòng."><svg><use href="#i-home" /></svg><span>Tổng quan</span></a>
+                <a class="@(activeNav == "dashboard" ? "active" : "")" asp-controller="Home" asp-action="Index"><svg><use href="#i-home" /></svg><span>Tổng quan</span></a>
                 <a class="@(activeNav == "rooms" ? "active" : "")" asp-controller="Rooms" asp-action="Map"><svg><use href="#i-bed" /></svg><span>Phòng ở</span></a>
                 <a class="@(activeNav == "students" ? "active" : "")" asp-controller="Students" asp-action="Index"><svg><use href="#i-users" /></svg><span>Sinh viên</span></a>
-                <a class="@(activeNav == "applications" ? "active" : "")" asp-controller="Applications" asp-action="Index"><svg><use href="#i-file" /></svg><span>Đơn đăng ký</span><b class="nav-count">@await Component.InvokeAsync("ApplicationQueueBadge")</b></a>
-                <a href="#" data-demo-message="Màn hình Thu phí thuộc giai đoạn tiếp theo."><svg><use href="#i-coin" /></svg><span>Thu phí</span></a>
-                <a href="#" data-demo-message="Màn hình Sự cố thuộc giai đoạn tiếp theo."><svg><use href="#i-tool" /></svg><span>Sự cố</span><b class="nav-count danger">2</b></a>
-                <a href="#" data-demo-message="Màn hình Báo cáo thuộc giai đoạn tiếp theo."><svg><use href="#i-chart" /></svg><span>Báo cáo</span></a>
+                <a class="@(activeNav == "applications" ? "active" : "")" asp-controller="Applications" asp-action="Index"><svg><use href="#i-file" /></svg><span>Đơn lưu trú</span><b class="nav-count">@await Component.InvokeAsync("ApplicationQueueBadge")</b></a>
+                <a class="@(activeNav == "billing" ? "active" : "")" asp-controller="Billing" asp-action="Index"><svg><use href="#i-coin" /></svg><span>Thu phí</span></a>
+                <a class="@(activeNav == "maintenance" ? "active" : "")" asp-controller="Maintenance" asp-action="Index"><svg><use href="#i-tool" /></svg><span>Sự cố</span><b class="nav-count danger">@await Component.InvokeAsync("MaintenanceQueueBadge")</b></a>
+                <a class="@(activeNav == "reports" ? "active" : "")" asp-controller="Reports" asp-action="Index"><svg><use href="#i-chart" /></svg><span>Báo cáo</span></a>
             </nav>
-            <nav class="main-nav nav-bottom"><a href="#" data-demo-message="Màn hình Cài đặt thuộc giai đoạn tiếp theo."><svg><use href="#i-settings" /></svg><span>Cài đặt</span></a></nav>
+            <nav class="main-nav nav-bottom"><a class="@(activeNav == "settings" ? "active" : "")" asp-controller="Settings" asp-action="Index"><svg><use href="#i-settings" /></svg><span>Cài đặt</span></a></nav>
         </aside>
 
         <header class="topbar">
             <button class="icon-button mobile-menu" type="button" data-mobile-menu aria-label="Mở menu"><svg><use href="#i-menu" /></svg></button>
-            <a class="mobile-brand" asp-controller="Rooms" asp-action="Map">NẾP KTX</a>
+            <a class="mobile-brand" asp-controller="Home" asp-action="Index">NẾP KTX</a>
             <label class="global-search"><svg><use href="#i-search" /></svg><input type="search" placeholder="Tìm phòng, sinh viên..." aria-label="Tìm kiếm toàn hệ thống" data-global-search /></label>
-            <button class="facility-select" type="button" data-demo-message="Hiện dữ liệu đang hiển thị cho Cơ sở Thủ Đức."><svg><use href="#i-building" /></svg><span>Cơ sở Thủ Đức</span><svg class="small"><use href="#i-down" /></svg></button>
-            <button class="icon-button notification-button" type="button" data-demo-message="Bạn có 3 thông báo mới." aria-label="3 thông báo mới"><svg><use href="#i-bell" /></svg><span class="notification-badge">3</span></button>
-            <div class="account-menu"><span class="avatar">@initials</span><span class="account-copy"><strong>@fullName</strong><small>Quản lý KTX</small></span><form asp-controller="Account" asp-action="Logout" method="post"><button class="icon-button" type="submit" title="Đăng xuất" aria-label="Đăng xuất"><svg><use href="#i-logout" /></svg></button></form></div>
+            <span class="facility-select" title="Cơ sở đang vận hành"><svg><use href="#i-building" /></svg><span>Cơ sở Thủ Đức</span></span>
+            <a class="icon-button notification-button" asp-controller="Home" asp-action="Index" aria-label="Mở việc cần xử lý"><svg><use href="#i-bell" /></svg><span class="notification-badge">@await Component.InvokeAsync("OperationsAttentionBadge")</span></a>
+            <div class="account-menu"><span class="avatar">@initials</span><a class="account-copy" asp-controller="Account" asp-action="ChangePassword" title="Mở bảo mật tài khoản"><strong>@fullName</strong><small>Quản lý KTX</small></a><form asp-controller="Account" asp-action="Logout" method="post"><button class="icon-button" type="submit" title="Đăng xuất" aria-label="Đăng xuất"><svg><use href="#i-logout" /></svg></button></form></div>
         </header>
 
         <main class="main-content">@RenderBody()</main>
         <nav class="mobile-bottom-nav" aria-label="Điều hướng di động">
-            <a href="#" data-demo-message="Màn hình Tổng quan thuộc giai đoạn tiếp theo."><svg><use href="#i-home" /></svg><span>Tổng quan</span></a>
+            <a class="@(activeNav == "dashboard" ? "active" : "")" asp-controller="Home" asp-action="Index"><svg><use href="#i-home" /></svg><span>Tổng quan</span></a>
             <a class="@(activeNav == "rooms" ? "active" : "")" asp-controller="Rooms" asp-action="Map"><svg><use href="#i-bed" /></svg><span>Phòng</span></a>
             <a class="@(activeNav == "applications" ? "active" : "")" asp-controller="Applications" asp-action="Index"><svg><use href="#i-file" /></svg><span>Đơn</span></a>
-            <a class="@(activeNav == "students" ? "active" : "")" asp-controller="Students" asp-action="Index"><svg><use href="#i-users" /></svg><span>Tài khoản</span></a>
+            <a class="@(activeNav == "billing" ? "active" : "")" asp-controller="Billing" asp-action="Index"><svg><use href="#i-coin" /></svg><span>Thu phí</span></a>
         </nav>
         <div class="sidebar-scrim" data-sidebar-scrim></div>
     </div>

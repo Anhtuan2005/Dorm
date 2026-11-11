@@ -6,8 +6,5 @@ public interface IApplicationManagementService
 {
     Task<ApplicationQueueViewModel> GetQueueAsync(ApplicationQueueQuery query, CancellationToken cancellationToken = default);
     Task<int> GetActiveCountAsync(CancellationToken cancellationToken = default);
-    Task<ApplicationManagementResult> BeginReviewAsync(ApplicationActionInput input, string managerUserId, CancellationToken cancellationToken = default);
-    Task<ApplicationManagementResult> RequestInformationAsync(ApplicationActionInput input, string managerUserId, CancellationToken cancellationToken = default);
-    Task<ApplicationManagementResult> RejectAsync(ApplicationActionInput input, string managerUserId, CancellationToken cancellationToken = default);
-    Task<ApplicationManagementResult> ApproveAndAssignAsync(ApplicationActionInput input, string managerUserId, CancellationToken cancellationToken = default);
+    Task<ApplicationManagementResult> ExecuteAsync(ApplicationActionInput input, HousingRequestAction action, string managerUserId, CancellationToken cancellationToken = default);
 }

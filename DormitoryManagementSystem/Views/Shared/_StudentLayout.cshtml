@@ -56,7 +56,7 @@
             <button class="student-help-card" type="button" data-chat-open><span><svg><use href="#s-message" /></svg></span><span><strong>Cần hỗ trợ?</strong><small>Hỏi trợ lý AI của KTX</small></span></button>
             <div class="student-account">
                 <span class="student-avatar">@initials</span>
-                <span><strong>@fullName</strong><small>@currentUser?.Email</small></span>
+                <a class="student-account-copy" asp-controller="Account" asp-action="ChangePassword" title="Đổi mật khẩu"><strong>@fullName</strong><small>@currentUser?.Email</small></a>
                 <form asp-controller="Account" asp-action="Logout" method="post"><button type="submit" aria-label="Đăng xuất" title="Đăng xuất"><svg><use href="#s-logout" /></svg></button></form>
             </div>
         </aside>
@@ -65,7 +65,7 @@
             <button class="student-mobile-menu" type="button" data-student-menu aria-label="Mở menu"><svg><use href="#s-menu" /></svg></button>
             <div class="student-breadcrumb"><span>Cổng sinh viên</span><strong>@ViewData["Title"]</strong></div>
             <a class="student-mobile-brand" asp-controller="Student" asp-action="Dashboard">NẾP KTX</a>
-            <button class="student-notification" type="button" data-student-notifications aria-label="Thông báo"><svg><use href="#s-bell" /></svg><span>2</span></button>
+            <a class="student-notification" asp-controller="Student" asp-action="Notifications" aria-label="Thông báo"><svg><use href="#s-bell" /></svg><span>@await Component.InvokeAsync("StudentNotificationBadge")</span></a>
             <span class="student-top-avatar">@initials</span>
         </header>
 

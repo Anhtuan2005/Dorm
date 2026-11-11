@@ -7,8 +7,10 @@
 <div class="students-page">
     <header class="operations-heading">
         <div><p class="operations-kicker">Hồ sơ và quyền truy cập</p><h1>Sinh viên</h1><p>Tra cứu chỗ ở và quản lý tài khoản cổng sinh viên từ một hồ sơ duy nhất.</p></div>
-        <div class="account-totals"><span><small>Đã có tài khoản</small><strong>@Model.LinkedAccountCount</strong></span><span><small>Chưa liên kết</small><strong>@Model.UnlinkedAccountCount</strong></span></div>
+        <div class="student-heading-actions"><div class="account-totals"><span><small>Đã có tài khoản</small><strong>@Model.LinkedAccountCount</strong></span><span><small>Chưa liên kết</small><strong>@Model.UnlinkedAccountCount</strong></span></div><button type="button" class="heading-room-link" data-open-dialog="create-profile-dialog"><svg><use href="#i-plus" /></svg>Thêm sinh viên</button></div>
     </header>
+
+    <dialog class="manager-dialog" id="create-profile-dialog" aria-labelledby="create-profile-title"><form asp-action="CreateProfile" method="post"><header><div><p>Hồ sơ gốc</p><h2 id="create-profile-title">Thêm sinh viên</h2></div><button type="button" data-dialog-close aria-label="Đóng"><svg><use href="#i-close" /></svg></button></header><div class="profile-form-grid"><label><span>Mã sinh viên</span><input name="StudentCode" required minlength="4" maxlength="20" /></label><label><span>Họ và tên</span><input name="FullName" required minlength="2" maxlength="100" /></label><label><span>Giới tính</span><select name="Gender" required><option value="">Chọn</option><option>Nam</option><option>Nữ</option><option>Khác</option></select></label><label><span>Khoa</span><input name="Faculty" maxlength="100" /></label><label><span>Điện thoại</span><input name="PhoneNumber" type="tel" maxlength="20" /></label></div><div class="issue-proof"><svg><use href="#i-check" /></svg><p>Hồ sơ được tạo trước; tài khoản đăng nhập và phòng ở được cấp qua các quy trình riêng có kiểm soát.</p></div><footer><button type="button" data-dialog-close>Hủy</button><button type="submit">Tạo hồ sơ</button></footer></form></dialog>
 
     <form class="student-directory-toolbar" method="get" asp-action="Index" data-filter-form>
         <label class="queue-search"><svg><use href="#i-search" /></svg><input name="Search" value="@Model.Query.Search" placeholder="Mã sinh viên, họ tên, email..." aria-label="Tìm sinh viên" /></label>
@@ -20,7 +22,7 @@
 
     <div class="student-directory-workbench">
         <section class="student-record-list" aria-label="Danh sách sinh viên">
-            <header><div><strong>@Model.Items.Count hồ sơ</strong><small>Hiển thị tối đa 120 kết quả</small></div><svg><use href="#i-users" /></svg></header>
+            <header><div><strong>@Model.TotalItems hồ sơ</strong><small>Trang @Model.Query.Page / @Model.TotalPages</small></div><svg><use href="#i-users" /></svg></header>
             @if (Model.Items.Count == 0)
             {
                 <div class="queue-empty"><span><svg><use href="#i-search" /></svg></span><strong>Không tìm thấy sinh viên</strong><p>Thử thay đổi từ khóa hoặc xóa bộ lọc.</p><a asp-action="Index">Xóa bộ lọc</a></div>
@@ -30,7 +32,7 @@
                 <div class="student-record-scroll">
                     @foreach (var student in Model.Items)
                     {
-                        <a class="student-record @(student.IsSelected ? "selected" : "")" asp-action="Index" asp-route-Search="@Model.Query.Search" asp-route-Building="@Model.Query.Building" asp-route-Account="@Model.Query.Account" asp-route-SelectedId="@student.Id">
+                        <a class="student-record @(student.IsSelected ? "selected" : "")" asp-action="Index" asp-route-Search="@Model.Query.Search" asp-route-Building="@Model.Query.Building" asp-route-Account="@Model.Query.Account" asp-route-Page="@Model.Query.Page" asp-route-SelectedId="@student.Id">
                             <span class="directory-avatar">@student.Initials</span>
                             <span><strong>@student.FullName</strong><small>@student.StudentCode · @student.Faculty</small></span>
                             <span class="directory-room">@(student.RoomCode ?? "Chưa xếp")</span>
@@ -38,15 +40,20 @@
                         </a>
                     }
                 </div>
+                @if (Model.TotalPages > 1)
+                {
+                    <nav class="billing-pagination" aria-label="Phân trang sinh viên"><a class="@(Model.Query.Page <= 1 ? "disabled" : "")" asp-action="Index" asp-route-Search="@Model.Query.Search" asp-route-Building="@Model.Query.Building" asp-route-Account="@Model.Query.Account" asp-route-Page="@(Model.Query.Page - 1)">Trước</a><span>@Model.Query.Page / @Model.TotalPages</span><a class="@(Model.Query.Page >= Model.TotalPages ? "disabled" : "")" asp-action="Index" asp-route-Search="@Model.Query.Search" asp-route-Building="@Model.Query.Building" asp-route-Account="@Model.Query.Account" asp-route-Page="@(Model.Query.Page + 1)">Sau</a></nav>
+                }
             }
         </section>
 
         @if (selected is not null)
         {
             <aside class="student-record-detail">
-                <header class="student-profile-cover"><span class="profile-avatar">@selected.Initials</span><div><small>@selected.StudentCode</small><h2>@selected.FullName</h2><p>@selected.Faculty</p></div><span class="account-state @(selected.IsLocked ? "locked" : selected.HasAccount ? "linked" : "unlinked")">@(selected.IsLocked ? "Tài khoản bị khóa" : selected.HasAccount ? "Đã liên kết tài khoản" : "Chưa có tài khoản")</span></header>
+                <header class="student-profile-cover"><span class="profile-avatar">@selected.Initials</span><div><small>@selected.StudentCode</small><h2>@selected.FullName</h2><p>@selected.Faculty</p></div><div class="student-cover-actions"><span class="account-state @(selected.IsLocked ? "locked" : selected.HasAccount ? "linked" : "unlinked")">@(selected.IsLocked ? "Tài khoản bị khóa" : selected.HasAccount ? "Đã liên kết tài khoản" : "Chưa có tài khoản")</span><button type="button" data-open-dialog="edit-profile-dialog">Sửa hồ sơ</button></div></header>
                 <div class="student-profile-facts"><div><small>Phòng hiện tại</small><strong>@(selected.RoomCode ?? "Chưa xếp phòng")</strong>@if (selected.StayStartedAt is not null) { <span>Từ @selected.StayStartedAt.Value.ToLocalTime().ToString("dd/MM/yyyy")</span> }</div><div><small>Giới tính hồ sơ</small><strong>@selected.Gender</strong></div><div><small>Điện thoại</small><strong>@selected.PhoneNumber</strong></div><div><small>Email đăng nhập</small><strong>@(selected.Email ?? "Chưa cấp")</strong></div></div>
-                <div class="student-profile-metrics"><a asp-controller="Applications" asp-action="Index" asp-route-Search="@selected.StudentCode"><small>Đơn lưu trú</small><strong>@selected.RequestCount</strong><span>Xem lịch sử <svg><use href="#i-arrow" /></svg></span></a><a href="#" data-demo-message="Module Thu phí sẽ mở chi tiết công nợ của sinh viên."><small>Công nợ</small><strong>@Money(selected.OutstandingBalance) đ</strong><span>Xem hóa đơn <svg><use href="#i-arrow" /></svg></span></a></div>
+                <div class="student-profile-metrics"><a asp-controller="Applications" asp-action="Index" asp-route-Search="@selected.StudentCode"><small>Đơn lưu trú</small><strong>@selected.RequestCount</strong><span>Xem lịch sử <svg><use href="#i-arrow" /></svg></span></a><a asp-controller="Billing" asp-action="Index" asp-route-Search="@selected.StudentCode"><small>Công nợ</small><strong>@Money(selected.OutstandingBalance) đ</strong><span>Xem hóa đơn <svg><use href="#i-arrow" /></svg></span></a></div>
+                <section class="stay-history"><header><div><p>Dấu vết lưu trú</p><h3>Lịch sử phòng ở</h3></div><span>@selected.StayHistory.Count lượt</span></header>@if (selected.StayHistory.Count == 0) { <p class="stay-history-empty">Sinh viên chưa có lượt ở nào.</p> } else { <div>@foreach (var stay in selected.StayHistory) { <article><i class="@(stay.IsCurrent ? "current" : "")"></i><span><strong>@stay.RoomCode · @stay.BuildingName</strong><small>@stay.StartedAt.ToLocalTime().ToString("dd/MM/yyyy") — @(stay.EndedAt?.ToLocalTime().ToString("dd/MM/yyyy") ?? "Hiện tại")</small></span>@if (stay.IsCurrent) { <em>Đang ở</em> }</article> }</div> }</section>
                 <section class="account-control">
                     <header><div><p>Truy cập cổng sinh viên</p><h3>Tài khoản người dùng</h3></div><svg><use href="#i-users" /></svg></header>
                     @if (!selected.HasAccount)
@@ -61,6 +68,8 @@
                     }
                 </section>
             </aside>
+
+            <dialog class="manager-dialog" id="edit-profile-dialog" aria-labelledby="edit-profile-title"><form asp-action="UpdateProfile" method="post"><header><div><p>@selected.StudentCode</p><h2 id="edit-profile-title">Chỉnh sửa hồ sơ</h2></div><button type="button" data-dialog-close aria-label="Đóng"><svg><use href="#i-close" /></svg></button></header><input type="hidden" name="Id" value="@selected.Id" /><div class="profile-form-grid"><label><span>Mã sinh viên</span><input name="StudentCode" required minlength="4" maxlength="20" value="@selected.StudentCode" /></label><label><span>Họ và tên</span><input name="FullName" required minlength="2" maxlength="100" value="@selected.FullName" /></label><label><span>Giới tính</span><select name="Gender" required><option value="Nam" selected="@(selected.Gender == "Nam")">Nam</option><option value="Nữ" selected="@(selected.Gender == "Nữ")">Nữ</option><option value="Khác" selected="@(selected.Gender != "Nam" && selected.Gender != "Nữ")">Khác</option></select></label><label><span>Khoa</span><input name="Faculty" maxlength="100" value="@selected.Faculty" /></label><label><span>Điện thoại</span><input name="PhoneNumber" type="tel" maxlength="20" value="@(selected.PhoneNumber == "Chưa cập nhật" ? "" : selected.PhoneNumber)" /></label></div><div class="issue-proof"><svg><use href="#i-check" /></svg><p>Thay đổi này không chỉnh sửa lịch sử phòng ở, đơn, hóa đơn hoặc giao dịch đã phát sinh.</p></div><footer><button type="button" data-dialog-close>Hủy</button><button type="submit">Lưu hồ sơ</button></footer></form></dialog>
 
             @if (!selected.HasAccount)
             {

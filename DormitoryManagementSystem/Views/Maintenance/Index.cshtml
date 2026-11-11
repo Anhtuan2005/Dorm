@@ -1,0 +1,116 @@
+@model MaintenanceQueueViewModel
+@{
+    var selected = Model.SelectedRequest;
+}
+
+<div class="maintenance-page">
+    <header class="operations-heading maintenance-heading">
+        <div><p class="operations-kicker">Cơ sở vật chất</p><h1>Sự cố &amp; bảo trì</h1><p>Ưu tiên nguy cơ ảnh hưởng an toàn, phân công rõ người xử lý và cập nhật chỗ tạm khóa.</p></div>
+        <a class="heading-room-link" asp-controller="Rooms" asp-action="Map"><svg><use href="#i-bed" /></svg>Mở sơ đồ phòng</a>
+    </header>
+
+    <nav class="maintenance-summary" aria-label="Tóm tắt sự cố">
+        <a class="@(Model.Query.Status == "open" ? "active" : "")" asp-action="Index" asp-route-Status="open"><span>Đang mở</span><strong>@Model.Summary.OpenCount</strong><small>Yêu cầu cần theo dõi</small></a>
+        <a class="urgent @(Model.Query.Priority == "Urgent" ? "active" : "")" asp-action="Index" asp-route-Priority="Urgent"><span>Khẩn cấp</span><strong>@Model.Summary.UrgentCount</strong><small>Xử lý an toàn trước</small></a>
+        <a class="@(Model.Query.Status == "unassigned" ? "active" : "")" asp-action="Index" asp-route-Status="unassigned"><span>Chưa phân công</span><strong>@Model.Summary.UnassignedCount</strong><small>Cần chọn tổ phụ trách</small></a>
+        <a class="warning @(Model.Query.Status == "breached" ? "active" : "")" asp-action="Index" asp-route-Status="breached"><span>Vượt SLA phản hồi</span><strong>@Model.Summary.BreachedSlaCount</strong><small>@Model.Summary.BlockedBeds chỗ đang tạm khóa</small></a>
+    </nav>
+
+    <form class="maintenance-toolbar" method="get" asp-action="Index">
+        <label class="queue-search"><svg><use href="#i-search" /></svg><input name="Search" value="@Model.Query.Search" placeholder="Mã sự cố, phòng, nội dung..." aria-label="Tìm sự cố" /></label>
+        <label><span>Tiến độ</span><select name="Status"><option value="">Tất cả tiến độ</option><option value="open" selected="@(Model.Query.Status == "open")">Đang mở</option><option value="unassigned" selected="@(Model.Query.Status == "unassigned")">Chưa phân công</option><option value="progress" selected="@(Model.Query.Status == "progress")">Đang xử lý</option><option value="waiting" selected="@(Model.Query.Status == "waiting")">Chờ vật tư</option><option value="resolved" selected="@(Model.Query.Status == "resolved")">Đã hoàn thành/đóng</option><option value="breached" selected="@(Model.Query.Status == "breached")">Vượt SLA</option></select></label>
+        <label><span>Ưu tiên</span><select name="Priority"><option value="">Mọi mức</option><option value="Urgent" selected="@(Model.Query.Priority == "Urgent")">Khẩn cấp</option><option value="High" selected="@(Model.Query.Priority == "High")">Cao</option><option value="Medium" selected="@(Model.Query.Priority == "Medium")">Vừa</option><option value="Low" selected="@(Model.Query.Priority == "Low")">Thấp</option></select></label>
+        <label><span>Tòa</span><select name="Building"><option value="">Tất cả tòa</option>@foreach (var building in Model.Buildings) { <option value="@building.Value" selected="@(Model.Query.Building == building.Value)">@building.Label</option> }</select></label>
+        <button type="submit"><svg><use href="#i-search" /></svg>Lọc</button>
+        @if (!string.IsNullOrWhiteSpace(Model.Query.Search) || !string.IsNullOrWhiteSpace(Model.Query.Status) || !string.IsNullOrWhiteSpace(Model.Query.Priority) || !string.IsNullOrWhiteSpace(Model.Query.Building)) { <a asp-action="Index">Xóa lọc</a> }
+    </form>
+
+    <div class="maintenance-workbench @(selected is null ? "empty" : "")">
+        <aside class="maintenance-queue" aria-label="Danh sách sự cố">
+            <header><span><strong>@Model.TotalItems sự cố</strong><small>Khẩn cấp và tạo sớm hơn trước</small></span><i><svg><use href="#i-tool" /></svg></i></header>
+            @if (Model.Items.Count == 0)
+            {
+                <div class="queue-empty"><span><svg><use href="#i-check" /></svg></span><strong>Không có sự cố phù hợp</strong><p>Thử đổi mức ưu tiên, tiến độ hoặc xóa bộ lọc.</p><a asp-action="Index">Về toàn bộ sự cố</a></div>
+            }
+            else
+            {
+                <div class="maintenance-queue-list">
+                    @foreach (var item in Model.Items)
+                    {
+                        <a class="maintenance-ticket @(item.IsSelected ? "selected" : "") @(item.IsSlaBreached ? "breached" : "")" asp-action="Index" asp-route-Search="@Model.Query.Search" asp-route-Status="@Model.Query.Status" asp-route-Priority="@Model.Query.Priority" asp-route-Building="@Model.Query.Building" asp-route-Page="@Model.Query.Page" asp-route-SelectedId="@item.Id">
+                            <span class="maintenance-priority @item.PriorityClass">@item.PriorityLabel</span>
+                            <span class="ticket-copy"><strong>@item.Title</strong><small>@item.Code · @item.RoomCode · @item.Category</small></span>
+                            <span class="maintenance-state @item.StatusClass">@item.StatusLabel</span>
+                            <span class="ticket-age">@(item.IsSlaBreached ? "Vượt SLA · " : "")@item.AgeLabel</span>
+                        </a>
+                    }
+                </div>
+                @if (Model.TotalPages > 1)
+                {
+                    <nav class="billing-pagination" aria-label="Phân trang sự cố"><a class="@(Model.Query.Page <= 1 ? "disabled" : "")" asp-action="Index" asp-route-Search="@Model.Query.Search" asp-route-Status="@Model.Query.Status" asp-route-Priority="@Model.Query.Priority" asp-route-Building="@Model.Query.Building" asp-route-Page="@(Model.Query.Page - 1)">Trước</a><span>@Model.Query.Page / @Model.TotalPages</span><a class="@(Model.Query.Page >= Model.TotalPages ? "disabled" : "")" asp-action="Index" asp-route-Search="@Model.Query.Search" asp-route-Status="@Model.Query.Status" asp-route-Priority="@Model.Query.Priority" asp-route-Building="@Model.Query.Building" asp-route-Page="@(Model.Query.Page + 1)">Sau</a></nav>
+                }
+            }
+        </aside>
+
+        @if (selected is not null)
+        {
+            <main class="maintenance-detail">
+                <header class="maintenance-detail-head">
+                    <div><span class="maintenance-priority @selected.PriorityClass">@selected.PriorityLabel</span><span class="maintenance-state @selected.StatusClass">@selected.StatusLabel</span><h2>@selected.Title</h2><p>@selected.Code · Tạo @selected.CreatedAtLocal.ToString("dd/MM/yyyy, HH:mm")</p></div>
+                    <a asp-controller="Rooms" asp-action="Map" asp-route-Building="@selected.RoomCode.Split('-')[0]" asp-route-Room="@selected.RoomCode" class="case-more" aria-label="Mở phòng @selected.RoomCode"><svg><use href="#i-more" /></svg></a>
+                </header>
+
+                <section class="incident-location">
+                    <span><svg><use href="#i-bed" /></svg></span><div><p>Vị trí ảnh hưởng</p><h3>Phòng @selected.RoomCode</h3><small>@selected.BuildingName · Tầng @selected.FloorNumber</small></div>
+                    <dl><div><dt>Người báo</dt><dd>@selected.ReporterName</dd><small>@selected.ReporterCode</small></div><div><dt>Tổ phụ trách</dt><dd>@(selected.AssignedTeam ?? "Chưa phân công")</dd></div></dl>
+                </section>
+
+                @if (selected.IsSlaBreached)
+                {
+                    <div class="maintenance-sla-alert"><svg><use href="#i-bell" /></svg><span><strong>Đã vượt thời gian phản hồi mục tiêu</strong><small>Ưu tiên cập nhật tiến độ hoặc phân công tổ xử lý ngay.</small></span></div>
+                }
+
+                <section class="incident-description"><p>@selected.Category</p><h3>Mô tả hiện trường</h3><blockquote>@selected.Description</blockquote></section>
+                @if (selected.Attachments.Count > 0) { <section class="incident-attachments"><header><div><p>Chứng cứ hiện trường</p><h3>@selected.Attachments.Count ảnh đính kèm</h3></div></header><div>@foreach (var attachment in selected.Attachments) { <a asp-controller="Attachments" asp-action="Maintenance" asp-route-id="@attachment.Id" target="_blank"><img src="@Url.Action("Maintenance", "Attachments", new { id = attachment.Id })" alt="@attachment.FileName" loading="lazy" /><span>@attachment.FileName</span></a> }</div></section> }
+
+                <section class="capacity-impact">
+                    <header><div><p>Ảnh hưởng sức chứa</p><h3>Phòng @selected.RoomCode sau sự cố</h3></div><strong>@selected.Assignable chỗ có thể xếp</strong></header>
+                    <div><span><small>Sức chứa</small><strong>@selected.Capacity</strong></span><span><small>Đang ở</small><strong>@selected.Occupied</strong></span><span><small>Đang giữ</small><strong>@selected.Held</strong></span><span class="blocked"><small>Tạm khóa</small><strong>@selected.BlockedBeds</strong></span><span class="assignable"><small>Có thể xếp</small><strong>@selected.Assignable</strong></span></div>
+                    <small>Số liệu này dùng chung với sơ đồ phòng, tìm phòng và bước duyệt đơn.</small>
+                </section>
+
+                @if (selected.CanUpdate)
+                {
+                    <a class="mobile-maintenance-action" href="#maintenance-action"><svg><use href="#i-tool" /></svg>Cập nhật tiến độ</a>
+                }
+
+                <section class="maintenance-timeline">
+                    <header><div><p>Nhật ký xử lý</p><h3>@selected.Timeline.Count cập nhật</h3></div><small>Mới nhất trước</small></header>
+                    <div>@foreach (var entry in selected.Timeline) { <article><i><svg><use href="#i-check" /></svg></i><span><strong>@entry.StatusLabel</strong><p>@entry.Note</p><small>@entry.ActorName</small></span><time>@entry.CreatedAtLocal.ToString("dd/MM, HH:mm")</time></article> }</div>
+                </section>
+            </main>
+
+            <aside class="maintenance-action" id="maintenance-action">
+                <header><p>Điều phối xử lý</p><h2>@(selected.CanUpdate ? "Cập nhật sự cố" : "Sự cố đã đóng")</h2><small>Mỗi cập nhật được thêm vào nhật ký và gửi cho sinh viên đã báo.</small></header>
+                @if (selected.CanUpdate)
+                {
+                    <form asp-action="Update" method="post" class="maintenance-action-form">
+                        <input type="hidden" name="RequestId" value="@selected.Id" /><input type="hidden" name="RowVersion" value="@selected.RowVersion" />
+                        <input type="hidden" name="Return.Search" value="@Model.Query.Search" /><input type="hidden" name="Return.Status" value="@Model.Query.Status" /><input type="hidden" name="Return.Priority" value="@Model.Query.Priority" /><input type="hidden" name="Return.Building" value="@Model.Query.Building" /><input type="hidden" name="Return.Page" value="@Model.Query.Page" />
+                        <label><span>Tiến độ</span><select name="Status" required><option value="New" selected="@(selected.Status == "New")">Chưa phân công</option><option value="Assigned" selected="@(selected.Status == "Assigned")">Đã phân công</option><option value="InProgress" selected="@(selected.Status == "InProgress")">Đang xử lý</option><option value="WaitingParts" selected="@(selected.Status == "WaitingParts")">Chờ vật tư</option><option value="Resolved" selected="@(selected.Status == "Resolved")">Đã hoàn thành</option><option value="Closed" selected="@(selected.Status == "Closed")">Đóng yêu cầu</option></select></label>
+                        <label><span>Mức ưu tiên</span><select name="Priority" required><option value="Urgent" selected="@(selected.Priority == "Urgent")">Khẩn cấp</option><option value="High" selected="@(selected.Priority == "High")">Cao</option><option value="Medium" selected="@(selected.Priority == "Medium")">Vừa</option><option value="Low" selected="@(selected.Priority == "Low")">Thấp</option></select></label>
+                        <label><span>Tổ phụ trách</span><select name="AssignedTeam"><option value="">Chưa phân công</option>@foreach (var team in Model.Teams) { <option value="@team" selected="@(selected.AssignedTeam == team)">@team</option> }</select></label>
+                        <label><span>Chỗ tạm khóa <small>Tối đa @selected.MaxBlockedBeds</small></span><input type="number" name="BlockedBeds" min="0" max="@selected.MaxBlockedBeds" step="1" value="@selected.BlockedBeds" required /></label>
+                        <label><span>Nội dung cập nhật</span><textarea name="Note" rows="4" minlength="8" maxlength="600" required placeholder="Việc đã làm, thời gian dự kiến hoặc lý do chờ..."></textarea></label>
+                        <button type="submit"><svg><use href="#i-check" /></svg>Lưu cập nhật</button>
+                        <small class="maintenance-assurance"><svg><use href="#i-check" /></svg>Hoàn thành/đóng sự cố sẽ trả toàn bộ chỗ tạm khóa của yêu cầu này về phòng.</small>
+                    </form>
+                }
+                else
+                {
+                    <div class="collection-complete"><span><svg><use href="#i-check" /></svg></span><strong>Đã đóng yêu cầu</strong><p>Nhật ký được giữ nguyên để tra cứu và đối soát vận hành.</p></div>
+                }
+            </aside>
+        }
+    </div>
+</div>

@@ -19,6 +19,7 @@ else
             <article class="repair-card">
                 <header><div><span class="repair-status @repair.StatusClass">@repair.StatusLabel</span><h2>@repair.Title</h2><p>@repair.Code · Phòng @repair.RoomCode · @repair.Category</p></div><div class="repair-meta"><small>Mức độ</small><strong>@repair.PriorityLabel</strong><small>Cập nhật @repair.UpdatedAt.ToLocalTime().ToString("dd/MM, HH:mm")</small></div></header>
                 <p class="repair-description">@repair.Description</p>
+                @if (repair.Attachments.Count > 0) { <div class="repair-attachments">@foreach (var attachment in repair.Attachments) { <a asp-controller="Attachments" asp-action="Maintenance" asp-route-id="@attachment.Id" target="_blank"><img src="@Url.Action("Maintenance", "Attachments", new { id = attachment.Id })" alt="Ảnh hiện trường @repair.Code" loading="lazy" /><span>@attachment.FileName</span></a> }</div> }
                 <div class="repair-timeline">
                     @foreach (var update in repair.Updates)
                     {
@@ -31,7 +32,7 @@ else
 }
 
 <dialog class="student-dialog repair-dialog" data-repair-dialog aria-labelledby="repair-title">
-    <form method="post" asp-action="CreateRepair">
+    <form method="post" asp-action="CreateRepair" enctype="multipart/form-data">
         <header><div><p>Phòng @Model.CurrentRoomCode</p><h2 id="repair-title">Mô tả sự cố cần hỗ trợ</h2></div><button type="button" data-dialog-close aria-label="Đóng"><svg><use href="#s-close" /></svg></button></header>
         <div class="form-grid">
             <label class="student-form-field"><span>Nhóm sự cố</span><select name="Category" required><option value="">Chọn nhóm</option><option>Điện nước</option><option>Thiết bị phòng</option><option>Internet</option><option>Vệ sinh</option><option>An ninh</option><option>Khác</option></select></label>
@@ -39,6 +40,7 @@ else
         </div>
         <label class="student-form-field"><span>Tiêu đề</span><input name="Title" minlength="5" maxlength="180" required placeholder="Ví dụ: Đèn trần không hoạt động" /></label>
         <label class="student-form-field"><span>Mô tả chi tiết</span><textarea name="Description" rows="5" minlength="15" maxlength="1000" required placeholder="Vị trí, thời điểm phát hiện và mức độ ảnh hưởng..."></textarea><small>Không gửi thông tin nhạy cảm hoặc ảnh giấy tờ cá nhân.</small></label>
+        <label class="student-form-field attachment-picker"><span>Ảnh hiện trường <small>Không bắt buộc</small></span><input name="Attachments" type="file" accept="image/jpeg,image/png,image/webp" multiple /><small>Tối đa 3 ảnh JPG, PNG hoặc WebP; mỗi ảnh không quá 5 MB.</small></label>
         <footer><button type="button" class="student-secondary" data-dialog-close>Hủy</button><button type="submit" class="student-primary">Gửi yêu cầu</button></footer>
     </form>
 </dialog>

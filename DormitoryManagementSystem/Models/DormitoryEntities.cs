@@ -60,8 +60,11 @@ public sealed class Stay
     public StudentProfile StudentProfile { get; set; } = null!;
     public int RoomId { get; set; }
     public Room Room { get; set; } = null!;
+    public long? HousingRequestId { get; set; }
+    public HousingRequest? HousingRequest { get; set; }
     public DateTime StartedAt { get; set; }
     public DateTime? EndedAt { get; set; }
+    [Timestamp] public byte[] RowVersion { get; set; } = [];
 }
 
 public sealed class RoomHold
@@ -75,7 +78,7 @@ public sealed class RoomHold
 }
 
 public enum HousingRequestType { Registration, Transfer, Checkout }
-public enum HousingRequestStatus { Submitted, UnderReview, NeedsInformation, Approved, Rejected, Cancelled }
+public enum HousingRequestStatus { Submitted, UnderReview, NeedsInformation, AwaitingMoveIn, Approved, Rejected, Cancelled }
 
 public sealed class HousingRequest
 {
@@ -85,12 +88,19 @@ public sealed class HousingRequest
     public StudentProfile StudentProfile { get; set; } = null!;
     public int? TargetRoomId { get; set; }
     public Room? TargetRoom { get; set; }
+    public int? SourceStayId { get; set; }
+    public Stay? SourceStay { get; set; }
+    public Stay? CreatedStay { get; set; }
+    public int? ApprovedRoomHoldId { get; set; }
+    public RoomHold? ApprovedRoomHold { get; set; }
     public HousingRequestType Type { get; set; }
     public HousingRequestStatus Status { get; set; }
     [MaxLength(600)] public string StudentReason { get; set; } = string.Empty;
     [MaxLength(600)] public string? DecisionReason { get; set; }
     public DateTime SubmittedAt { get; set; }
+    public DateTime? ActionRequiredAt { get; set; }
     public DateTime? ReviewedAt { get; set; }
+    public DateTime? MoveInConfirmedAt { get; set; }
     public string? ReviewedByUserId { get; set; }
     public ApplicationUser? ReviewedByUser { get; set; }
     [Timestamp] public byte[] RowVersion { get; set; } = [];
@@ -120,7 +130,9 @@ public sealed class BillingPeriod
     public ICollection<Invoice> Invoices { get; set; } = [];
 }
 
-public enum InvoiceStatus { Issued, PartiallyPaid, Paid, Overdue, Cancelled }
+public enum InvoiceStatus { Issued, Cancelled }
+
+public enum PaymentMethod { Cash, BankTransfer, Adjustment }
 
 public sealed class Invoice
 {
@@ -133,11 +145,12 @@ public sealed class Invoice
     public int? StayId { get; set; }
     public Stay? Stay { get; set; }
     public decimal TotalAmount { get; set; }
-    public decimal PaidAmount { get; set; }
     public InvoiceStatus Status { get; set; }
     public DateTime IssuedAt { get; set; }
+    public DateTime? LedgerUpdatedAt { get; set; }
     [Timestamp] public byte[] RowVersion { get; set; } = [];
     public ICollection<InvoiceLine> Lines { get; set; } = [];
+    public ICollection<PaymentTransaction> Transactions { get; set; } = [];
 }
 
 public sealed class InvoiceLine
@@ -148,6 +161,26 @@ public sealed class InvoiceLine
     [MaxLength(32)] public string ChargeType { get; set; } = string.Empty;
     [MaxLength(120)] public string Description { get; set; } = string.Empty;
     public decimal Amount { get; set; }
+}
+
+public sealed class PaymentTransaction
+{
+    public long Id { get; set; }
+    public long InvoiceId { get; set; }
+    public Invoice Invoice { get; set; } = null!;
+    [MaxLength(32)] public string Code { get; set; } = string.Empty;
+    public decimal Amount { get; set; }
+    public PaymentMethod Method { get; set; }
+    public DateTime ReceivedAt { get; set; }
+    public DateTime RecordedAt { get; set; }
+    public string? RecordedByUserId { get; set; }
+    public ApplicationUser? RecordedByUser { get; set; }
+    [MaxLength(100)] public string? ExternalReference { get; set; }
+    [MaxLength(80)] public string IdempotencyKey { get; set; } = string.Empty;
+    public long? ReversesTransactionId { get; set; }
+    public PaymentTransaction? ReversesTransaction { get; set; }
+    public PaymentTransaction? ReversalTransaction { get; set; }
+    [MaxLength(600)] public string? Note { get; set; }
 }
 
 public enum MaintenancePriority { Low, Medium, High, Urgent }
@@ -166,10 +199,25 @@ public sealed class MaintenanceRequest
     [MaxLength(1000)] public string Description { get; set; } = string.Empty;
     public MaintenancePriority Priority { get; set; }
     public MaintenanceStatus Status { get; set; }
+    [MaxLength(100)] public string? AssignedTeam { get; set; }
     public int BlockedBeds { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
+    [Timestamp] public byte[] RowVersion { get; set; } = [];
     public ICollection<MaintenanceUpdate> Updates { get; set; } = [];
+    public ICollection<MaintenanceAttachment> Attachments { get; set; } = [];
+}
+
+public sealed class MaintenanceAttachment
+{
+    public long Id { get; set; }
+    public int MaintenanceRequestId { get; set; }
+    public MaintenanceRequest MaintenanceRequest { get; set; } = null!;
+    [MaxLength(80)] public string StoredName { get; set; } = string.Empty;
+    [MaxLength(180)] public string OriginalName { get; set; } = string.Empty;
+    [MaxLength(40)] public string ContentType { get; set; } = string.Empty;
+    public long Length { get; set; }
+    public DateTime CreatedAt { get; set; }
 }
 
 public sealed class MaintenanceUpdate
@@ -179,6 +227,8 @@ public sealed class MaintenanceUpdate
     public MaintenanceRequest MaintenanceRequest { get; set; } = null!;
     public MaintenanceStatus Status { get; set; }
     [MaxLength(600)] public string Note { get; set; } = string.Empty;
+    public string? ActorUserId { get; set; }
+    public ApplicationUser? ActorUser { get; set; }
     public DateTime CreatedAt { get; set; }
 }
 

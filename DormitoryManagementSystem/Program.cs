@@ -55,9 +55,15 @@ builder.Services.ConfigureApplicationCookie(options =>
 });
 
 builder.Services.AddScoped<IRoomMapService, RoomMapService>();
+builder.Services.AddScoped<IOperationsCatalogService, OperationsCatalogService>();
 builder.Services.AddScoped<IStudentPortalService, StudentPortalService>();
 builder.Services.AddScoped<IApplicationManagementService, ApplicationManagementService>();
 builder.Services.AddScoped<IStudentManagementService, StudentManagementService>();
+builder.Services.AddScoped<IBillingLedgerService, BillingLedgerService>();
+builder.Services.AddScoped<IMaintenanceManagementService, MaintenanceManagementService>();
+builder.Services.AddScoped<IMaintenanceAttachmentStorage, MaintenanceAttachmentStorage>();
+builder.Services.AddScoped<IOperationsReportingService, OperationsReportingService>();
+builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddControllersWithViews();
 builder.Services.AddSignalR();
 
@@ -92,14 +98,16 @@ app.MapGet("/health", async (DormitoryDbContext db, CancellationToken cancellati
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Rooms}/{action=Map}/{id?}");
+    pattern: "{controller=Home}/{action=Index}/{id?}");
 app.MapHub<OperationsHub>("/hubs/operations");
 
 await using (var scope = app.Services.CreateAsyncScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<DormitoryDbContext>();
-    await db.Database.MigrateAsync();
-    await DataSeeder.SeedAsync(scope.ServiceProvider);
+    if (app.Environment.IsDevelopment() || app.Configuration.GetValue<bool>("Database:ApplyMigrationsOnStartup"))
+        await db.Database.MigrateAsync();
+    if (app.Environment.IsDevelopment() && app.Configuration.GetValue<bool>("DemoData:Seed"))
+        await DataSeeder.SeedAsync(scope.ServiceProvider);
 }
 
 try

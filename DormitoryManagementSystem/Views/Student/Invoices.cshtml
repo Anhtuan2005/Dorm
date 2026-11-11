@@ -9,7 +9,7 @@
 <section class="invoice-overview">
     <div><span class="overview-icon"><svg><use href="#s-wallet" /></svg></span><span><small>Tổng cần thanh toán</small><strong>@Money(Model.OutstandingBalance) đ</strong></span></div>
     <div><small>Kỳ đang mở</small><strong>@Model.Invoices.Count(x => x.NeedsPayment) hóa đơn</strong></div>
-    <div><small>Đã thanh toán</small><strong>@Model.Invoices.Count(x => !x.NeedsPayment) kỳ</strong></div>
+    <div><small>Đã cân đối</small><strong>@Model.Invoices.Count(x => !x.NeedsPayment && x.StatusClass == "paid") kỳ</strong></div>
     <button type="button" data-demo-message="Thanh toán trực tuyến chưa được bật. Vui lòng thanh toán tại văn phòng KTX hoặc theo thông tin chuyển khoản trên thông báo chính thức.">Hướng dẫn thanh toán</button>
 </section>
 
@@ -18,8 +18,12 @@
     {
         <article class="student-invoice-card">
             <header><div><span class="invoice-status @invoice.StatusClass">@invoice.StatusLabel</span><h2>@invoice.PeriodName</h2><p>@invoice.Code · Hạn @invoice.DueDate.ToString("dd/MM/yyyy")</p></div><div class="invoice-total"><small>@(invoice.NeedsPayment ? "Còn phải trả" : "Tổng hóa đơn")</small><strong>@Money(invoice.NeedsPayment ? invoice.Balance : invoice.TotalAmount) đ</strong></div></header>
-            <details open="@invoice.NeedsPayment"><summary>Chi tiết các khoản phí <svg><use href="#s-chevron" /></svg></summary><div class="invoice-lines">@foreach (var line in invoice.Lines) { <div><span>@line.Description</span><strong>@Money(line.Amount) đ</strong></div> }<div class="invoice-line-total"><span>Tổng cộng</span><strong>@Money(invoice.TotalAmount) đ</strong></div>@if (invoice.PaidAmount > 0) { <div><span>Đã thanh toán</span><strong>-@Money(invoice.PaidAmount) đ</strong></div> }</div></details>
-            @if (invoice.NeedsPayment) { <footer><p><svg><use href="#s-calendar" /></svg>Thanh toán đúng hạn để không ảnh hưởng quyền đăng ký.</p><button type="button" data-demo-message="Chức năng thanh toán trực tuyến sẽ được triển khai ở sprint Thu phí. Hóa đơn hiện được tra cứu từ dữ liệu thật.">Thanh toán</button></footer> }
+            <details open="@invoice.NeedsPayment"><summary>Chi tiết các khoản phí <svg><use href="#s-chevron" /></svg></summary><div class="invoice-lines">@foreach (var line in invoice.Lines) { <div><span>@line.Description</span><strong>@Money(line.Amount) đ</strong></div> }<div class="invoice-line-total"><span>Tổng cộng</span><strong>@Money(invoice.TotalAmount) đ</strong></div>@if (invoice.PaidAmount > 0) { <div><span>Đã ghi nhận thu</span><strong>-@Money(invoice.PaidAmount) đ</strong></div> }<div class="invoice-line-total"><span>Còn phải thanh toán</span><strong>@Money(invoice.Balance) đ</strong></div></div></details>
+            @if (invoice.Transactions.Count > 0)
+            {
+                <details class="invoice-transactions"><summary>Lịch sử khoản thu (@invoice.Transactions.Count) <svg><use href="#s-chevron" /></svg></summary><div>@foreach (var transaction in invoice.Transactions) { <article class="@(transaction.IsReversal ? "reversal" : "")"><span><strong>@transaction.Code</strong><small>@transaction.MethodLabel · @transaction.ReceivedAt.ToLocalTime().ToString("dd/MM/yyyy, HH:mm")</small>@if (!string.IsNullOrWhiteSpace(transaction.Note)) { <em>@transaction.Note</em> }</span><b>@(transaction.Amount > 0 ? "+" : "")@Money(transaction.Amount) đ</b></article> }</div></details>
+            }
+            @if (invoice.NeedsPayment) { <footer><p><svg><use href="#s-calendar" /></svg>Thanh toán đúng hạn để không ảnh hưởng quyền đăng ký.</p><button type="button" data-demo-message="Thanh toán trực tuyến chưa được bật. Vui lòng thanh toán tại văn phòng KTX hoặc theo hướng dẫn chính thức.">Xem hướng dẫn</button></footer> }
         </article>
     }
 </div>

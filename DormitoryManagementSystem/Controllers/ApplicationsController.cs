@@ -25,19 +25,23 @@ public sealed class ApplicationsController(
 
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> BeginReview(ApplicationActionInput input, CancellationToken cancellationToken) =>
-        RedirectWith(await applicationService.BeginReviewAsync(input, ManagerId, cancellationToken), "attention");
+        RedirectWith(await applicationService.ExecuteAsync(input, HousingRequestAction.BeginReview, ManagerId, cancellationToken), "attention");
 
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> RequestInformation(ApplicationActionInput input, CancellationToken cancellationToken) =>
-        RedirectWith(await applicationService.RequestInformationAsync(input, ManagerId, cancellationToken), "attention");
+        RedirectWith(await applicationService.ExecuteAsync(input, HousingRequestAction.RequestInformation, ManagerId, cancellationToken), "attention");
 
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> Reject(ApplicationActionInput input, CancellationToken cancellationToken) =>
-        RedirectWith(await applicationService.RejectAsync(input, ManagerId, cancellationToken), "completed");
+        RedirectWith(await applicationService.ExecuteAsync(input, HousingRequestAction.Reject, ManagerId, cancellationToken), "completed");
 
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> Approve(ApplicationActionInput input, CancellationToken cancellationToken) =>
-        RedirectWith(await applicationService.ApproveAndAssignAsync(input, ManagerId, cancellationToken), "completed");
+        RedirectWith(await applicationService.ExecuteAsync(input, HousingRequestAction.Approve, ManagerId, cancellationToken), "attention");
+
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> ConfirmMoveIn(ApplicationActionInput input, CancellationToken cancellationToken) =>
+        RedirectWith(await applicationService.ExecuteAsync(input, HousingRequestAction.ConfirmMoveIn, ManagerId, cancellationToken), "completed");
 
     private string ManagerId => userManager.GetUserId(User)
         ?? throw new InvalidOperationException("Không xác định được tài khoản quản lý.");

@@ -6,7 +6,7 @@
 }
 
 <section class="student-page-head dashboard-head">
-    <div><p class="student-kicker">Học kỳ I · 2026–2027</p><h1>Chào @Model.Student.FullName.Split(' ').Last(), hôm nay ở KTX thế nào?</h1><p>Mọi việc liên quan đến phòng @Model.CurrentStay.RoomCode được tập hợp tại đây.</p></div>
+    <div><p class="student-kicker">Học kỳ I · 2026–2027</p><h1>Chào @Model.Student.FullName.Split(' ').Last(), hôm nay ở KTX thế nào?</h1><p>@(Model.CurrentStay is null ? "Bạn chưa có lượt lưu trú hiện tại. Có thể tìm phòng và gửi đơn đăng ký ngay tại đây." : $"Mọi việc liên quan đến phòng {Model.CurrentStay.RoomCode} được tập hợp tại đây.")</p></div>
     <span class="student-date"><svg><use href="#s-calendar" /></svg>Thứ Tư, 09/09/2026</span>
 </section>
 
@@ -23,13 +23,20 @@
 <div class="student-dashboard-grid">
     <div class="student-dashboard-primary">
         <section class="student-section">
-            <header class="student-section-head"><div><p>Chỗ ở hiện tại</p><h2>Thẻ phòng của bạn</h2></div><span class="live-status"><i></i>Đang lưu trú</span></header>
-            <article class="room-pass">
-                <div class="room-pass-code"><small>@Model.CurrentStay.BuildingName · Tầng @Model.CurrentStay.FloorNumber</small><strong>@Model.CurrentStay.RoomCode</strong><span>Phòng @Model.CurrentStay.Capacity người · @Model.CurrentStay.Roommates bạn cùng phòng</span></div>
-                <dl><div><dt>Giá phòng</dt><dd>@Money(Model.CurrentStay.MonthlyPrice) đ<small>/tháng</small></dd></div><div><dt>Nhận phòng</dt><dd>@Model.CurrentStay.StartedAt.ToLocalTime().ToString("dd/MM/yyyy")</dd></div></dl>
-                <div class="room-pass-amenities">@foreach (var amenity in Model.CurrentStay.Amenities.Take(4)) { <span>@amenity</span> }</div>
-                <span class="room-pass-mark"><svg><use href="#s-bed" /></svg></span>
-            </article>
+            <header class="student-section-head"><div><p>Chỗ ở hiện tại</p><h2>Thẻ phòng của bạn</h2></div>@if (Model.CurrentStay is not null) { <span class="live-status"><i></i>Đang lưu trú</span> }</header>
+            @if (Model.CurrentStay is not null)
+            {
+                <article class="room-pass">
+                    <div class="room-pass-code"><small>@Model.CurrentStay.BuildingName · Tầng @Model.CurrentStay.FloorNumber</small><strong>@Model.CurrentStay.RoomCode</strong><span>Phòng @Model.CurrentStay.Capacity người · @Model.CurrentStay.Roommates bạn cùng phòng</span></div>
+                    <dl><div><dt>Giá phòng</dt><dd>@Money(Model.CurrentStay.MonthlyPrice) đ<small>/tháng</small></dd></div><div><dt>Nhận phòng</dt><dd>@Model.CurrentStay.StartedAt.ToLocalTime().ToString("dd/MM/yyyy")</dd></div></dl>
+                    <div class="room-pass-amenities">@foreach (var amenity in Model.CurrentStay.Amenities.Take(4)) { <span>@amenity</span> }</div>
+                    <span class="room-pass-mark"><svg><use href="#s-bed" /></svg></span>
+                </article>
+            }
+            else
+            {
+                <div class="no-current-stay"><span><svg><use href="#s-bed" /></svg></span><div><strong>Chưa có phòng hiện tại</strong><p>Tìm phòng phù hợp để gửi đơn đăng ký ở.</p></div><a asp-action="Rooms">Tìm phòng</a></div>
+            }
         </section>
 
         <section class="student-section">
@@ -37,7 +44,7 @@
             <div class="student-activity-list">
                 @if (Model.ActiveRequest is not null)
                 {
-                    <a asp-action="Applications" class="student-activity"><span class="activity-icon teal"><svg><use href="#s-file" /></svg></span><span><strong>@Model.ActiveRequest.TypeLabel · @Model.ActiveRequest.TargetRoomCode</strong><small>@Model.ActiveRequest.Code · @Model.ActiveRequest.StatusLabel</small></span><span class="activity-status @Model.ActiveRequest.StatusClass">@Model.ActiveRequest.StatusLabel</span><svg><use href="#s-chevron" /></svg></a>
+                    <a asp-action="Applications" class="student-activity"><span class="activity-icon teal"><svg><use href="#s-file" /></svg></span><span><strong>@Model.ActiveRequest.TypeLabel@(Model.ActiveRequest.TargetRoomCode is null ? "" : $" · {Model.ActiveRequest.TargetRoomCode}")</strong><small>@Model.ActiveRequest.Code · @Model.ActiveRequest.NextActionLabel</small></span><span class="activity-status @Model.ActiveRequest.StatusClass">@Model.ActiveRequest.StatusLabel</span><svg><use href="#s-chevron" /></svg></a>
                 }
                 else
                 {
@@ -68,7 +75,7 @@
                 <div class="student-notification-list">
                     @foreach (var notice in Model.Notifications)
                     {
-                        <a href="@notice.TargetUrl" class="@(notice.IsUnread ? "unread" : "")"><i></i><span><strong>@notice.Title</strong><small>@notice.Body</small><time>@notice.CreatedAt.ToLocalTime().ToString("dd/MM, HH:mm")</time></span></a>
+                        <a asp-action="OpenNotification" asp-route-id="@notice.Id" class="@(notice.IsUnread ? "unread" : "")"><i></i><span><strong>@notice.Title</strong><small>@notice.Body</small><time>@notice.CreatedAt.ToLocalTime().ToString("dd/MM, HH:mm")</time></span></a>
                     }
                 </div>
             }

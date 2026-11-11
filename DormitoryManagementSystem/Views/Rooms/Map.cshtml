@@ -22,7 +22,7 @@
                     <span>·</span> <strong>@Model.GlobalCapacity.Blocked</strong> tạm khóa
                 </p>
             </div>
-            <span class="last-updated"><i></i>Cập nhật vừa xong</span>
+            <div class="map-heading-actions"><a asp-action="Catalog"><svg><use href="#i-settings" /></svg>Danh mục phòng</a><span class="last-updated"><i></i>Cập nhật vừa xong</span></div>
         </div>
 
         <section class="work-alerts" aria-label="Việc cần xử lý">
@@ -30,19 +30,19 @@
                 <span class="alert-icon"><svg><use href="#i-file" /></svg></span>
                 <span><strong>@Model.OverdueApplicationCount đơn quá hạn xử lý</strong><small>Xem đơn <svg><use href="#i-arrow" /></svg></small></span>
             </a>
-            <button type="button" class="work-alert invoices" data-demo-message="Danh sách 7 hóa đơn quá hạn sẽ được mở tại màn hình Thu phí.">
+            <a class="work-alert invoices" asp-controller="Billing" asp-action="Index" asp-route-Status="overdue">
                 <span class="alert-icon"><svg><use href="#i-coin" /></svg></span>
-                <span><strong>7 hóa đơn quá hạn · 18.450.000 đ</strong><small>Xem công nợ <svg><use href="#i-arrow" /></svg></small></span>
-            </button>
-            <button type="button" class="work-alert incidents" data-demo-message="Danh sách 2 sự cố khẩn cấp sẽ được mở tại màn hình Sự cố.">
+                <span><strong>@Model.OverdueInvoiceCount hóa đơn quá hạn · @Money(Model.OverdueInvoiceAmount) đ</strong><small>Xem công nợ <svg><use href="#i-arrow" /></svg></small></span>
+            </a>
+            <a class="work-alert incidents" asp-controller="Maintenance" asp-action="Index" asp-route-Priority="Urgent">
                 <span class="alert-icon"><svg><use href="#i-tool" /></svg></span>
-                <span><strong>2 sự cố khẩn cấp</strong><small>Xem sự cố <svg><use href="#i-arrow" /></svg></small></span>
-            </button>
+                <span><strong>@Model.UrgentMaintenanceCount sự cố khẩn cấp</strong><small>Xem sự cố <svg><use href="#i-arrow" /></svg></small></span>
+            </a>
         </section>
 
-        <a class="mobile-work-summary" asp-controller="Applications" asp-action="Index" asp-route-Scope="attention">
+        <a class="mobile-work-summary" asp-controller="Home" asp-action="Index">
             <span class="alert-icon"><svg><use href="#i-file" /></svg></span>
-            <span><strong>@(Model.OverdueApplicationCount + 9) việc cần xử lý</strong><small>@Model.OverdueApplicationCount đơn · 7 công nợ · 2 sự cố khẩn</small></span>
+            <span><strong>@(Model.OverdueApplicationCount + Model.OverdueInvoiceCount + Model.UrgentMaintenanceCount) việc cần xử lý</strong><small>@Model.OverdueApplicationCount đơn · @Model.OverdueInvoiceCount công nợ · @Model.UrgentMaintenanceCount sự cố khẩn</small></span>
             <svg><use href="#i-chevron" /></svg>
         </a>
 
@@ -143,7 +143,6 @@
             <a class="detail-back" asp-action="Map" asp-route-Building="@Model.Query.Building" asp-route-Floor="@mobileFloor" asp-route-Room="@selected.Code" aria-label="Quay lại sơ đồ"><svg><use href="#i-chevron" /></svg></a>
             <div><p>Chi tiết phòng</p><h2>Phòng @selected.Code</h2></div>
             <button class="icon-button detail-close" type="button" data-detail-close aria-label="Đóng chi tiết"><svg><use href="#i-close" /></svg></button>
-            <button class="icon-button detail-more" type="button" data-demo-message="Các thao tác bổ sung sẽ xuất hiện tại đây." aria-label="Thao tác khác"><svg><use href="#i-more" /></svg></button>
         </header>
         <span class="detail-status @selected.StatusClass">@selected.StatusLabel.Replace(" · không thể xếp", "")</span>
         <p class="room-price"><strong>@Money(selected.MonthlyPrice) đ</strong> / tháng</p>
@@ -183,7 +182,7 @@
                         <li><span class="student-index">@studentNumber</span><span><strong>@student.FullName</strong><small>@student.StudentCode</small></span><span class="student-faculty">Hồ sơ sinh viên</span><svg><use href="#i-chevron" /></svg></li>
                     }
                 </ol>
-                @if (selected.Students.Count > 4) { <button class="text-button" type="button" data-demo-message="Danh sách đầy đủ @selected.Students.Count sinh viên sẽ mở tại màn hình Sinh viên.">Xem đủ @selected.Students.Count sinh viên <svg><use href="#i-arrow" /></svg></button> }
+                @if (selected.Students.Count > 4) { <a class="text-button" asp-controller="Students" asp-action="Index" asp-route-Search="@selected.Code">Xem đủ @selected.Students.Count sinh viên <svg><use href="#i-arrow" /></svg></a> }
             }
         </section>
         <section class="tab-panel" data-panel="amenities"><ul class="amenity-list">@foreach (var amenity in selected.Amenities) { <li><svg><use href="#i-check" /></svg>@amenity</li> }</ul></section>
@@ -193,10 +192,10 @@
         </section>
 
         <footer class="detail-actions">
-            @if (selected.Capacity.Assignable > 0) { <button class="primary-button" type="button" data-demo-message="Luồng xếp sinh viên sẽ được triển khai sau khi bạn duyệt màn hình này."><svg><use href="#i-plus" /></svg>Xếp sinh viên</button> }
+            @if (selected.Capacity.Assignable > 0) { <a class="primary-button" asp-controller="Applications" asp-action="Index" asp-route-Scope="attention" asp-route-Search="@selected.Code"><svg><use href="#i-plus" /></svg>Xếp sinh viên</a> }
             else if (selected.Capacity.Blocked > 0) { <button class="primary-button danger-button" type="button" data-tab-target="incidents"><svg><use href="#i-tool" /></svg>Xem sự cố đang xử lý</button> }
             else { <button class="primary-button" type="button" disabled>Phòng hiện đã đủ chỗ</button> }
-            <button class="secondary-button" type="button" data-demo-message="Lịch sử lưu trú sẽ được triển khai cùng module Sinh viên."><svg><use href="#i-file" /></svg>Xem lịch sử lưu trú</button>
+            <a class="secondary-button" asp-controller="Students" asp-action="Index" asp-route-Search="@selected.Code"><svg><use href="#i-file" /></svg>Xem sinh viên phòng</a>
         </footer>
     </aside>
 </div>

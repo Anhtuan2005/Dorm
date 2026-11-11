@@ -9,6 +9,7 @@ public sealed class ApplicationQueueQuery
     public string? Type { get; set; }
     public bool OverdueOnly { get; set; }
     public long? SelectedId { get; set; }
+    [Range(1, int.MaxValue)] public int Page { get; set; } = 1;
 }
 
 public sealed record ApplicationQueueSummaryViewModel(
@@ -33,6 +34,8 @@ public sealed record ApplicationQueueItemViewModel(
     DateTime SubmittedAt,
     int WaitingHours,
     bool IsOverdue,
+    string ResponsibilityLabel,
+    string NextActionLabel,
     bool IsSelected);
 
 public sealed record PlacementRoomViewModel(
@@ -70,6 +73,7 @@ public sealed class ApplicationCaseViewModel
     public string PhoneNumber { get; init; } = string.Empty;
     public string? Email { get; init; }
     public string TypeLabel { get; init; } = string.Empty;
+    public string RequestType { get; init; } = string.Empty;
     public string StatusLabel { get; init; } = string.Empty;
     public string StatusClass { get; init; } = string.Empty;
     public string StudentReason { get; init; } = string.Empty;
@@ -77,13 +81,21 @@ public sealed class ApplicationCaseViewModel
     public DateTime SubmittedAt { get; init; }
     public int WaitingHours { get; init; }
     public bool IsOverdue { get; init; }
+    public string ResponsibilityLabel { get; init; } = string.Empty;
+    public string NextActionLabel { get; init; } = string.Empty;
     public PlacementRoomViewModel? CurrentRoom { get; init; }
     public PlacementRoomViewModel? TargetRoom { get; init; }
     public decimal OutstandingBalance { get; init; }
     public int OpenRepairCount { get; init; }
     public bool CanStartReview { get; init; }
     public bool CanDecide { get; init; }
+    public bool CanRequestInformation { get; init; }
+    public bool CanReject { get; init; }
     public bool CanApprove { get; init; }
+    public bool CanConfirmMoveIn { get; init; }
+    public DateTime? HoldExpiresAt { get; init; }
+    public bool IsCheckout => RequestType == "Checkout";
+    public string PrimaryActionLabel => IsCheckout ? "Duyệt trả phòng" : "Duyệt và giữ chỗ";
     public string? ApprovalBlockReason { get; init; }
     public IReadOnlyList<ApplicationAuditEventViewModel> Events { get; init; } = [];
 }
@@ -94,6 +106,9 @@ public sealed class ApplicationQueueViewModel
     public required ApplicationQueueSummaryViewModel Summary { get; init; }
     public required IReadOnlyList<ApplicationQueueItemViewModel> Items { get; init; }
     public ApplicationCaseViewModel? SelectedCase { get; init; }
+    public int TotalItems { get; init; }
+    public int PageSize { get; init; }
+    public int TotalPages => Math.Max(1, (int)Math.Ceiling((double)TotalItems / PageSize));
 }
 
 public sealed class ApplicationActionInput
@@ -111,6 +126,7 @@ public sealed class StudentDirectoryQuery
     public string? Building { get; set; }
     public string Account { get; set; } = "all";
     public int? SelectedId { get; set; }
+    [Range(1, int.MaxValue)] public int Page { get; set; } = 1;
 }
 
 public sealed record StudentDirectoryItemViewModel(
@@ -141,7 +157,10 @@ public sealed class StudentDirectoryDetailViewModel
     public bool IsLocked { get; init; }
     public int RequestCount { get; init; }
     public decimal OutstandingBalance { get; init; }
+    public required IReadOnlyList<StudentStayHistoryViewModel> StayHistory { get; init; }
 }
+
+public sealed record StudentStayHistoryViewModel(string RoomCode, string BuildingName, DateTime StartedAt, DateTime? EndedAt, bool IsCurrent);
 
 public sealed class StudentDirectoryViewModel
 {
@@ -151,6 +170,23 @@ public sealed class StudentDirectoryViewModel
     public StudentDirectoryDetailViewModel? SelectedStudent { get; init; }
     public int LinkedAccountCount { get; init; }
     public int UnlinkedAccountCount { get; init; }
+    public int TotalItems { get; init; }
+    public int PageSize { get; init; }
+    public int TotalPages => Math.Max(1, (int)Math.Ceiling((double)TotalItems / PageSize));
+}
+
+public class CreateStudentProfileInput
+{
+    [Required, StringLength(20, MinimumLength = 4)] public string StudentCode { get; set; } = string.Empty;
+    [Required, StringLength(100, MinimumLength = 2)] public string FullName { get; set; } = string.Empty;
+    [Required, StringLength(16)] public string Gender { get; set; } = string.Empty;
+    [StringLength(100)] public string Faculty { get; set; } = string.Empty;
+    [Phone, StringLength(20)] public string PhoneNumber { get; set; } = string.Empty;
+}
+
+public sealed class UpdateStudentProfileInput : CreateStudentProfileInput
+{
+    [Range(1, int.MaxValue)] public int Id { get; set; }
 }
 
 public sealed class CreateStudentAccountInput

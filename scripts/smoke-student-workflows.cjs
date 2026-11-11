@@ -1,7 +1,7 @@
 const { execFileSync } = require("child_process");
-const { chromium } = require("C:\\Users\\Admin\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\node\\node_modules\\playwright");
+const { chromium } = require("playwright");
+const { baseUrl, e2ePassword } = require("./e2e-config.cjs");
 
-const baseUrl = "http://127.0.0.1:5189";
 const transferReason = "Kiểm thử tự động luồng chuyển phòng sinh viên.";
 const repairTitle = "Kiểm thử tự động kết nối Wi-Fi";
 
@@ -18,7 +18,7 @@ function cleanup() {
 async function signIn(page) {
   await page.goto(`${baseUrl}/Account/Login`, { waitUntil: "networkidle" });
   await page.getByLabel("Email").fill("student@nepktx.local");
-  await page.getByLabel("Mật khẩu").fill("Demo@123");
+  await page.getByLabel("Mật khẩu").fill(e2ePassword);
   await Promise.all([
     page.waitForLoadState("networkidle"),
     page.getByRole("button", { name: "Đăng nhập" }).click()

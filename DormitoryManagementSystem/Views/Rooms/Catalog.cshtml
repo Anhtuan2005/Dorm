@@ -1,0 +1,62 @@
+@model RoomCatalogViewModel
+@{
+    var building = Model.SelectedBuilding;
+    var floor = Model.SelectedFloor;
+    string Money(decimal value) => value.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("vi-VN"));
+}
+
+<div class="catalog-page">
+    <header class="operations-heading">
+        <div><p class="operations-kicker">Cấu hình sức chứa</p><h1>Danh mục tòa, tầng và phòng</h1><p>Duy trì dữ liệu nền dùng chung cho sơ đồ, xếp phòng, hóa đơn và sự cố.</p></div>
+        <div class="catalog-heading-actions"><button type="button" class="heading-room-link" data-open-dialog="create-building-dialog"><svg><use href="#i-plus" /></svg>Thêm tòa</button><a class="heading-room-link quiet" asp-action="Map"><svg><use href="#i-home" /></svg>Về sơ đồ</a></div>
+    </header>
+
+    <div class="catalog-workbench">
+        <aside class="catalog-buildings">
+            <header><div><p>Cơ cấu KTX</p><h2>@Model.Buildings.Count tòa nhà</h2></div></header>
+            <nav>@foreach (var item in Model.Buildings) { <a class="@(item.IsSelected ? "selected" : "")" asp-action="Catalog" asp-route-BuildingId="@item.Id"><span><strong>Tòa @item.Code</strong><small>@item.Name · @item.SiteName</small></span><em>@item.RoomCount phòng</em></a> }</nav>
+            @if (building is not null) { <button type="button" data-open-dialog="edit-building-dialog">Chỉnh thông tin tòa @building.Code</button> }
+        </aside>
+
+        <main class="catalog-rooms">
+            @if (building is null)
+            {
+                <div class="queue-empty"><span><svg><use href="#i-home" /></svg></span><strong>Chưa có tòa nhà</strong><p>Thêm tòa đầu tiên để bắt đầu cấu hình tầng và phòng.</p></div>
+            }
+            else
+            {
+                <header class="catalog-room-head"><div><p>@building.SiteName</p><h2>Tòa @building.Code · @building.RoomCount phòng</h2></div><div><button type="button" data-open-dialog="create-floor-dialog"><svg><use href="#i-plus" /></svg>Thêm tầng</button>@if (floor is not null) { <button class="primary" type="button" data-open-dialog="create-room-dialog"><svg><use href="#i-plus" /></svg>Thêm phòng</button> }</div></header>
+                <nav class="catalog-floor-tabs">@foreach (var item in Model.Floors) { <a class="@(item.IsSelected ? "selected" : "")" asp-action="Catalog" asp-route-BuildingId="@building.Id" asp-route-FloorId="@item.Id"><strong>Tầng @item.Number</strong><small>@item.RoomCount phòng</small></a> }</nav>
+                @if (floor is null)
+                {
+                    <div class="queue-empty"><span><svg><use href="#i-home" /></svg></span><strong>Tòa @building.Code chưa có tầng</strong><p>Thêm tầng trước khi tạo phòng.</p></div>
+                }
+                else if (Model.Rooms.Count == 0)
+                {
+                    <div class="queue-empty"><span><svg><use href="#i-home" /></svg></span><strong>Tầng @floor.Number chưa có phòng</strong><p>Thêm phòng để đưa vào sơ đồ vận hành.</p><button type="button" data-open-dialog="create-room-dialog">Thêm phòng đầu tiên</button></div>
+                }
+                else
+                {
+                    <div class="catalog-table-scroll"><table><thead><tr><th>Phòng</th><th>Loại</th><th>Sức chứa</th><th>Đang ở</th><th>Giữ / khóa</th><th>Có thể xếp</th><th>Giá tháng</th><th></th></tr></thead><tbody>@foreach (var room in Model.Rooms) { <tr><td><strong>@room.Code</strong><small>@(string.IsNullOrWhiteSpace(room.Amenities) ? "Chưa khai báo tiện nghi" : room.Amenities.Replace("|", " · "))</small></td><td>@room.RoomType</td><td>@room.Capacity</td><td>@room.Occupied</td><td>@room.Held / @room.Blocked</td><td><span class="catalog-assignable @(room.Assignable == 0 ? "full" : "")">@room.Assignable chỗ</span></td><td>@Money(room.MonthlyPrice) đ</td><td><button type="button" data-open-dialog="edit-room-@room.Id">Sửa</button></td></tr> }</tbody></table></div>
+                }
+            }
+        </main>
+    </div>
+
+    <dialog class="manager-dialog" id="create-building-dialog" aria-labelledby="create-building-title"><form asp-action="CreateBuilding" method="post"><header><div><p>Cơ sở vận hành</p><h2 id="create-building-title">Thêm tòa nhà</h2></div><button type="button" data-dialog-close aria-label="Đóng"><svg><use href="#i-close" /></svg></button></header><div class="profile-form-grid"><label><span>Mã tòa</span><input name="Code" maxlength="4" required placeholder="VD: E" /></label><label><span>Tên hiển thị</span><input name="Name" maxlength="80" required placeholder="Tòa E" /></label><label><span>Cơ sở</span><input name="SiteName" maxlength="100" required value="@(building?.SiteName ?? "Cơ sở Thủ Đức")" /></label><label><span>Thứ tự</span><input name="SortOrder" type="number" min="0" max="999" value="@(Model.Buildings.Count + 1)" /></label></div><footer><button type="button" data-dialog-close>Hủy</button><button type="submit">Tạo tòa</button></footer></form></dialog>
+
+    @if (building is not null)
+    {
+        <dialog class="manager-dialog" id="edit-building-dialog" aria-labelledby="edit-building-title"><form asp-action="UpdateBuilding" method="post"><header><div><p>Tòa @building.Code</p><h2 id="edit-building-title">Thông tin tòa nhà</h2></div><button type="button" data-dialog-close aria-label="Đóng"><svg><use href="#i-close" /></svg></button></header><input type="hidden" name="Id" value="@building.Id" /><div class="profile-form-grid"><label><span>Tên hiển thị</span><input name="Name" maxlength="80" required value="@building.Name" /></label><label><span>Cơ sở</span><input name="SiteName" maxlength="100" required value="@building.SiteName" /></label><label><span>Thứ tự</span><input name="SortOrder" type="number" min="0" max="999" value="@building.SortOrder" /></label></div><div class="issue-proof"><svg><use href="#i-check" /></svg><p>Mã tòa được giữ cố định để mã phòng và lịch sử nghiệp vụ luôn nhất quán.</p></div><footer><button type="button" data-dialog-close>Hủy</button><button type="submit">Lưu tòa nhà</button></footer></form></dialog>
+        <dialog class="manager-dialog" id="create-floor-dialog" aria-labelledby="create-floor-title"><form asp-action="CreateFloor" method="post"><header><div><p>Tòa @building.Code</p><h2 id="create-floor-title">Thêm tầng</h2></div><button type="button" data-dialog-close aria-label="Đóng"><svg><use href="#i-close" /></svg></button></header><input type="hidden" name="BuildingId" value="@building.Id" /><label><span>Số tầng</span><input name="Number" type="number" min="1" max="100" required value="@(Model.Floors.Count == 0 ? 1 : Model.Floors.Max(x => x.Number) + 1)" /></label><footer><button type="button" data-dialog-close>Hủy</button><button type="submit">Thêm tầng</button></footer></form></dialog>
+    }
+
+    @if (building is not null && floor is not null)
+    {
+        <dialog class="manager-dialog" id="create-room-dialog" aria-labelledby="create-room-title"><form asp-action="CreateRoom" method="post"><header><div><p>Tòa @building.Code · Tầng @floor.Number</p><h2 id="create-room-title">Thêm phòng</h2></div><button type="button" data-dialog-close aria-label="Đóng"><svg><use href="#i-close" /></svg></button></header><input type="hidden" name="FloorId" value="@floor.Id" /><div class="profile-form-grid"><label><span>Mã phòng</span><input name="Code" maxlength="12" required placeholder="@building.Code-@(floor.Number)01" /></label><label><span>Loại phòng</span><input name="RoomType" maxlength="24" required placeholder="Nam / Nữ" /></label><label><span>Sức chứa</span><input name="Capacity" type="number" min="1" max="100" value="8" required /></label><label><span>Giá tháng</span><input name="MonthlyPrice" type="number" min="0" step="1000" value="1200000" required /></label><label class="wide"><span>Tiện nghi (ngăn cách bằng |)</span><input name="Amenities" maxlength="240" placeholder="Wi-Fi|Điều hòa|Bàn học" /></label></div><footer><button type="button" data-dialog-close>Hủy</button><button type="submit">Tạo phòng</button></footer></form></dialog>
+        @foreach (var room in Model.Rooms)
+        {
+            <dialog class="manager-dialog" id="edit-room-@room.Id" aria-labelledby="edit-room-title-@room.Id"><form asp-action="UpdateRoom" method="post"><header><div><p>@room.Code</p><h2 id="edit-room-title-@room.Id">Chỉnh sửa phòng</h2></div><button type="button" data-dialog-close aria-label="Đóng"><svg><use href="#i-close" /></svg></button></header><input type="hidden" name="Id" value="@room.Id" /><input type="hidden" name="FloorId" value="@floor.Id" /><input type="hidden" name="RowVersion" value="@room.RowVersion" /><div class="profile-form-grid"><label><span>Mã phòng</span><input name="Code" maxlength="12" required value="@room.Code" /></label><label><span>Loại phòng</span><input name="RoomType" maxlength="24" required value="@room.RoomType" /></label><label><span>Sức chứa</span><input name="Capacity" type="number" min="@(room.Occupied + room.Held + room.Blocked)" max="100" value="@room.Capacity" required /><small>Tối thiểu hiện tại: @(room.Occupied + room.Held + room.Blocked)</small></label><label><span>Giá tháng</span><input name="MonthlyPrice" type="number" min="0" step="1000" value="@room.MonthlyPrice.ToString(System.Globalization.CultureInfo.InvariantCulture)" required /></label><label class="wide"><span>Tiện nghi</span><input name="Amenities" maxlength="240" value="@room.Amenities" /></label></div><footer class="catalog-dialog-footer"><button type="button" data-dialog-close>Hủy</button><button type="submit">Lưu phòng</button></footer></form><form asp-action="DeleteRoom" method="post" class="catalog-delete-form" data-confirm="Chỉ xóa được phòng chưa phát sinh nghiệp vụ. Tiếp tục xóa @room.Code?"><input type="hidden" name="roomId" value="@room.Id" /><button type="submit">Xóa phòng chưa sử dụng</button></form></dialog>
+        }
+    }
+</div>

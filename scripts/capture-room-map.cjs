@@ -1,15 +1,16 @@
 const fs = require("fs");
 const path = require("path");
-const { chromium } = require("C:\\Users\\Admin\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\node\\node_modules\\playwright");
-const sharp = require("C:\\Users\\Admin\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\node\\node_modules\\sharp");
+const { chromium } = require("playwright");
+const sharp = require("sharp");
+const { baseUrl, e2ePassword } = require("./e2e-config.cjs");
 
 const outputDir = path.resolve(__dirname, "..", "artifacts", "screenshots");
 fs.mkdirSync(outputDir, { recursive: true });
 
 async function signIn(page) {
-  await page.goto("http://127.0.0.1:5189/Account/Login", { waitUntil: "networkidle" });
+  await page.goto(`${baseUrl}/Account/Login`, { waitUntil: "networkidle" });
   await page.getByLabel("Email").fill("manager@nepktx.local");
-  await page.getByLabel("Mật khẩu").fill("Demo@123");
+  await page.getByLabel("Mật khẩu").fill(e2ePassword);
   await Promise.all([
     page.waitForLoadState("networkidle"),
     page.getByRole("button", { name: "Đăng nhập" }).click()
@@ -28,14 +29,14 @@ async function signIn(page) {
   desktopPage.on("pageerror", error => issues.push(`desktop pageerror: ${error.message}`));
   desktopPage.on("console", message => { if (message.type() === "error") issues.push(`desktop console: ${message.text()}`); });
   await signIn(desktopPage);
-  await desktopPage.goto("http://127.0.0.1:5189/Rooms/Map?Building=A&Room=A-302", { waitUntil: "networkidle" });
+  await desktopPage.goto(`${baseUrl}/Rooms/Map?Building=A&Room=A-302`, { waitUntil: "networkidle" });
   const buildingLabels = await desktopPage.locator(".building-tabs a strong").allTextContents();
   if (JSON.stringify(buildingLabels) !== JSON.stringify(["Tòa A", "Tòa B", "Tòa C", "Tòa D"])) issues.push(`building tabs: ${buildingLabels.join(", ")}`);
   const totalSummary = await desktopPage.locator(".capacity-summary").innerText();
   for (const expected of ["1.280", "1.142", "24", "94", "20"]) if (!totalSummary.includes(expected)) issues.push(`missing total ${expected}`);
   if ((await desktopPage.locator(".room-detail h2").innerText()) !== "Phòng A-302") issues.push("selected detail does not match A-302");
   await desktopPage.screenshot({ path: path.join(outputDir, "room-map-desktop.png") });
-  await desktopPage.goto("http://127.0.0.1:5189/Rooms/Map?Building=A&Status=held&OnlyAvailable=true", { waitUntil: "networkidle" });
+  await desktopPage.goto(`${baseUrl}/Rooms/Map?Building=A&Status=held&OnlyAvailable=true`, { waitUntil: "networkidle" });
   if (!(await desktopPage.locator(".empty-state").isVisible())) issues.push("empty filter state is not visible");
   await desktop.close();
 
@@ -44,7 +45,7 @@ async function signIn(page) {
   mobilePage.on("pageerror", error => issues.push(`mobile pageerror: ${error.message}`));
   mobilePage.on("console", message => { if (message.type() === "error") issues.push(`mobile console: ${message.text()}`); });
   await signIn(mobilePage);
-  await mobilePage.goto("http://127.0.0.1:5189/Rooms/Map?Building=A&Floor=3&Room=A-302", { waitUntil: "networkidle" });
+  await mobilePage.goto(`${baseUrl}/Rooms/Map?Building=A&Floor=3&Room=A-302`, { waitUntil: "networkidle" });
   if ((await mobilePage.locator(".floor-row:visible").count()) !== 1) issues.push("mobile must show exactly one floor");
   await mobilePage.screenshot({ path: path.join(outputDir, "room-map-mobile-map.png") });
   await mobilePage.getByRole("link", { name: /A-302, 6 trên 8/ }).click();

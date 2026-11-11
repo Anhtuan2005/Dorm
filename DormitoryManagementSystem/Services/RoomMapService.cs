@@ -5,13 +5,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DormitoryManagementSystem.Services;
 
-public sealed class RoomMapService(DormitoryDbContext db) : IRoomMapService
+public sealed class RoomMapService(DormitoryDbContext db, TimeProvider timeProvider) : IRoomMapService
 {
     public async Task<RoomMapViewModel> GetAsync(
         RoomMapQuery query,
         CancellationToken cancellationToken = default)
     {
-        var now = DateTime.UtcNow;
+        var now = timeProvider.GetUtcNow().UtcDateTime;
+        var businessDate = DateOnly.FromDateTime(now.AddHours(7));
         var rooms = await db.Rooms
             .AsNoTracking()
             .Include(x => x.Floor)
@@ -28,7 +29,7 @@ public sealed class RoomMapService(DormitoryDbContext db) : IRoomMapService
         if (rooms.Count == 0)
             throw new InvalidOperationException("Chưa có dữ liệu phòng.");
 
-        var facts = rooms.Select(ToFact).ToList();
+        var facts = rooms.Select(room => ToFact(room, now)).ToList();
         var buildingCodes = facts
             .OrderBy(x => x.Room.Floor.Building.SortOrder)
             .Select(x => x.Room.Floor.Building.Code)
@@ -96,6 +97,17 @@ public sealed class RoomMapService(DormitoryDbContext db) : IRoomMapService
                     .ToList()))
             .ToList();
 
+        var overdueInvoices = await db.Invoices
+            .AsNoTracking()
+            .Where(x => x.Status == InvoiceStatus.Issued && x.BillingPeriod.DueDate < businessDate)
+            .Select(x => new
+            {
+                x.TotalAmount,
+                Collected = x.Transactions.Sum(transaction => (decimal?)transaction.Amount) ?? 0m
+            })
+            .Where(x => x.TotalAmount > x.Collected)
+            .ToListAsync(cancellationToken);
+
         return new RoomMapViewModel
         {
             Query = query,
@@ -108,28 +120,23 @@ public sealed class RoomMapService(DormitoryDbContext db) : IRoomMapService
             SelectedRoom = ToDetail(selectedFact),
             OverdueApplicationCount = await db.HousingRequests.CountAsync(
                 x => (x.Status == HousingRequestStatus.Submitted ||
-                      x.Status == HousingRequestStatus.UnderReview ||
-                      x.Status == HousingRequestStatus.NeedsInformation) &&
-                     x.SubmittedAt < now.AddHours(-24),
+                      x.Status == HousingRequestStatus.UnderReview) &&
+                     (x.ActionRequiredAt ?? x.SubmittedAt) < now.AddHours(-24),
+                cancellationToken),
+            OverdueInvoiceCount = overdueInvoices.Count,
+            OverdueInvoiceAmount = overdueInvoices.Sum(x => x.TotalAmount - x.Collected),
+            UrgentMaintenanceCount = await db.MaintenanceRequests.CountAsync(
+                x => x.Priority == MaintenancePriority.Urgent &&
+                     x.Status != MaintenanceStatus.Resolved &&
+                     x.Status != MaintenanceStatus.Closed,
                 cancellationToken)
         };
     }
 
-    private static RoomFact ToFact(Room room)
+    private static RoomFact ToFact(Room room, DateTime now)
     {
-        var occupied = room.Stays.Count(x => x.EndedAt == null);
-        var blocked = Math.Min(
-            Math.Max(0, room.Capacity - occupied),
-            room.MaintenanceRequests
-                .Where(x => x.Status is not MaintenanceStatus.Resolved and not MaintenanceStatus.Closed)
-                .Sum(x => x.BlockedBeds));
-        var held = Math.Min(
-            Math.Max(0, room.Capacity - occupied - blocked),
-            room.Holds
-                .Where(x => x.ReleasedAt == null && x.ExpiresAt > DateTime.UtcNow)
-                .Sum(x => x.HeldBeds));
-        var assignable = Math.Max(0, room.Capacity - occupied - blocked - held);
-        return new RoomFact(room, occupied, held, assignable, blocked);
+        var capacity = RoomCapacityPolicy.FromRoom(room, now);
+        return new RoomFact(room, capacity.Occupied, capacity.Held, capacity.Assignable, capacity.Blocked);
     }
 
     private static CapacityViewModel Sum(IEnumerable<RoomFact> facts)

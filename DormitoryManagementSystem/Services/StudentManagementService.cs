@@ -9,46 +9,64 @@ namespace DormitoryManagementSystem.Services;
 
 public sealed class StudentManagementService(
     DormitoryDbContext db,
-    UserManager<ApplicationUser> userManager) : IStudentManagementService
+    UserManager<ApplicationUser> userManager,
+    IBillingLedgerService billingLedger) : IStudentManagementService
 {
+    private const int PageSize = 24;
+
     public async Task<StudentDirectoryViewModel> GetDirectoryAsync(
         StudentDirectoryQuery query,
         CancellationToken cancellationToken = default)
     {
+        query.Page = Math.Max(1, query.Page);
         var baseQuery = db.StudentProfiles.AsNoTracking();
         var linkedCount = await baseQuery.CountAsync(x => x.UserId != null, cancellationToken);
         var totalCount = await baseQuery.CountAsync(cancellationToken);
         var buildings = await db.Buildings.AsNoTracking().OrderBy(x => x.SortOrder).Select(x => x.Code).ToListAsync(cancellationToken);
 
-        var students = await baseQuery
+        var filtered = baseQuery
             .Include(x => x.User)
             .Include(x => x.Stays.Where(stay => stay.EndedAt == null))
                 .ThenInclude(x => x.Room).ThenInclude(x => x.Floor).ThenInclude(x => x.Building)
-            .AsSplitQuery()
-            .OrderBy(x => x.StudentCode)
-            .ToListAsync(cancellationToken);
+            .AsSplitQuery();
 
-        IEnumerable<StudentProfile> filtered = students;
         if (!string.IsNullOrWhiteSpace(query.Search))
         {
             var search = query.Search.Trim();
             filtered = filtered.Where(x =>
-                x.StudentCode.Contains(search, StringComparison.OrdinalIgnoreCase) ||
-                x.FullName.Contains(search, StringComparison.OrdinalIgnoreCase) ||
-                (x.User?.Email?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false));
+                x.StudentCode.Contains(search) ||
+                x.FullName.Contains(search) ||
+                (x.User != null && x.User.Email != null && x.User.Email.Contains(search)) ||
+                x.Stays.Any(stay => stay.EndedAt == null && stay.Room.Code.Contains(search)));
         }
         if (!string.IsNullOrWhiteSpace(query.Building))
-            filtered = filtered.Where(x => x.Stays.SingleOrDefault()?.Room.Floor.Building.Code == query.Building);
+            filtered = filtered.Where(x => x.Stays.Any(stay => stay.EndedAt == null && stay.Room.Floor.Building.Code == query.Building));
         filtered = query.Account switch
         {
             "linked" => filtered.Where(x => x.UserId != null),
             "unlinked" => filtered.Where(x => x.UserId == null),
-            "locked" => filtered.Where(x => x.User?.LockoutEnd > DateTimeOffset.UtcNow),
+            "locked" => filtered.Where(x => x.User != null && x.User.LockoutEnd > DateTimeOffset.UtcNow),
             _ => filtered
         };
 
-        var listed = filtered.Take(120).ToList();
-        var selected = listed.FirstOrDefault(x => x.Id == query.SelectedId) ?? listed.FirstOrDefault();
+        var filteredCount = await filtered.CountAsync(cancellationToken);
+        var totalPages = Math.Max(1, (int)Math.Ceiling((double)filteredCount / PageSize));
+        query.Page = Math.Min(query.Page, totalPages);
+        var listed = await filtered.OrderBy(x => x.StudentCode)
+            .Skip((query.Page - 1) * PageSize)
+            .Take(PageSize)
+            .ToListAsync(cancellationToken);
+        var selected = listed.FirstOrDefault(x => x.Id == query.SelectedId);
+        if (selected is null && query.SelectedId.HasValue)
+        {
+            selected = await baseQuery
+                .Include(x => x.User)
+                .Include(x => x.Stays.Where(stay => stay.EndedAt == null))
+                    .ThenInclude(x => x.Room).ThenInclude(x => x.Floor).ThenInclude(x => x.Building)
+                .AsSplitQuery()
+                .SingleOrDefaultAsync(x => x.Id == query.SelectedId.Value, cancellationToken);
+        }
+        selected ??= listed.FirstOrDefault();
         var items = listed.Select(student =>
         {
             var currentStay = student.Stays.SingleOrDefault();
@@ -72,8 +90,58 @@ public sealed class StudentManagementService(
             Buildings = buildings,
             SelectedStudent = selected is null ? null : await ToDetailAsync(selected, cancellationToken),
             LinkedAccountCount = linkedCount,
-            UnlinkedAccountCount = totalCount - linkedCount
+            UnlinkedAccountCount = totalCount - linkedCount,
+            TotalItems = filteredCount,
+            PageSize = PageSize
         };
+    }
+
+    public async Task<StudentManagementResult> CreateProfileAsync(
+        CreateStudentProfileInput input,
+        CancellationToken cancellationToken = default)
+    {
+        var code = NormalizeCode(input.StudentCode);
+        if (await db.StudentProfiles.AnyAsync(x => x.StudentCode == code, cancellationToken))
+            return new(false, $"Mã sinh viên {code} đã tồn tại.");
+
+        var profile = new StudentProfile
+        {
+            StudentCode = code,
+            FullName = input.FullName.Trim(),
+            Gender = input.Gender.Trim(),
+            Faculty = input.Faculty.Trim(),
+            PhoneNumber = input.PhoneNumber.Trim()
+        };
+        db.StudentProfiles.Add(profile);
+        try
+        {
+            await db.SaveChangesAsync(cancellationToken);
+            return new(true, $"Đã tạo hồ sơ {profile.StudentCode} — {profile.FullName}.", profile.Id);
+        }
+        catch (DbUpdateException)
+        {
+            return new(false, "Không thể tạo hồ sơ vì mã sinh viên vừa được sử dụng.");
+        }
+    }
+
+    public async Task<StudentManagementResult> UpdateProfileAsync(
+        UpdateStudentProfileInput input,
+        CancellationToken cancellationToken = default)
+    {
+        var profile = await db.StudentProfiles.Include(x => x.User).SingleOrDefaultAsync(x => x.Id == input.Id, cancellationToken);
+        if (profile is null) return new(false, "Không tìm thấy hồ sơ sinh viên.", input.Id);
+        var code = NormalizeCode(input.StudentCode);
+        if (await db.StudentProfiles.AnyAsync(x => x.Id != input.Id && x.StudentCode == code, cancellationToken))
+            return new(false, $"Mã sinh viên {code} đã thuộc hồ sơ khác.", input.Id);
+
+        profile.StudentCode = code;
+        profile.FullName = input.FullName.Trim();
+        profile.Gender = input.Gender.Trim();
+        profile.Faculty = input.Faculty.Trim();
+        profile.PhoneNumber = input.PhoneNumber.Trim();
+        if (profile.User is not null) profile.User.FullName = profile.FullName;
+        await db.SaveChangesAsync(cancellationToken);
+        return new(true, $"Đã cập nhật hồ sơ {profile.StudentCode}.", profile.Id);
     }
 
     public async Task<StudentManagementResult> CreateAccountAsync(
@@ -161,9 +229,17 @@ public sealed class StudentManagementService(
     {
         var currentStay = student.Stays.SingleOrDefault();
         var requests = await db.HousingRequests.AsNoTracking().CountAsync(x => x.StudentProfileId == student.Id, cancellationToken);
-        var balance = await db.Invoices.AsNoTracking()
-            .Where(x => x.StudentProfileId == student.Id && x.Status != InvoiceStatus.Cancelled)
-            .SumAsync(x => x.TotalAmount - x.PaidAmount, cancellationToken);
+        var balance = await billingLedger.GetOutstandingBalanceAsync(student.Id, cancellationToken);
+        var history = await db.Stays.AsNoTracking()
+            .Where(x => x.StudentProfileId == student.Id)
+            .OrderByDescending(x => x.StartedAt)
+            .Select(x => new StudentStayHistoryViewModel(
+                x.Room.Code,
+                x.Room.Floor.Building.Name,
+                x.StartedAt,
+                x.EndedAt,
+                x.EndedAt == null))
+            .ToListAsync(cancellationToken);
         return new StudentDirectoryDetailViewModel
         {
             Id = student.Id,
@@ -179,9 +255,12 @@ public sealed class StudentManagementService(
             HasAccount = student.UserId is not null,
             IsLocked = student.User?.LockoutEnd > DateTimeOffset.UtcNow,
             RequestCount = requests,
-            OutstandingBalance = Math.Max(0, balance)
+            OutstandingBalance = balance,
+            StayHistory = history
         };
     }
+
+    private static string NormalizeCode(string code) => code.Trim().ToUpperInvariant();
 
     private static string Initials(string name) => string.Concat(name
         .Split(' ', StringSplitOptions.RemoveEmptyEntries)

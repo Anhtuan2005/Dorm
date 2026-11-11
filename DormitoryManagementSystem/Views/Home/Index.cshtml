@@ -1,8 +1,90 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+@model ManagerDashboardViewModel
+@{
+    string Number(int value) => value.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("vi-VN"));
+    string Money(decimal value) => value.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("vi-VN"));
+    string Css(decimal value) => value.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+    string TimeAgo(DateTime value)
+    {
+        var hours = Math.Max(0, (int)(Model.GeneratedAt - value).TotalHours);
+        return hours < 1 ? "Vừa xong" : hours < 24 ? $"{hours} giờ trước" : $"{hours / 24} ngày trước";
+    }
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="overview-page">
+    <header class="operations-heading overview-heading">
+        <div><p class="operations-kicker">Cơ sở Thủ Đức · Hôm nay</p><h1>Tổng quan vận hành</h1><p>Một ảnh chụp từ sức chứa, công nợ và công việc đang chờ để ưu tiên đúng việc trong ca.</p></div>
+        <a class="heading-room-link" asp-controller="Reports" asp-action="Index"><svg><use href="#i-chart" /></svg>Xem báo cáo kỳ</a>
+    </header>
+
+    <section class="operations-spine" aria-label="Tình trạng vận hành hiện tại">
+        <article class="occupancy-focus">
+            <header><span>Sức chứa toàn KTX</span><small><i></i>Dữ liệu hiện tại</small></header>
+            <div class="occupancy-number"><strong>@Model.Capacity.OccupancyRate.ToString("0.0")%</strong><span><b>@Number(Model.ActiveStudents)</b> sinh viên đang ở trên @Number(Model.Capacity.Capacity) chỗ</span></div>
+            <div class="capacity-track" aria-label="@Model.Capacity.Occupied đang ở, @Model.Capacity.Held đang giữ, @Model.Capacity.Blocked tạm khóa, @Model.Capacity.Assignable có thể xếp">
+                <i class="occupied" style="--share:@Css(OperationsMetricsPolicy.Percentage(Model.Capacity.Occupied, Model.Capacity.Capacity))%"></i>
+                <i class="held" style="--share:@Css(OperationsMetricsPolicy.Percentage(Model.Capacity.Held, Model.Capacity.Capacity))%"></i>
+                <i class="blocked" style="--share:@Css(OperationsMetricsPolicy.Percentage(Model.Capacity.Blocked, Model.Capacity.Capacity))%"></i>
+                <i class="assignable" style="--share:@Css(OperationsMetricsPolicy.Percentage(Model.Capacity.Assignable, Model.Capacity.Capacity))%"></i>
+            </div>
+            <dl class="capacity-legend">
+                <div><dt><i class="occupied"></i>Đang ở</dt><dd>@Number(Model.Capacity.Occupied)</dd></div>
+                <div><dt><i class="held"></i>Đang giữ</dt><dd>@Number(Model.Capacity.Held)</dd></div>
+                <div><dt><i class="blocked"></i>Tạm khóa</dt><dd>@Number(Model.Capacity.Blocked)</dd></div>
+                <div><dt><i class="assignable"></i>Có thể xếp</dt><dd>@Number(Model.Capacity.Assignable)</dd></div>
+            </dl>
+            <a asp-controller="Rooms" asp-action="Map">Mở sơ đồ phòng <svg><use href="#i-arrow" /></svg></a>
+        </article>
+
+        <article class="money-focus">
+            <header><span>Dòng tiền lưu trú</span><svg><use href="#i-coin" /></svg></header>
+            <small>Công nợ cần thu</small><strong>@Money(Model.OutstandingBalance) đ</strong>
+            <p><b>@Model.OverdueInvoices</b> hóa đơn quá hạn trong @Model.OutstandingInvoices hóa đơn còn nợ</p>
+            <div><span>Thu ròng tháng này</span><b>@Money(Model.CollectedThisMonth) đ</b></div>
+            <a asp-controller="Billing" asp-action="Index" asp-route-Status="overdue">Mở hàng đợi thu phí <svg><use href="#i-arrow" /></svg></a>
+        </article>
+
+        <article class="attention-focus">
+            <header><span>Việc cần can thiệp</span><b>@(Model.OverdueApplications + Model.OverdueInvoices + Model.UrgentMaintenance)</b></header>
+            <a asp-controller="Applications" asp-action="Index" asp-route-Scope="attention" asp-route-OverdueOnly="true"><i class="application"><svg><use href="#i-file" /></svg></i><span><strong>@Model.OverdueApplications đơn quá SLA</strong><small>@Model.NeedsInformation đơn đang chờ sinh viên</small></span><svg><use href="#i-chevron" /></svg></a>
+            <a asp-controller="Billing" asp-action="Index" asp-route-Status="overdue"><i class="billing"><svg><use href="#i-coin" /></svg></i><span><strong>@Model.OverdueInvoices hóa đơn quá hạn</strong><small>@Money(Model.OutstandingBalance) đ tổng công nợ</small></span><svg><use href="#i-chevron" /></svg></a>
+            <a asp-controller="Maintenance" asp-action="Index" asp-route-Priority="Urgent"><i class="maintenance"><svg><use href="#i-tool" /></svg></i><span><strong>@Model.UrgentMaintenance sự cố khẩn cấp</strong><small>@Model.OpenMaintenance sự cố đang mở</small></span><svg><use href="#i-chevron" /></svg></a>
+        </article>
+    </section>
+
+    <section class="overview-section building-health">
+        <header><div><p>Từng tòa</p><h2>Sức khỏe chỗ ở</h2></div><span>Tỷ lệ tính trên chỗ đang ở / sức chứa</span></header>
+        <div class="building-health-list">
+            @foreach (var building in Model.Buildings)
+            {
+                <a asp-controller="Rooms" asp-action="Map" asp-route-Building="@building.Code" asp-route-Room="@($"{building.Code}-302")">
+                    <span class="building-code">@building.Code</span>
+                    <span class="building-identity"><strong>@building.Name</strong><small>@building.Capacity.Occupied/@building.Capacity.Capacity đang ở</small></span>
+                    <span class="building-bar"><i style="--value:@Css(building.Capacity.OccupancyRate)%"></i></span>
+                    <strong class="building-rate">@building.Capacity.OccupancyRate.ToString("0.0")%</strong>
+                    <span class="building-facts"><b>@building.Capacity.Assignable</b> có thể xếp · <em>@building.Capacity.Blocked tạm khóa</em></span>
+                    <svg><use href="#i-chevron" /></svg>
+                </a>
+            }
+        </div>
+    </section>
+
+    <div class="overview-lower-grid">
+        <section class="overview-section workflow-pulse">
+            <header><div><p>Nhịp xử lý</p><h2>Đơn lưu trú</h2></div><a asp-controller="Applications" asp-action="Index">Xem tất cả</a></header>
+            <div class="workflow-line"><span><small>Đang mở</small><strong>@Model.ActiveApplications</strong></span><i><svg><use href="#i-arrow" /></svg></i><span><small>Quá SLA</small><strong class="danger">@Model.OverdueApplications</strong></span><i><svg><use href="#i-arrow" /></svg></i><span><small>Chờ bổ sung</small><strong>@Model.NeedsInformation</strong></span></div>
+            <p>“Lượt xử lý” cho biết chính xác Ban quản lý hay sinh viên đang giữ hành động tiếp theo.</p>
+        </section>
+
+        <section class="overview-section recent-operations">
+            <header><div><p>Dấu vết chung</p><h2>Cập nhật gần đây</h2></div><span>@Model.RecentActivities.Count hoạt động</span></header>
+            @if (Model.RecentActivities.Count == 0)
+            {
+                <div class="report-empty"><strong>Chưa có hoạt động</strong><p>Các cập nhật nghiệp vụ sẽ xuất hiện tại đây.</p></div>
+            }
+            else
+            {
+                <div>@foreach (var activity in Model.RecentActivities) { <a href="@activity.TargetUrl"><i class="@activity.Type"><svg><use href="@(activity.Type == "billing" ? "#i-coin" : activity.Type == "maintenance" ? "#i-tool" : "#i-file")" /></svg></i><span><small>@activity.TypeLabel · @TimeAgo(activity.OccurredAt)</small><strong>@activity.Title</strong><p>@activity.Detail</p></span><svg><use href="#i-chevron" /></svg></a> }</div>
+            }
+        </section>
+    </div>
 </div>

@@ -1,0 +1,16 @@
+@model StudentNotificationsViewModel
+@{ Layout = "_StudentLayout"; }
+
+<section class="student-page-head"><div><p class="student-kicker">Cập nhật dành cho bạn</p><h1>Thông báo</h1><p>Theo dõi thay đổi của đơn lưu trú, hóa đơn và yêu cầu sửa chữa.</p></div>@if (Model.UnreadCount > 0) { <form asp-action="MarkAllNotificationsRead" method="post"><button class="student-secondary page-action" type="submit"><svg><use href="#s-check" /></svg>Đánh dấu tất cả đã đọc</button></form> }</section>
+
+<section class="student-section notification-page">
+    <header class="student-section-head"><div><p>Hộp thư nghiệp vụ</p><h2>@Model.Notifications.Count thông báo</h2></div><span>@Model.UnreadCount chưa đọc</span></header>
+    @if (Model.Notifications.Count == 0)
+    {
+        <div class="student-empty"><span><svg><use href="#s-bell" /></svg></span><h2>Chưa có thông báo</h2><p>Cập nhật từ ban quản lý sẽ xuất hiện ở đây.</p><a asp-action="Dashboard">Về trang chủ</a></div>
+    }
+    else
+    {
+        <div class="notification-page-list">@foreach (var notice in Model.Notifications) { <a asp-action="OpenNotification" asp-route-id="@notice.Id" class="@(notice.IsUnread ? "unread" : "")"><i></i><span><strong>@notice.Title</strong><small>@notice.Body</small><time>@notice.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy, HH:mm")</time></span><svg><use href="#s-chevron" /></svg></a> }</div>
+    }
+</section>

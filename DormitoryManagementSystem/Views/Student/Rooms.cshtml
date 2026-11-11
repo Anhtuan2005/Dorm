@@ -4,7 +4,7 @@
     string Money(decimal value) => value.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("vi-VN"));
 }
 
-<section class="student-page-head room-search-head"><div><p class="student-kicker">Chuyển phòng · Học kỳ I</p><h1>Tìm một chỗ ở phù hợp hơn</h1><p>Chỉ hiển thị phòng nam còn chỗ và phù hợp hồ sơ của bạn.</p></div><div class="current-room-chip"><span>Phòng hiện tại</span><strong>@Model.CurrentRoomCode</strong></div></section>
+<section class="student-page-head room-search-head"><div><p class="student-kicker">@(Model.CurrentRoomCode is null ? "Đăng ký ở" : "Chuyển phòng") · Học kỳ I</p><h1>@(Model.CurrentRoomCode is null ? "Tìm chỗ ở đầu tiên tại KTX" : "Tìm một chỗ ở phù hợp hơn")</h1><p>Chỉ hiển thị phòng nam còn chỗ và phù hợp hồ sơ của bạn.</p></div><div class="current-room-chip"><span>Phòng hiện tại</span><strong>@(Model.CurrentRoomCode ?? "Chưa xếp")</strong></div></section>
 
 @if (Model.ActiveRequest is not null)
 {
@@ -45,10 +45,10 @@ else
 
 <dialog class="student-dialog" data-application-dialog aria-labelledby="application-title">
     <form method="post" asp-action="SubmitHousingRequest">
-        <header><div><p>Yêu cầu chuyển phòng</p><h2 id="application-title">Chọn phòng <span data-selected-room></span></h2></div><button type="button" data-dialog-close aria-label="Đóng"><svg><use href="#s-close" /></svg></button></header>
+        <header><div><p>@(Model.CurrentRoomCode is null ? "Đăng ký ở KTX" : "Yêu cầu chuyển phòng")</p><h2 id="application-title">Chọn phòng <span data-selected-room></span></h2></div><button type="button" data-dialog-close aria-label="Đóng"><svg><use href="#s-close" /></svg></button></header>
         <input type="hidden" name="TargetRoomId" data-selected-room-id />
         <div class="dialog-note"><svg><use href="#s-file" /></svg><p>Gửi đơn không đồng nghĩa giữ chỗ. Ban quản lý sẽ kiểm tra điều kiện và phản hồi trong mục “Đăng ký của tôi”.</p></div>
-        <label class="student-form-field"><span>Lý do chuyển phòng</span><textarea name="Reason" rows="5" minlength="10" maxlength="600" required placeholder="Ví dụ: Cần chuyển gần khu học tập hơn..."></textarea><small>Từ 10 đến 600 ký tự</small></label>
-        <footer><button type="button" class="student-secondary" data-dialog-close>Để sau</button><button type="submit" class="student-primary">Gửi đơn chuyển phòng</button></footer>
+        <label class="student-form-field"><span>@(Model.CurrentRoomCode is null ? "Ghi chú đăng ký" : "Lý do chuyển phòng")</span><textarea name="Reason" rows="5" minlength="10" maxlength="600" required placeholder="@(Model.CurrentRoomCode is null ? "Ví dụ: Đăng ký ở KTX trong học kỳ này..." : "Ví dụ: Cần chuyển gần khu học tập hơn...")"></textarea><small>Từ 10 đến 600 ký tự</small></label>
+        <footer><button type="button" class="student-secondary" data-dialog-close>Để sau</button><button type="submit" class="student-primary">@(Model.CurrentRoomCode is null ? "Gửi đơn đăng ký ở" : "Gửi đơn chuyển phòng")</button></footer>
     </form>
 </dialog>

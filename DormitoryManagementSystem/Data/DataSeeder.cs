@@ -10,8 +10,12 @@ public static class DataSeeder
     public static async Task SeedAsync(IServiceProvider services)
     {
         var db = services.GetRequiredService<DormitoryDbContext>();
+        var configuration = services.GetRequiredService<IConfiguration>();
         var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
         var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
+        var demoPassword = configuration["DemoData:Password"];
+        if (string.IsNullOrWhiteSpace(demoPassword))
+            throw new InvalidOperationException("DemoData:Password phải được cấu hình bằng User Secrets khi bật demo seed.");
 
         foreach (var role in new[] { RoleNames.Admin, RoleNames.DormManager, RoleNames.Student })
         {
@@ -19,9 +23,9 @@ public static class DataSeeder
                 await roleManager.CreateAsync(new IdentityRole(role));
         }
 
-        var managerUser = await EnsureUserAsync(userManager, "manager@nepktx.local", "Nguyễn Thị Lan", "Demo@123", RoleNames.DormManager);
-        await EnsureUserAsync(userManager, "admin@nepktx.local", "Phạm Đức Minh", "Demo@123", RoleNames.Admin);
-        var studentUser = await EnsureUserAsync(userManager, "student@nepktx.local", "Nguyễn Minh An", "Demo@123", RoleNames.Student);
+        var managerUser = await EnsureUserAsync(userManager, "manager@nepktx.local", "Nguyễn Thị Lan", demoPassword, RoleNames.DormManager);
+        await EnsureUserAsync(userManager, "admin@nepktx.local", "Phạm Đức Minh", demoPassword, RoleNames.Admin);
+        var studentUser = await EnsureUserAsync(userManager, "student@nepktx.local", "Nguyễn Minh An", demoPassword, RoleNames.Student);
 
         if (!await db.Buildings.AnyAsync())
         {
@@ -216,6 +220,8 @@ public static class DataSeeder
         }
 
         await SeedStudentPortalAsync(db, studentUser, managerUser);
+        await SeedMaintenanceWorkflowDemoAsync(db, managerUser);
+        await SeedBillingDemoAsync(db, managerUser);
     }
 
     private static async Task<ApplicationUser> EnsureUserAsync(
@@ -303,7 +309,6 @@ public static class DataSeeder
                 BillingPeriodId = september.Id,
                 StayId = currentStay.Id,
                 TotalAmount = 1_525_000m,
-                PaidAmount = 0,
                 Status = InvoiceStatus.Issued,
                 IssuedAt = new DateTime(2026, 9, 1, 8, 0, 0, DateTimeKind.Utc),
                 Lines =
@@ -325,8 +330,7 @@ public static class DataSeeder
                 BillingPeriodId = august.Id,
                 StayId = currentStay.Id,
                 TotalAmount = 1_478_000m,
-                PaidAmount = 1_478_000m,
-                Status = InvoiceStatus.Paid,
+                Status = InvoiceStatus.Issued,
                 IssuedAt = new DateTime(2026, 8, 1, 8, 0, 0, DateTimeKind.Utc),
                 Lines =
                 [
@@ -334,13 +338,28 @@ public static class DataSeeder
                     new InvoiceLine { ChargeType = "Electricity", Description = "Điện tháng 07 · 36 kWh", Amount = 144_000m },
                     new InvoiceLine { ChargeType = "Water", Description = "Nước tháng 07 · 3 m³", Amount = 54_000m },
                     new InvoiceLine { ChargeType = "Service", Description = "Phí dịch vụ", Amount = 30_000m }
+                ],
+                Transactions =
+                [
+                    new PaymentTransaction
+                    {
+                        Code = "THU-DEMO-202608-02106",
+                        Amount = 1_478_000m,
+                        Method = PaymentMethod.BankTransfer,
+                        ReceivedAt = new DateTime(2026, 8, 10, 3, 15, 0, DateTimeKind.Utc),
+                        RecordedAt = new DateTime(2026, 8, 10, 3, 17, 0, DateTimeKind.Utc),
+                        RecordedByUserId = managerUser.Id,
+                        ExternalReference = "VCB-20260810-02106",
+                        IdempotencyKey = "seed-payment-2026-08-02106",
+                        Note = "Khoản thu demo đã đối soát."
+                    }
                 ]
             });
         }
 
         if (!await db.HousingRequests.AnyAsync(x => x.Code == "DK-2026-0042"))
         {
-            db.HousingRequests.Add(new HousingRequest
+            var initialRequest = new HousingRequest
             {
                 Code = "DK-2026-0042",
                 StudentProfileId = profile.Id,
@@ -357,7 +376,9 @@ public static class DataSeeder
                     new HousingRequestEvent { Status = HousingRequestStatus.Submitted, Note = "Sinh viên đã gửi yêu cầu.", ActorUserId = studentUser.Id, CreatedAt = new DateTime(2026, 2, 18, 2, 30, 0, DateTimeKind.Utc) },
                     new HousingRequestEvent { Status = HousingRequestStatus.Approved, Note = "Hồ sơ đầy đủ, đã xác nhận nhận phòng.", ActorUserId = managerUser.Id, CreatedAt = new DateTime(2026, 2, 20, 7, 15, 0, DateTimeKind.Utc) }
                 ]
-            });
+            };
+            db.HousingRequests.Add(initialRequest);
+            currentStay.HousingRequest = initialRequest;
         }
 
         if (!await db.MaintenanceRequests.AnyAsync(x => x.Code == "SC-SV-0142"))
@@ -419,6 +440,9 @@ public static class DataSeeder
         var targetRooms = await db.Rooms
             .Where(x => new[] { "C-503", "C-504", "C-505", "C-506", "C-507", "C-508" }.Contains(x.Code))
             .ToDictionaryAsync(x => x.Code);
+        var currentStays = await db.Stays
+            .Where(x => x.EndedAt == null && studentProfiles.Values.Select(student => student.Id).Contains(x.StudentProfileId))
+            .ToDictionaryAsync(x => x.StudentProfileId);
 
         var studentDetails = new Dictionary<string, (string Name, string Faculty, string Phone)>
         {
@@ -457,11 +481,15 @@ public static class DataSeeder
                 Code = spec.Code,
                 StudentProfileId = student.Id,
                 TargetRoomId = room.Id,
+                SourceStayId = currentStays.GetValueOrDefault(student.Id)?.Id,
                 Type = HousingRequestType.Transfer,
                 Status = spec.Status,
                 StudentReason = spec.Reason,
                 DecisionReason = spec.Decision,
                 SubmittedAt = spec.Submitted,
+                ActionRequiredAt = spec.Status == HousingRequestStatus.NeedsInformation
+                    ? spec.Submitted.AddHours(3)
+                    : spec.Submitted,
                 ReviewedAt = spec.Status == HousingRequestStatus.Submitted ? null : spec.Submitted.AddHours(3),
                 ReviewedByUserId = spec.Status == HousingRequestStatus.Submitted ? null : managerUser.Id,
                 Events =
@@ -480,6 +508,149 @@ public static class DataSeeder
                 });
             }
             db.HousingRequests.Add(request);
+        }
+
+        await db.SaveChangesAsync();
+    }
+
+    private static async Task SeedMaintenanceWorkflowDemoAsync(DormitoryDbContext db, ApplicationUser managerUser)
+    {
+        var now = DateTime.UtcNow;
+        var existing = await db.MaintenanceRequests
+            .Where(x => x.Code == "SC-0284" || x.Code == "SC-B-001" || x.Code == "SC-C-001" || x.Code == "SC-D-001")
+            .ToListAsync();
+        foreach (var request in existing)
+        {
+            request.Category = string.IsNullOrWhiteSpace(request.Category) ? "Cơ sở vật chất" : request.Category;
+            request.Description = string.IsNullOrWhiteSpace(request.Description)
+                ? $"Kiểm tra hiện trường {request.RoomId}; khu vực có dấu hiệu hư hỏng và cần cô lập phần giường bị ảnh hưởng."
+                : request.Description;
+            if (request.Status != MaintenanceStatus.New)
+                request.AssignedTeam ??= "Tổ Hạ tầng";
+            if (request.UpdatedAt == default)
+                request.UpdatedAt = request.CreatedAt;
+        }
+
+        var roomCodes = new[] { "A-408", "C-205", "B-502", "C-108" };
+        var rooms = await db.Rooms.Where(x => roomCodes.Contains(x.Code)).ToDictionaryAsync(x => x.Code);
+        var demo = new[]
+        {
+            new MaintenanceRequest
+            {
+                RoomId = rooms["A-408"].Id, Code = "SC-0292", Title = "Mất điện toàn phòng", Category = "Điện nước",
+                Description = "Toàn bộ ổ cắm và đèn trong phòng mất điện, aptomat hành lang vẫn đang bật.",
+                Priority = MaintenancePriority.Urgent, Status = MaintenanceStatus.New, BlockedBeds = 0,
+                CreatedAt = now.AddMinutes(-20), UpdatedAt = now.AddMinutes(-20)
+            },
+            new MaintenanceRequest
+            {
+                RoomId = rooms["C-205"].Id, Code = "SC-0289", Title = "Rò rỉ nước dưới lavabo", Category = "Điện nước",
+                Description = "Khớp nối ống cấp dưới lavabo rò liên tục, nước lan ra lối đi cạnh giường số 1.",
+                Priority = MaintenancePriority.High, Status = MaintenanceStatus.InProgress, AssignedTeam = "Tổ Điện nước", BlockedBeds = 0,
+                CreatedAt = now.AddHours(-9), UpdatedAt = now.AddMinutes(-55),
+                Updates = [new MaintenanceUpdate { Status = MaintenanceStatus.InProgress, Note = "Đã khóa van nhánh và bắt đầu thay khớp nối.", ActorUserId = managerUser.Id, CreatedAt = now.AddMinutes(-55) }]
+            },
+            new MaintenanceRequest
+            {
+                RoomId = rooms["B-502"].Id, Code = "SC-0286", Title = "Điều hòa không làm mát", Category = "Thiết bị phòng",
+                Description = "Máy vẫn chạy quạt nhưng không giảm nhiệt độ sau khoảng 30 phút hoạt động.",
+                Priority = MaintenancePriority.Medium, Status = MaintenanceStatus.WaitingParts, AssignedTeam = "Tổ Thiết bị", BlockedBeds = 0,
+                CreatedAt = now.AddDays(-1.5), UpdatedAt = now.AddHours(-2),
+                Updates = [new MaintenanceUpdate { Status = MaintenanceStatus.WaitingParts, Note = "Đã xác định hỏng tụ đề, đang chờ vật tư thay thế.", ActorUserId = managerUser.Id, CreatedAt = now.AddHours(-2) }]
+            },
+            new MaintenanceRequest
+            {
+                RoomId = rooms["C-108"].Id, Code = "SC-0279", Title = "Đèn hành lang chập chờn", Category = "Khu vực chung",
+                Description = "Đèn trước cụm phòng C-107 đến C-109 chập chờn vào buổi tối.",
+                Priority = MaintenancePriority.Low, Status = MaintenanceStatus.Assigned, AssignedTeam = "Tổ Điện nước", BlockedBeds = 0,
+                CreatedAt = now.AddDays(-3), UpdatedAt = now.AddHours(-10),
+                Updates = [new MaintenanceUpdate { Status = MaintenanceStatus.Assigned, Note = "Đã lên lịch kiểm tra vào 08:30 ngày mai.", ActorUserId = managerUser.Id, CreatedAt = now.AddHours(-10) }]
+            }
+        };
+
+        foreach (var request in demo)
+            if (!await db.MaintenanceRequests.AnyAsync(x => x.Code == request.Code))
+                db.MaintenanceRequests.Add(request);
+
+        var futureDemoRows = await db.MaintenanceRequests
+            .Where(x => (x.Code == "SC-0292" || x.Code == "SC-0289" || x.Code == "SC-0286" || x.Code == "SC-0279") &&
+                        (x.CreatedAt > now || x.UpdatedAt > now))
+            .ToListAsync();
+        foreach (var request in futureDemoRows)
+        {
+            if (request.CreatedAt > now) request.CreatedAt = now.AddMinutes(-20);
+            if (request.UpdatedAt > now) request.UpdatedAt = now.AddMinutes(-10);
+        }
+
+        await db.SaveChangesAsync();
+    }
+
+    private static async Task SeedBillingDemoAsync(DormitoryDbContext db, ApplicationUser managerUser)
+    {
+        if (await db.Invoices.AnyAsync(x => x.Code.StartsWith("HD-MGR-"))) return;
+
+        var periods = await db.BillingPeriods.ToDictionaryAsync(x => x.Code);
+        var stays = await db.Stays.AsNoTracking()
+            .Include(x => x.StudentProfile)
+            .Include(x => x.Room).ThenInclude(x => x.Floor).ThenInclude(x => x.Building)
+            .Where(x => x.EndedAt == null && x.StudentProfile.StudentCode != "SV002106")
+            .OrderBy(x => x.Room.Floor.Building.SortOrder)
+            .ThenBy(x => x.StudentProfile.StudentCode)
+            .ToListAsync();
+        var selected = stays
+            .GroupBy(x => x.Room.Floor.Building.Code)
+            .SelectMany(group => group.Take(2))
+            .Take(8)
+            .ToList();
+
+        for (var index = 0; index < selected.Count; index++)
+        {
+            var stay = selected[index];
+            var period = index < 4 ? periods["2026-08"] : periods["2026-09"];
+            var electricity = 132_000m + index * 9_000m;
+            var water = 54_000m + index * 3_000m;
+            var service = 35_000m;
+            var total = stay.Room.MonthlyPrice + electricity + water + service;
+            var collected = index switch
+            {
+                1 => 650_000m,
+                2 => total,
+                5 => 500_000m,
+                _ => 0
+            };
+            var invoice = new Invoice
+            {
+                Code = $"HD-MGR-{index + 1:0000}",
+                StudentProfileId = stay.StudentProfileId,
+                BillingPeriodId = period.Id,
+                StayId = stay.Id,
+                TotalAmount = total,
+                Status = InvoiceStatus.Issued,
+                IssuedAt = period.StartDate.ToDateTime(new TimeOnly(8, 0), DateTimeKind.Utc),
+                Lines =
+                [
+                    new InvoiceLine { ChargeType = "Room", Description = $"Phí phòng {stay.Room.Code}", Amount = stay.Room.MonthlyPrice },
+                    new InvoiceLine { ChargeType = "Electricity", Description = $"Điện kỳ {period.Name}", Amount = electricity },
+                    new InvoiceLine { ChargeType = "Water", Description = $"Nước kỳ {period.Name}", Amount = water },
+                    new InvoiceLine { ChargeType = "Service", Description = "Phí dịch vụ", Amount = service }
+                ]
+            };
+            if (collected > 0)
+            {
+                invoice.Transactions.Add(new PaymentTransaction
+                {
+                    Code = $"THU-DEMO-MGR-{index + 1:0000}",
+                    Amount = collected,
+                    Method = index == 1 ? PaymentMethod.Cash : PaymentMethod.BankTransfer,
+                    ReceivedAt = period.StartDate.AddDays(8).ToDateTime(new TimeOnly(9, 15), DateTimeKind.Utc),
+                    RecordedAt = period.StartDate.AddDays(8).ToDateTime(new TimeOnly(9, 17), DateTimeKind.Utc),
+                    RecordedByUserId = managerUser.Id,
+                    ExternalReference = index == 1 ? null : $"DEMO-{period.Code}-{index + 1:0000}",
+                    IdempotencyKey = $"seed-manager-payment-{index + 1:0000}",
+                    Note = "Dữ liệu minh họa nghiệp vụ thu phí."
+                });
+            }
+            db.Invoices.Add(invoice);
         }
 
         await db.SaveChangesAsync();

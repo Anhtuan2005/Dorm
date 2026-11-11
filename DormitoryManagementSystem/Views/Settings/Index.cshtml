@@ -1,0 +1,16 @@
+@model ManagerSettingsViewModel
+
+<div class="settings-page">
+    <header class="operations-heading">
+        <div><p class="operations-kicker">Quy tắc đang áp dụng</p><h1>Cài đặt hệ thống</h1><p>Đọc cấu hình vận hành và ranh giới phân quyền hiện tại. Thay đổi hạ tầng được thực hiện ở cấu hình server.</p></div>
+        <a class="heading-room-link" asp-controller="Rooms" asp-action="Catalog"><svg><use href="#i-settings" /></svg>Quản lý dữ liệu nền</a>
+    </header>
+
+    <section class="settings-health @(Model.DatabaseConnected ? "healthy" : "danger")"><span><svg><use href="@(Model.DatabaseConnected ? "#i-check" : "#i-close")" /></svg></span><div><small>Trạng thái dữ liệu</small><strong>@(Model.DatabaseConnected ? "SQL Server đang kết nối" : "Không thể kết nối SQL Server")</strong><p>Migration mới nhất: @Model.LatestMigration</p></div></section>
+
+    <div class="settings-grid">
+        <section class="settings-panel"><header><p>Cơ sở vận hành</p><h2>@Model.SiteName</h2></header><dl><div><dt>Tòa đang quản lý</dt><dd>@Model.BuildingCount</dd></div><div><dt>Phòng</dt><dd>@Model.RoomCount</dd></div><div><dt>Kỳ thu</dt><dd>@Model.BillingPeriodCount</dd></div><div><dt>Múi giờ nghiệp vụ</dt><dd>@Model.BusinessTimeZone</dd></div></dl></section>
+        <section class="settings-panel"><header><p>Luật nghiệp vụ</p><h2>Ranh giới an toàn</h2></header><ul><li><svg><use href="#i-check" /></svg><span><strong>SLA đơn lưu trú</strong><small>@Model.ManagerSlaHours giờ khi lượt xử lý thuộc Ban quản lý</small></span></li><li><svg><use href="#i-check" /></svg><span><strong>Sức chứa</strong><small>Đang ở + đang giữ + tạm khóa không vượt sức chứa</small></span></li><li><svg><use href="#i-check" /></svg><span><strong>Thu phí</strong><small>Giao dịch bất biến; sai sót dùng bản ghi hoàn tác</small></span></li><li><svg><use href="#i-check" /></svg><span><strong>Đồng thời</strong><small>Transaction và row version bảo vệ quyết định quan trọng</small></span></li></ul></section>
+        <section class="settings-panel role-matrix"><header><p>Phân quyền</p><h2>Ba vai trò hệ thống</h2></header><table><thead><tr><th>Phạm vi</th><th>Admin</th><th>Quản lý</th><th>Sinh viên</th></tr></thead><tbody><tr><td>Vận hành phòng</td><td>Toàn quyền</td><td>Thao tác</td><td>Chỉ tìm</td></tr><tr><td>Đơn lưu trú</td><td>Xét duyệt</td><td>Xét duyệt</td><td>Dữ liệu mình</td></tr><tr><td>Thu phí / Sự cố</td><td>Toàn quyền</td><td>Thao tác</td><td>Dữ liệu mình</td></tr><tr><td>Tài khoản</td><td>Quản trị</td><td>Cấp sinh viên</td><td>Tài khoản mình</td></tr></tbody></table></section>
+    </div>
+</div>

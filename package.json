@@ -1,0 +1,14 @@
+{
+  "name": "nep-ktx-browser-checks",
+  "private": true,
+  "description": "Browser regression and capture tools for the Razor application.",
+  "scripts": {
+    "audit": "node scripts/audit-final-system.cjs",
+    "smoke:placement": "node scripts/smoke-application-transaction.cjs",
+    "smoke:accounts": "node scripts/smoke-student-account-lifecycle.cjs"
+  },
+  "devDependencies": {
+    "playwright": "1.65.0",
+    "sharp": "0.35.5"
+  }
+}

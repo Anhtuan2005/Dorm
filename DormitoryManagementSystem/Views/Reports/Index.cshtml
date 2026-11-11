@@ -1,0 +1,78 @@
+@model OperationsReportViewModel
+@{
+    string Money(decimal value) => value.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("vi-VN"));
+    string Css(decimal value) => value.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+    var trendMax = Math.Max(1m, Model.Trends.Select(x => x.Invoiced).DefaultIfEmpty(0).Max());
+}
+
+<div class="reports-page">
+    <header class="operations-heading reports-heading">
+        <div><p class="operations-kicker">Đối soát vận hành</p><h1>Báo cáo ký túc xá</h1><p>Đọc sức chứa hiện tại bên cạnh kết quả thu phí, đơn lưu trú và sự cố trong kỳ.</p></div>
+        <a class="heading-room-link" asp-action="ExportCsv" asp-route-PeriodId="@Model.Query.PeriodId" asp-route-Building="@Model.Query.Building"><svg><use href="#i-file" /></svg>Xuất CSV</a>
+    </header>
+
+    <form class="report-filter" method="get" asp-action="Index" data-filter-form>
+        <label><span>Kỳ báo cáo</span><select name="PeriodId" data-auto-submit>@foreach (var period in Model.Periods) { <option value="@period.Value" selected="@(Model.Query.PeriodId?.ToString() == period.Value)">@period.Label</option> }</select></label>
+        <label><span>Phạm vi</span><select name="Building" data-auto-submit><option value="">Toàn KTX</option>@foreach (var building in Model.BuildingOptions) { <option value="@building.Value" selected="@(Model.Query.Building == building.Value)">@building.Label</option> }</select></label>
+        <span><svg><use href="#i-check" /></svg>@Model.PeriodStart.ToString("dd/MM")–@Model.PeriodEnd.ToString("dd/MM/yyyy") · tạo @Model.GeneratedAt.ToLocalTime().ToString("HH:mm")</span>
+    </form>
+
+    <section class="report-finance" aria-label="Tổng hợp tài chính">
+        <div class="finance-lead"><small>Tỷ lệ thu kỳ</small><strong>@Model.Finance.CollectionRate.ToString("0.0")%</strong><div><i style="--value:@Css(Model.Finance.CollectionRate)%"></i></div><p>@Model.Finance.InvoiceCount hóa đơn trong @Model.PeriodName.ToLowerInvariant()</p></div>
+        <dl><div><dt>Đã phát hành</dt><dd>@Money(Model.Finance.Invoiced) đ</dd></div><div><dt>Đã thu ròng</dt><dd class="positive">@Money(Model.Finance.Collected) đ</dd></div><div><dt>Còn phải thu</dt><dd>@Money(Model.Finance.Outstanding) đ</dd></div><div class="danger"><dt>Quá hạn</dt><dd>@Money(Model.Finance.Overdue) đ<small>@Model.Finance.OverdueCount hóa đơn</small></dd></div></dl>
+        <a asp-controller="Billing" asp-action="Index" asp-route-PeriodId="@Model.Query.PeriodId" asp-route-Building="@Model.Query.Building">Đối soát hóa đơn <svg><use href="#i-arrow" /></svg></a>
+    </section>
+
+    <div class="report-grid">
+        <section class="report-panel collection-trend">
+            <header><div><p>Dòng tiền</p><h2>Phát hành và thu ròng</h2></div><span>Đơn vị: triệu đồng</span></header>
+            @if (Model.Trends.All(x => x.Invoiced == 0))
+            {
+                <div class="report-empty"><strong>Chưa có dữ liệu thu phí</strong><p>Hãy phát hành hóa đơn để bắt đầu theo dõi xu hướng.</p></div>
+            }
+            else
+            {
+                <div class="trend-chart" aria-label="Xu hướng thu phí">
+                    @foreach (var point in Model.Trends)
+                    {
+                        var invoicedHeight = Math.Round(point.Invoiced / trendMax * 100m, 1);
+                        var collectedHeight = Math.Round(Math.Max(0, point.Collected) / trendMax * 100m, 1);
+                        <div class="trend-column"><span class="trend-bars"><i class="invoiced" style="--height:@Css(invoicedHeight)%" title="Phát hành @Money(point.Invoiced) đ"></i><i class="collected" style="--height:@Css(collectedHeight)%" title="Đã thu @Money(point.Collected) đ"></i></span><strong>@point.Label</strong><small>@point.CollectionRate.ToString("0")% đã thu</small></div>
+                    }
+                </div>
+                <div class="trend-legend"><span><i class="invoiced"></i>Phát hành</span><span><i class="collected"></i>Đã thu ròng</span></div>
+            }
+        </section>
+
+        <section class="report-panel request-outcomes">
+            <header><div><p>Đơn lưu trú</p><h2>Kết quả trong kỳ</h2></div><a asp-controller="Applications" asp-action="Index" asp-route-Scope="all">Mở worklist</a></header>
+            <div class="outcome-number"><strong>@Model.Workflow.Submitted</strong><span>đơn được gửi</span><em>@Model.Workflow.ApprovalRate.ToString("0.0")% duyệt trên đơn đã quyết định</em></div>
+            <div class="outcome-track"><i class="approved" style="--value:@Css(OperationsMetricsPolicy.Percentage(Model.Workflow.Approved, Math.Max(1, Model.Workflow.Submitted)))%"></i><i class="rejected" style="--value:@Css(OperationsMetricsPolicy.Percentage(Model.Workflow.Rejected, Math.Max(1, Model.Workflow.Submitted)))%"></i><i class="cancelled" style="--value:@Css(OperationsMetricsPolicy.Percentage(Model.Workflow.Cancelled, Math.Max(1, Model.Workflow.Submitted)))%"></i></div>
+            <dl><div><dt>Đã duyệt</dt><dd>@Model.Workflow.Approved</dd></div><div><dt>Từ chối</dt><dd>@Model.Workflow.Rejected</dd></div><div><dt>Đã hủy</dt><dd>@Model.Workflow.Cancelled</dd></div><div><dt>Chờ bổ sung</dt><dd>@Model.Workflow.NeedsInformation</dd></div></dl>
+            <p>@Model.Workflow.Registration đăng ký ở · @Model.Workflow.Transfer chuyển phòng · @Model.Workflow.Checkout trả phòng</p>
+        </section>
+
+        <section class="report-panel maintenance-outcomes">
+            <header><div><p>An toàn phòng</p><h2>Sự cố trong kỳ</h2></div><a asp-controller="Maintenance" asp-action="Index">Mở worklist</a></header>
+            <div class="maintenance-score"><strong>@Model.Maintenance.ResolutionRate.ToString("0.0")%</strong><span>đã giải quyết trong @Model.Maintenance.Created sự cố được ghi nhận</span></div>
+            <dl><div><dt>Đã giải quyết</dt><dd>@Model.Maintenance.Resolved</dd></div><div><dt>Đang mở</dt><dd>@Model.Maintenance.Open</dd></div><div class="danger"><dt>Khẩn cấp</dt><dd>@Model.Maintenance.Urgent</dd></div><div><dt>Chỗ tạm khóa</dt><dd>@Model.Maintenance.BlockedBeds</dd></div></dl>
+        </section>
+    </div>
+
+    <section class="report-panel building-report-table">
+        <header><div><p>Đối chiếu tòa</p><h2>Sức chứa và công nợ</h2></div><span>Số liệu sức chứa là ảnh chụp hiện tại</span></header>
+        @if (Model.Buildings.Count == 0)
+        {
+            <div class="report-empty"><strong>Không có dữ liệu trong phạm vi này</strong><p>Hãy chọn lại tòa hoặc kỳ báo cáo.</p><a asp-action="Index">Xóa bộ lọc</a></div>
+        }
+        else
+        {
+            <div class="report-table-scroll"><table><thead><tr><th>Tòa</th><th>Lấp đầy</th><th>Đang ở / Sức chứa</th><th>Đang giữ</th><th>Tạm khóa</th><th>Có thể xếp</th><th>Công nợ kỳ</th><th>Sự cố mở</th></tr></thead><tbody>
+                @foreach (var building in Model.Buildings)
+                {
+                    <tr><td><a asp-controller="Rooms" asp-action="Map" asp-route-Building="@building.Code">@building.Name</a></td><td><strong>@building.Capacity.OccupancyRate.ToString("0.0")%</strong><i><span style="--value:@Css(building.Capacity.OccupancyRate)%"></span></i></td><td>@building.Capacity.Occupied / @building.Capacity.Capacity</td><td>@building.Capacity.Held</td><td class="@(building.Capacity.Blocked > 0 ? "danger" : "")">@building.Capacity.Blocked</td><td class="positive">@building.Capacity.Assignable</td><td>@Money(building.OutstandingBalance) đ</td><td>@building.ActiveIncidents</td></tr>
+                }
+            </tbody></table></div>
+        }
+    </section>
+</div>

@@ -20,6 +20,24 @@ public sealed class StudentsController(IStudentManagementService studentService)
     }
 
     [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> CreateProfile(CreateStudentProfileInput input, CancellationToken cancellationToken)
+    {
+        var result = ModelState.IsValid
+            ? await studentService.CreateProfileAsync(input, cancellationToken)
+            : new StudentManagementResult(false, Errors());
+        return RedirectWith(result);
+    }
+
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> UpdateProfile(UpdateStudentProfileInput input, CancellationToken cancellationToken)
+    {
+        var result = ModelState.IsValid
+            ? await studentService.UpdateProfileAsync(input, cancellationToken)
+            : new StudentManagementResult(false, Errors(), input.Id);
+        return RedirectWith(result);
+    }
+
+    [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> CreateAccount(CreateStudentAccountInput input, CancellationToken cancellationToken)
     {
         var result = ModelState.IsValid

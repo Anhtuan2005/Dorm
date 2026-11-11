@@ -2,8 +2,12 @@
 **/bin/
 **/obj/
 
+# Browser-test dependencies
+**/node_modules/
+
 # Runtime logs and local diagnostics
 **/logs/
+**/App_Data/
 *.log
 *.trace
 
@@ -28,7 +32,11 @@ coverage/
 
 # Project notes and exported documents; README files remain versioned
 docs/**
-!docs/**/
+!docs/
+!docs/agents/
+!docs/agents/**
+!docs/adr/
+!docs/adr/**
 !docs/**/README.md
 *.md
 !README.md
@@ -38,6 +46,11 @@ docs/**
 !CLAUDE.md
 !**/CLAUDE.md
 !.interface-design/system.md
+!CONTEXT.md
+!docs/agents/*.md
+!docs/adr/*.md
+!.scratch/
+!.scratch/**
 DESIGN.json
 *.doc
 *.docx

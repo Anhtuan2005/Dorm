@@ -1,7 +1,7 @@
-const { chromium } = require("C:\\Users\\Admin\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\node\\node_modules\\playwright");
+const { chromium } = require("playwright");
 const { spawnSync } = require("child_process");
+const { baseUrl, e2ePassword } = require("./e2e-config.cjs");
 
-const baseUrl = "http://127.0.0.1:5189";
 const marker = "[E2E] Kiểm thử transaction xếp phòng tự động.";
 const sqlcmd = "C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn\\SQLCMD.EXE";
 
@@ -22,14 +22,16 @@ IF @RequestId IS NOT NULL
 BEGIN
     DECLARE @RequestCode nvarchar(24) = (SELECT Code FROM HousingRequests WHERE Id = @RequestId);
     DECLARE @TargetRoomId int = (SELECT TargetRoomId FROM HousingRequests WHERE Id = @RequestId);
+    DECLARE @HoldId int = (SELECT ApprovedRoomHoldId FROM HousingRequests WHERE Id = @RequestId);
     DECLARE @SubmittedAt datetime2 = (SELECT SubmittedAt FROM HousingRequests WHERE Id = @RequestId);
     DELETE FROM Notifications
       WHERE UserId = (SELECT UserId FROM StudentProfiles WHERE Id = @StudentId)
         AND Type = N'Application'
         AND (Title LIKE N'%' + @RequestCode + N'%' OR Body LIKE N'%' + @RequestCode + N'%');
     DELETE FROM HousingRequestEvents WHERE HousingRequestId = @RequestId;
+    DELETE FROM Stays WHERE HousingRequestId = @RequestId;
     DELETE FROM HousingRequests WHERE Id = @RequestId;
-    DELETE FROM Stays WHERE StudentProfileId = @StudentId AND RoomId = @TargetRoomId AND StartedAt >= @SubmittedAt;
+    DELETE FROM RoomHolds WHERE Id = @HoldId;
     UPDATE Stays SET EndedAt = NULL
       WHERE Id = (
         SELECT TOP (1) Id FROM Stays
@@ -47,7 +49,7 @@ function cleanup() {
 async function signIn(page, email) {
   await page.goto(`${baseUrl}/Account/Login`, { waitUntil: "networkidle" });
   await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Mật khẩu").fill("Demo@123");
+  await page.getByLabel("Mật khẩu").fill(e2ePassword);
   await Promise.all([
     page.waitForLoadState("networkidle"),
     page.getByRole("button", { name: "Đăng nhập" }).click()
@@ -85,13 +87,32 @@ async function signIn(page, email) {
     if (!managerText.includes(requestCode) || !managerText.includes("C-503") || !managerText.includes("Còn 8 chỗ")) {
       issues.push("manager did not receive the submitted request with live capacity");
     }
+    await Promise.all([
+      manager.waitForLoadState("networkidle"),
+      manager.getByRole("button", { name: "Nhận xử lý đơn" }).click()
+    ]);
+    if (!(await manager.getByRole("button", { name: "Duyệt và giữ chỗ" }).isVisible())) {
+      issues.push("review claim did not unlock the approval action");
+    }
+    manager.once("dialog", dialog => dialog.accept());
+    await Promise.all([
+      manager.waitForURL(/Scope=attention/),
+      manager.getByRole("button", { name: "Duyệt và giữ chỗ" }).click()
+    ]);
+    const reservedText = await manager.locator(".applications-page").innerText();
+    if (!reservedText.includes("Chờ nhận phòng") || !reservedText.includes("Xác nhận nhận phòng")) issues.push("approval did not create the move-in handoff");
+
+    await student.goto(`${baseUrl}/Student/Dashboard`, { waitUntil: "networkidle" });
+    const beforeMoveIn = await student.locator("main").innerText();
+    if (!beforeMoveIn.includes("A-302") || beforeMoveIn.includes("Phòng C-503\nTòa C")) issues.push("student moved rooms before handover confirmation");
+
     manager.once("dialog", dialog => dialog.accept());
     await Promise.all([
       manager.waitForURL(/Scope=completed/),
-      manager.getByRole("button", { name: "Duyệt và xếp phòng" }).click()
+      manager.getByRole("button", { name: "Xác nhận nhận phòng" }).click()
     ]);
     const decisionText = await manager.locator(".applications-page").innerText();
-    if (!decisionText.includes("Đã duyệt") || !decisionText.includes("Đơn đã hoàn tất")) issues.push("approval did not reach the completed state");
+    if (!decisionText.includes("Đã duyệt") || !decisionText.includes("Đơn đã hoàn tất")) issues.push("move-in confirmation did not reach the completed state");
 
     await student.goto(`${baseUrl}/Student/Dashboard`, { waitUntil: "networkidle" });
     const dashboardText = await student.locator("main").innerText();

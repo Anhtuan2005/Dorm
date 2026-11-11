@@ -20,6 +20,28 @@ public sealed class StudentController(
     }
 
     [HttpGet]
+    public async Task<IActionResult> Notifications(CancellationToken cancellationToken)
+    {
+        SetPage("Thông báo", "notifications");
+        return View(await studentPortalService.GetNotificationsAsync(UserId, cancellationToken));
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> OpenNotification(long id, CancellationToken cancellationToken)
+    {
+        var target = await studentPortalService.ReadNotificationAsync(UserId, id, cancellationToken);
+        return target is null ? RedirectToAction(nameof(Notifications)) : LocalRedirect(target);
+    }
+
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> MarkAllNotificationsRead(CancellationToken cancellationToken)
+    {
+        var count = await studentPortalService.MarkAllNotificationsReadAsync(UserId, cancellationToken);
+        TempData["Success"] = count == 0 ? "Bạn không có thông báo chưa đọc." : $"Đã đánh dấu {count} thông báo là đã đọc.";
+        return RedirectToAction(nameof(Notifications));
+    }
+
+    [HttpGet]
     public async Task<IActionResult> Rooms(
         [FromQuery] StudentRoomSearchQuery query,
         CancellationToken cancellationToken)
@@ -57,10 +79,44 @@ public sealed class StudentController(
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CancelHousingRequest(
-        long id,
+        StudentHousingRequestActionInput input,
         CancellationToken cancellationToken)
     {
-        var result = await studentPortalService.CancelHousingRequestAsync(UserId, id, cancellationToken);
+        var result = await studentPortalService.CancelHousingRequestAsync(UserId, input, cancellationToken);
+        TempData[result.Success ? "Success" : "Error"] = result.Message;
+        return RedirectToAction(nameof(Applications));
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SupplementHousingRequest(
+        SupplementHousingRequestInput input,
+        CancellationToken cancellationToken)
+    {
+        if (!ModelState.IsValid)
+        {
+            TempData["Error"] = FirstValidationError("Nội dung bổ sung chưa hợp lệ.");
+            return RedirectToAction(nameof(Applications));
+        }
+
+        var result = await studentPortalService.SupplementHousingRequestAsync(UserId, input, cancellationToken);
+        TempData[result.Success ? "Success" : "Error"] = result.Message;
+        return RedirectToAction(nameof(Applications));
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SubmitCheckoutRequest(
+        SubmitCheckoutRequestInput input,
+        CancellationToken cancellationToken)
+    {
+        if (!ModelState.IsValid)
+        {
+            TempData["Error"] = FirstValidationError("Lý do trả phòng chưa hợp lệ.");
+            return RedirectToAction(nameof(Applications));
+        }
+
+        var result = await studentPortalService.SubmitCheckoutRequestAsync(UserId, input, cancellationToken);
         TempData[result.Success ? "Success" : "Error"] = result.Message;
         return RedirectToAction(nameof(Applications));
     }
@@ -100,6 +156,11 @@ public sealed class StudentController(
 
     private string UserId => userManager.GetUserId(User)
         ?? throw new InvalidOperationException("Không xác định được tài khoản đăng nhập.");
+
+    private string FirstValidationError(string fallback) => ModelState.Values
+        .SelectMany(x => x.Errors)
+        .Select(x => x.ErrorMessage)
+        .FirstOrDefault() ?? fallback;
 
     private void SetPage(string title, string activeNav)
     {

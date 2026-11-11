@@ -113,6 +113,12 @@
     if (event.key !== "Enter") return;
     event.preventDefault();
     const value = globalSearch.value.trim();
-    window.location.assign(value ? `/Rooms/Map?Search=${encodeURIComponent(value)}` : "/Rooms/Map");
+    if (!value) {
+      window.location.assign("/Rooms/Map");
+      return;
+    }
+    const isRoomCode = /^[a-z]-?\d{3}$/i.test(value.replace(/\s/g, ""));
+    const destination = isRoomCode ? "/Rooms/Map" : "/Students";
+    window.location.assign(`${destination}?Search=${encodeURIComponent(value)}`);
   });
 })();

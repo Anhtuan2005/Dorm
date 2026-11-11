@@ -86,6 +86,11 @@
         repairDialog.showModal();
     }
 
+    document.querySelectorAll("[data-open-dialog]").forEach(opener => {
+        const dialog = document.getElementById(opener.dataset.openDialog);
+        if (dialog) bindDialog(dialog, [opener]);
+    });
+
     const chatDialog = document.querySelector("[data-ai-assistant]");
     const chatMessages = document.querySelector("[data-chat-messages]");
     const chatInput = document.querySelector("[data-chat-input]");

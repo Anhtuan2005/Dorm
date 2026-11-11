@@ -1,7 +1,7 @@
-const { chromium } = require("C:\\Users\\Admin\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\node\\node_modules\\playwright");
+const { chromium } = require("playwright");
 const { spawnSync } = require("child_process");
+const { baseUrl, e2ePassword } = require("./e2e-config.cjs");
 
-const baseUrl = "http://127.0.0.1:5189";
 const testStudent = "SV000001";
 const testEmail = "e2e.student@student.nepktx.local";
 const initialPassword = "Temporary@123";
@@ -43,6 +43,10 @@ async function fillLogin(page, email, password) {
   await page.getByRole("button", { name: "Đăng nhập" }).click();
 }
 
+function isSelectedStudent(url) {
+  return /^\/Students(?:\/Index)?$/.test(url.pathname) && url.searchParams.has("SelectedId");
+}
+
 (async () => {
   cleanup();
   const browser = await chromium.launch({ executablePath: "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe", headless: true });
@@ -51,14 +55,14 @@ async function fillLogin(page, email, password) {
     const managerContext = await browser.newContext({ viewport: { width: 1400, height: 900 } });
     const manager = await managerContext.newPage();
     manager.setDefaultNavigationTimeout(60000);
-    await fillLogin(manager, "manager@nepktx.local", "Demo@123");
+    await fillLogin(manager, "manager@nepktx.local", e2ePassword);
     await manager.waitForURL(url => !url.pathname.includes("/Account/Login"));
     await manager.goto(`${baseUrl}/Students/Index?Search=${testStudent}`, { waitUntil: "networkidle" });
     await manager.getByRole("button", { name: "Cấp tài khoản" }).click();
     await manager.locator("#create-account-dialog input[name=Email]").fill(testEmail);
     await manager.locator("#create-account-dialog input[name=TemporaryPassword]").fill(initialPassword);
     await Promise.all([
-      manager.waitForURL(/\/Students\/Index\?SelectedId=/),
+      manager.waitForURL(isSelectedStudent),
       manager.getByRole("button", { name: "Cấp tài khoản", exact: true }).last().click()
     ]);
     const createdText = await manager.locator(".students-page").innerText();
@@ -67,13 +71,13 @@ async function fillLogin(page, email, password) {
     await manager.getByRole("button", { name: "Đặt lại mật khẩu" }).click();
     await manager.locator("#reset-password-dialog input[name=TemporaryPassword]").fill(resetPassword);
     await Promise.all([
-      manager.waitForURL(/\/Students\/Index\?SelectedId=/),
+      manager.waitForURL(isSelectedStudent),
       manager.getByRole("button", { name: "Cập nhật mật khẩu" }).click()
     ]);
 
     manager.once("dialog", dialog => dialog.accept());
     await Promise.all([
-      manager.waitForURL(/\/Students\/Index\?SelectedId=/),
+      manager.waitForURL(isSelectedStudent),
       manager.getByRole("button", { name: "Khóa tài khoản" }).click()
     ]);
     if (!(await manager.locator(".students-page").innerText()).includes("Đang khóa")) issues.push("account lock state was not persisted");
@@ -91,7 +95,7 @@ async function fillLogin(page, email, password) {
     }
     manager.once("dialog", dialog => dialog.accept());
     await Promise.all([
-      manager.waitForURL(/\/Students\/Index\?SelectedId=/),
+      manager.waitForURL(isSelectedStudent),
       unlockButton.click()
     ]);
     if (!(await manager.locator(".students-page").innerText()).includes("Đang hoạt động")) issues.push("account unlock state was not persisted");

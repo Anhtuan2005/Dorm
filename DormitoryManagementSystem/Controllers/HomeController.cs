@@ -1,26 +1,27 @@
 using System.Diagnostics;
-using Microsoft.AspNetCore.Mvc;
 using DormitoryManagementSystem.Models;
+using DormitoryManagementSystem.Security;
+using DormitoryManagementSystem.Services;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
 namespace DormitoryManagementSystem.Controllers;
 
-public class HomeController : Controller
+[Authorize]
+public class HomeController(
+    ILogger<HomeController> logger,
+    IOperationsReportingService reporting) : Controller
 {
-    private readonly ILogger<HomeController> _logger;
-
-    public HomeController(ILogger<HomeController> logger)
+    public async Task<IActionResult> Index(CancellationToken cancellationToken)
     {
-        _logger = logger;
-    }
+        if (User.IsInRole(RoleNames.Student))
+            return RedirectToAction("Dashboard", "Student");
+        if (!User.IsInRole(RoleNames.Admin) && !User.IsInRole(RoleNames.DormManager))
+            return Forbid();
 
-    public IActionResult Index()
-    {
-        if (User.Identity?.IsAuthenticated != true)
-            return RedirectToAction("Login", "Account");
-
-        return User.IsInRole(Security.RoleNames.Student)
-            ? RedirectToAction("Dashboard", "Student")
-            : RedirectToAction("Map", "Rooms");
+        ViewData["Title"] = "Tổng quan";
+        ViewData["ActiveNav"] = "dashboard";
+        return View(await reporting.GetDashboardAsync(cancellationToken));
     }
 
     public IActionResult Privacy()
@@ -28,9 +29,10 @@ public class HomeController : Controller
         return View();
     }
 
-    [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
+    [AllowAnonymous, ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public IActionResult Error()
     {
+        logger.LogError("Yêu cầu lỗi với trace {TraceIdentifier}.", HttpContext.TraceIdentifier);
         return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
     }
 }
