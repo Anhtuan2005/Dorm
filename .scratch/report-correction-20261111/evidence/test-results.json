@@ -1,0 +1,743 @@
+{
+  "recorded_date": "2026-11-11",
+  "timezone": "Asia/Saigon",
+  "scope": "Existing working-copy policy and SQL integration tests; documentation PR does not include application changes.",
+  "commits": [
+    {
+      "sha": "faf4575532855cbbb9d882147d5362e6e96cacdf",
+      "author_date": "2026-09-09T23:58:58+07:00",
+      "subject": "first commit",
+      "url": "https://github.com/Anhtuan2005/Dorm/commit/faf4575532855cbbb9d882147d5362e6e96cacdf"
+    },
+    {
+      "sha": "bf4c140bdff0ae81ad888e6159d54f4afaaf9cbe",
+      "author_date": "2026-09-10T01:07:47+07:00",
+      "subject": "changes",
+      "url": "https://github.com/Anhtuan2005/Dorm/commit/bf4c140bdff0ae81ad888e6159d54f4afaaf9cbe"
+    }
+  ],
+  "current_runs": [
+    {
+      "source": ".scratch\\report-correction-20261111\\evidence\\policy-verification.trx",
+      "sha256": "d5307bb770b7361267e0c97834afd8c08b914ecdb734d83ecb41aa403b297044",
+      "times": {
+        "creation": "2026-11-11T15:52:15.1622003+07:00",
+        "queuing": "2026-11-11T15:52:15.1622007+07:00",
+        "start": "2026-11-11T15:52:13.1505015+07:00",
+        "finish": "2026-11-11T15:52:15.1912165+07:00"
+      },
+      "counters": {
+        "total": "37",
+        "executed": "37",
+        "passed": "37",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "by_outcome": {
+        "Passed": 37
+      },
+      "tests": [
+        {
+          "testName": "DormitoryManagementSystem.Tests.HousingRequestWorkflowTests.Waiting_for_student_never_counts_as_manager_sla_breach",
+          "outcome": "Passed",
+          "startTime": "2026-11-11T15:52:15.0089484+07:00",
+          "endTime": "2026-11-11T15:52:15.1088036+07:00",
+          "duration": "00:00:00.0920271"
+        },
+        {
+          "testName": "DormitoryManagementSystem.Tests.RoomCapacityPolicyTests.Move_in_rejects_an_invalid_hold(released: False, expired: True, holdRoomId: 1, heldBeds: 1, expectedError: \"đã hết hạn\")",
+          "outcome": "Passed",
+          "startTime": "2026-11-11T15:52:15.1427472+07:00",
+          "endTime": "2026-11-11T15:52:15.1427980+07:00",
+          "duration": "00:00:00.0000126"
+        },
+        {
+          "testName": "DormitoryManagementSystem.Tests.RoomCapacityPolicyTests.Maintenance_block_cannot_consume_an_active_hold",
+          "outcome": "Passed",
+          "startTime": "2026-11-11T15:52:15.1430740+07:00",
+          "endTime": "2026-11-11T15:52:15.1431209+07:00",
+          "duration": "00:00:00.0014940"
+        },
+        {
+          "testName": "DormitoryManagementSystem.Tests.BillingLedgerPolicyTests.Unpaid_invoice_due_today_is_awaiting",
+          "outcome": "Passed",
+          "startTime": "2026-11-11T15:52:15.1378189+07:00",
+          "endTime": "2026-11-11T15:52:15.1397547+07:00",
+          "duration": "00:00:00.0001840"
+        },
+        {
+          "testName": "DormitoryManagementSystem.Tests.BillingLedgerPolicyTests.Reversal_offsets_the_original_receipt",
+          "outcome": "Passed",
+          "startTime": "2026-11-11T15:52:15.1372823+07:00",
+          "endTime": "2026-11-11T15:52:15.1373291+07:00",
+          "duration": "00:00:00.0003353"
+        },
+        {
+          "testName": "DormitoryManagementSystem.Tests.BillingLedgerPolicyTests.Partially_collected_invoice_is_partial",
+          "outcome": "Passed",
+          "startTime": "2026-11-11T15:52:15.1367468+07:00",
+          "endTime": "2026-11-11T15:52:15.1371607+07:00",
+          "duration": "00:00:00.0001843"
+        },
+        {
+          "testName": "DormitoryManagementSystem.Tests.BillingLedgerPolicyTests.Fully_collected_invoice_is_paid_and_closed_for_collection",
+          "outcome": "Passed",
+          "startTime": "2026-11-11T15:52:15.1374353+07:00",
+          "endTime": "2026-11-11T15:52:15.1376134+07:00",
+          "duration": "00:00:00.0002427"
+        },
+        {
+          "testName": "DormitoryManagementSystem.Tests.HousingRequestWorkflowTests.Allowed_transitions_have_one_explicit_destination(current: Submitted, action: BeginReview, expected: UnderReview)",
+          "outcome": "Passed",
+          "startTime": "2026-11-11T15:52:15.1402052+07:00",
+          "endTime": "2026-11-11T15:52:15.1402531+07:00",
+          "duration": "00:00:00.0000022"
+        },
+        {
+          "testName": "DormitoryManagementSystem.Tests.BillingLedgerPolicyTests.Cancelled_invoice_cannot_collect_even_with_a_balance",
+          "outcome": "Passed",
+          "startTime": "2026-11-11T15:52:15.0098785+07:00",
+          "endTime": "2026-11-11T15:52:15.1058418+07:00",
+          "duration": "00:00:00.0908250"
+        },
+        {
+          "testName": "DormitoryManagementSystem.Tests.HousingRequestWorkflowTests.Allowed_transitions_have_one_explicit_destination(current: Submitted, action: RequestInformation, expected: NeedsInformation)",
+          "outcome": "Passed",
+          "startTime": "2026-11-11T15:52:15.1411997+07:00",
+          "endTime": "2026-11-11T15:52:15.1412449+07:00",
+          "duration": "00:00:00.0000019"
+        },
+        {
+          "testName": "DormitoryManagementSystem.Tests.RoomCapacityPolicyTests.Blocked_and_held_counts_are_clamped_after_occupancy",
+          "outcome": "Passed",
+          "startTime": "2026-11-11T15:52:15.1433742+07:00",
+          "endTime": "2026-11-11T15:52:15.1434202+07:00",
+          "duration": "00:00:00.0001861"
+        },
+        {
+          "testName": "DormitoryManagementSystem.Tests.RoomCapacityPolicyTests.Capacity_is_shared_between_occupied_held_blocked_and_assignable",
+          "outcome": "Passed",
+          "startTime": "2026-11-11T15:52:15.1432263+07:00",
+          "endTime": "2026-11-11T15:52:15.1432720+07:00",
+          "duration": "00:00:00.0002429"
+        },
+        {
+          "testName": "DormitoryManagementSystem.Tests.HousingRequestWorkflowTests.Invalid_transitions_are_rejected_without_changing_state(current: NeedsInformation, action: BeginReview)",
+          "outcome": "Passed",
+          "startTime": "2026-11-11T15:52:15.1394132+07:00",
+          "endTime": "2026-11-11T15:52:15.1394672+07:00",
+          "duration": "00:00:00.0000028"
+        },
+        {
+          "testName": "DormitoryManagementSystem.Tests.HousingRequestWorkflowTests.Invalid_transitions_are_rejected_without_changing_state(current: UnderReview, action: ConfirmMoveIn)",
+          "outcome": "Passed",
+          "startTime": "2026-11-11T15:52:15.1377981+07:00",
+          "endTime": "2026-11-11T15:52:15.1378899+07:00",
+          "duration": "00:00:00.0000064"
+        },
+        {
+          "testName": "DormitoryManagementSystem.Tests.OperationsMetricsPolicyTests.Percentage_is_rounded_and_clamped(part: 9, whole: 8, expected: 100)",
+          "outcome": "Passed",
+          "startTime": "2026-11-11T15:52:15.0099384+07:00",
+          "endTime": "2026-11-11T15:52:15.1088658+07:00",
+          "duration": "00:00:00.0906756"
+        },
+        {
+          "testName": "DormitoryManagementSystem.Tests.HousingRequestWorkflowTests.Awaiting_move_in_stays_active_and_returns_to_management",
+          "outcome": "Passed",
+          "startTime": "2026-11-11T15:52:15.1414660+07:00",
+          "endTime": "2026-11-11T15:52:15.1415114+07:00",
+          "duration": "00:00:00.0005274"
+        },
+        {
+          "testName": "DormitoryManagementSystem.Tests.RoomCapacityPolicyTests.Move_in_rejects_an_invalid_hold(released: False, expired: False, holdRoomId: 1, heldBeds: 2, expectedError: \"không giữ đúng 1 chỗ\")",
+          "outcome": "Passed",
+          "startTime": "2026-11-11T15:52:15.1420193+07:00",
+          "endTime": "2026-11-11T15:52:15.1420711+07:00",
+          "duration": "00:00:00.0002346"
+        },
+        {
+          "testName": "DormitoryManagementSystem.Tests.RoomCapacityPolicyTests.Move_in_rejects_an_invalid_hold(released: False, expired: False, holdRoomId: 2, heldBeds: 1, expectedError: \"không thuộc phòng đích\")",
+          "outcome": "Passed",
+          "startTime": "2026-11-11T15:52:15.0099174+07:00",
+          "endTime": "2026-11-11T15:52:15.1419072+07:00",
+          "duration": "00:00:00.0969529"
+        },
+        {
+          "testName": "DormitoryManagementSystem.Tests.HousingRequestWorkflowTests.Allowed_transitions_have_one_explicit_destination(current: AwaitingMoveIn, action: ConfirmMoveIn, expected: Approved)",
+          "outcome": "Passed",
+          "startTime": "2026-11-11T15:52:15.1410659+07:00",
+          "endTime": "2026-11-11T15:52:15.1411160+07:00",
+          "duration": "00:00:00.0000024"
+        },
+        {
+          "testName": "DormitoryManagementSystem.Tests.HousingRequestWorkflowTests.Allowed_transitions_have_one_explicit_destination(current: UnderReview, action: Approve, expected: AwaitingMoveIn)",
+          "outcome": "Passed",
+          "startTime": "2026-11-11T15:52:15.1399627+07:00",
+          "endTime": "2026-11-11T15:52:15.1400075+07:00",
+          "duration": "00:00:00.0001714"
+        },
+        {
+          "testName": "DormitoryManagementSystem.Tests.HousingRequestWorkflowTests.Invalid_transitions_are_rejected_without_changing_state(current: Submitted, action: Approve)",
+          "outcome": "Passed",
+          "startTime": "2026-11-11T15:52:15.1395562+07:00",
+          "endTime": "2026-11-11T15:52:15.1396010+07:00",
+          "duration": "00:00:00.0000020"
+        },
+        {
+          "testName": "DormitoryManagementSystem.Tests.OperationsMetricsPolicyTests.Percentage_is_rounded_and_clamped(part: -2, whole: 8, expected: 0)",
+          "outcome": "Passed",
+          "startTime": "2026-11-11T15:52:15.1140124+07:00",
+          "endTime": "2026-11-11T15:52:15.1140565+07:00",
+          "duration": "00:00:00.0000036"
+        },
+        {
+          "testName": "DormitoryManagementSystem.Tests.BillingLedgerPolicyTests.Unpaid_invoice_becomes_overdue_only_after_due_date",
+          "outcome": "Passed",
+          "startTime": "2026-11-11T15:52:15.1136885+07:00",
+          "endTime": "2026-11-11T15:52:15.1366103+07:00",
+          "duration": "00:00:00.0015439"
+        },
+        {
+          "testName": "DormitoryManagementSystem.Tests.HousingRequestWorkflowTests.Manager_work_becomes_overdue_at_the_24_hour_boundary",
+          "outcome": "Passed",
+          "startTime": "2026-11-11T15:52:15.1416200+07:00",
+          "endTime": "2026-11-11T15:52:15.1416651+07:00",
+          "duration": "00:00:00.0001116"
+        },
+        {
+          "testName": "DormitoryManagementSystem.Tests.HousingRequestWorkflowTests.Allowed_transitions_have_one_explicit_destination(current: NeedsInformation, action: Reject, expected: Rejected)",
+          "outcome": "Passed",
+          "startTime": "2026-11-11T15:52:15.1397099+07:00",
+          "endTime": "2026-11-11T15:52:15.1398253+07:00",
+          "duration": "00:00:00.0001241"
+        },
+        {
+          "testName": "DormitoryManagementSystem.Tests.HousingRequestWorkflowTests.Invalid_transitions_are_rejected_without_changing_state(current: Rejected, action: RequestInformation)",
+          "outcome": "Passed",
+          "startTime": "2026-11-11T15:52:15.1137239+07:00",
+          "endTime": "2026-11-11T15:52:15.1374818+07:00",
+          "duration": "00:00:00.0021792"
+        },
+        {
+          "testName": "DormitoryManagementSystem.Tests.HousingRequestWorkflowTests.Allowed_transitions_have_one_explicit_destination(current: AwaitingMoveIn, action: Reject, expected: Rejected)",
+          "outcome": "Passed",
+          "startTime": "2026-11-11T15:52:15.1413199+07:00",
+          "endTime": "2026-11-11T15:52:15.1413644+07:00",
+          "duration": "00:00:00.0000018"
+        },
+        {
+          "testName": "DormitoryManagementSystem.Tests.RoomCapacityPolicyTests.Move_in_consumes_only_the_capacity_reserved_by_its_hold",
+          "outcome": "Passed",
+          "startTime": "2026-11-11T15:52:15.1429104+07:00",
+          "endTime": "2026-11-11T15:52:15.1429655+07:00",
+          "duration": "00:00:00.0005929"
+        },
+        {
+          "testName": "DormitoryManagementSystem.Tests.HousingRequestWorkflowTests.Allowed_transitions_have_one_explicit_destination(current: UnderReview, action: Cancel, expected: Cancelled)",
+          "outcome": "Passed",
+          "startTime": "2026-11-11T15:52:15.1403289+07:00",
+          "endTime": "2026-11-11T15:52:15.1403732+07:00",
+          "duration": "00:00:00.0000026"
+        },
+        {
+          "testName": "DormitoryManagementSystem.Tests.HousingRequestWorkflowTests.Allowed_transitions_have_one_explicit_destination(current: UnderReview, action: RequestInformation, expected: NeedsInformation)",
+          "outcome": "Passed",
+          "startTime": "2026-11-11T15:52:15.1404460+07:00",
+          "endTime": "2026-11-11T15:52:15.1404914+07:00",
+          "duration": "00:00:00.0000018"
+        },
+        {
+          "testName": "DormitoryManagementSystem.Tests.OperationsMetricsPolicyTests.Percentage_is_rounded_and_clamped(part: 0, whole: 1280, expected: 0)",
+          "outcome": "Passed",
+          "startTime": "2026-11-11T15:52:15.1138851+07:00",
+          "endTime": "2026-11-11T15:52:15.1139303+07:00",
+          "duration": "00:00:00.0000074"
+        },
+        {
+          "testName": "DormitoryManagementSystem.Tests.OperationsMetricsPolicyTests.Percentage_is_rounded_and_clamped(part: 4, whole: 0, expected: 0)",
+          "outcome": "Passed",
+          "startTime": "2026-11-11T15:52:15.1130905+07:00",
+          "endTime": "2026-11-11T15:52:15.1137836+07:00",
+          "duration": "00:00:00.0002258"
+        },
+        {
+          "testName": "DormitoryManagementSystem.Tests.OperationsMetricsPolicyTests.Percentage_is_rounded_and_clamped(part: 1142, whole: 1280, expected: 89.2)",
+          "outcome": "Passed",
+          "startTime": "2026-11-11T15:52:15.1358557+07:00",
+          "endTime": "2026-11-11T15:52:15.1359305+07:00",
+          "duration": "00:00:00.0000047"
+        },
+        {
+          "testName": "DormitoryManagementSystem.Tests.HousingRequestWorkflowTests.Allowed_transitions_have_one_explicit_destination(current: NeedsInformation, action: SubmitInformation, expected: Submitted)",
+          "outcome": "Passed",
+          "startTime": "2026-11-11T15:52:15.1400873+07:00",
+          "endTime": "2026-11-11T15:52:15.1401309+07:00",
+          "duration": "00:00:00.0000083"
+        },
+        {
+          "testName": "DormitoryManagementSystem.Tests.HousingRequestWorkflowTests.Checkout_approval_completes_without_a_move_in_handoff",
+          "outcome": "Passed",
+          "startTime": "2026-11-11T15:52:15.1417683+07:00",
+          "endTime": "2026-11-11T15:52:15.1418132+07:00",
+          "duration": "00:00:00.0000864"
+        },
+        {
+          "testName": "DormitoryManagementSystem.Tests.HousingRequestWorkflowTests.Invalid_transitions_are_rejected_without_changing_state(current: Approved, action: Cancel)",
+          "outcome": "Passed",
+          "startTime": "2026-11-11T15:52:15.1375640+07:00",
+          "endTime": "2026-11-11T15:52:15.1376693+07:00",
+          "duration": "00:00:00.0001930"
+        },
+        {
+          "testName": "DormitoryManagementSystem.Tests.RoomCapacityPolicyTests.Move_in_rejects_an_invalid_hold(released: True, expired: False, holdRoomId: 1, heldBeds: 1, expectedError: \"đã được giải phóng\")",
+          "outcome": "Passed",
+          "startTime": "2026-11-11T15:52:15.1421504+07:00",
+          "endTime": "2026-11-11T15:52:15.1421965+07:00",
+          "duration": "00:00:00.0000154"
+        }
+      ]
+    },
+    {
+      "source": ".scratch\\report-correction-20261111\\evidence\\sql-verification.trx",
+      "sha256": "07a8ef505ad65024028fff37f8ca945565f1157f4aa0bb9a07472250e7298d0b",
+      "times": {
+        "creation": "2026-11-11T15:53:54.0659149+07:00",
+        "queuing": "2026-11-11T15:53:54.0659150+07:00",
+        "start": "2026-11-11T15:53:45.6178874+07:00",
+        "finish": "2026-11-11T15:54:09.2627933+07:00"
+      },
+      "counters": {
+        "total": "5",
+        "executed": "5",
+        "passed": "5",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "by_outcome": {
+        "Passed": 5
+      },
+      "tests": [
+        {
+          "testName": "DormitoryManagementSystem.IntegrationTests.HousingPlacementIntegrationTests.Two_approvals_for_the_last_bed_create_exactly_one_hold",
+          "outcome": "Passed",
+          "startTime": "2026-11-11T15:53:54.0545644+07:00",
+          "endTime": "2026-11-11T15:54:01.8340624+07:00",
+          "duration": "00:00:07.7906919"
+        },
+        {
+          "testName": "DormitoryManagementSystem.IntegrationTests.HousingPlacementIntegrationTests.Rejecting_an_expired_handoff_releases_the_hold_and_closes_the_request",
+          "outcome": "Passed",
+          "startTime": "2026-11-11T15:54:01.8350467+07:00",
+          "endTime": "2026-11-11T15:54:05.3518543+07:00",
+          "duration": "00:00:03.5173135"
+        },
+        {
+          "testName": "DormitoryManagementSystem.IntegrationTests.HousingPlacementIntegrationTests.Two_concurrent_confirmations_create_exactly_one_stay",
+          "outcome": "Passed",
+          "startTime": "2026-11-11T15:54:05.3523009+07:00",
+          "endTime": "2026-11-11T15:54:09.2098725+07:00",
+          "duration": "00:00:03.8577515"
+        },
+        {
+          "testName": "DormitoryManagementSystem.IntegrationTests.HousingPlacementIntegrationTests.Expired_hold_cannot_create_a_stay",
+          "outcome": "Passed",
+          "startTime": "2026-11-11T15:53:47.1483108+07:00",
+          "endTime": "2026-11-11T15:53:54.0419246+07:00",
+          "duration": "00:00:06.8871399"
+        },
+        {
+          "testName": "DormitoryManagementSystem.IntegrationTests.MaintenanceCapacityIntegrationTests.Blocking_beds_cannot_consume_an_active_hold",
+          "outcome": "Passed",
+          "startTime": "2026-11-11T15:53:47.1474017+07:00",
+          "endTime": "2026-11-11T15:53:54.0445958+07:00",
+          "duration": "00:00:06.8871317"
+        }
+      ]
+    }
+  ],
+  "previous_runs": [
+    {
+      "source": ".scratch\\report_cnppnc\\test-results\\report-verification.trx",
+      "sha256": "404ec9c10af1bf15e163f606fdffda04abfc1fbd1986cc65d03fbd879a0a23c2",
+      "times": {
+        "creation": "2026-10-24T20:04:25.6561055+07:00",
+        "queuing": "2026-10-24T20:04:25.6561063+07:00",
+        "start": "2026-10-24T20:04:22.4275260+07:00",
+        "finish": "2026-10-24T20:04:25.6989649+07:00"
+      },
+      "counters": {
+        "total": "37",
+        "executed": "37",
+        "passed": "37",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "by_outcome": {
+        "Passed": 37
+      },
+      "tests": [
+        {
+          "testName": "DormitoryManagementSystem.Tests.HousingRequestWorkflowTests.Checkout_approval_completes_without_a_move_in_handoff",
+          "outcome": "Passed",
+          "startTime": "2026-10-24T20:04:25.6218226+07:00",
+          "endTime": "2026-10-24T20:04:25.6218573+07:00",
+          "duration": "00:00:00.0001307"
+        },
+        {
+          "testName": "DormitoryManagementSystem.Tests.BillingLedgerPolicyTests.Unpaid_invoice_due_today_is_awaiting",
+          "outcome": "Passed",
+          "startTime": "2026-10-24T20:04:25.6169721+07:00",
+          "endTime": "2026-10-24T20:04:25.6194701+07:00",
+          "duration": "00:00:00.0002481"
+        },
+        {
+          "testName": "DormitoryManagementSystem.Tests.BillingLedgerPolicyTests.Partially_collected_invoice_is_partial",
+          "outcome": "Passed",
+          "startTime": "2026-10-24T20:04:25.6161231+07:00",
+          "endTime": "2026-10-24T20:04:25.6161973+07:00",
+          "duration": "00:00:00.0001928"
+        },
+        {
+          "testName": "DormitoryManagementSystem.Tests.RoomCapacityPolicyTests.Capacity_is_shared_between_occupied_held_blocked_and_assignable",
+          "outcome": "Passed",
+          "startTime": "2026-10-24T20:04:25.6234462+07:00",
+          "endTime": "2026-10-24T20:04:25.6234808+07:00",
+          "duration": "00:00:00.0002374"
+        },
+        {
+          "testName": "DormitoryManagementSystem.Tests.HousingRequestWorkflowTests.Awaiting_move_in_stays_active_and_returns_to_management",
+          "outcome": "Passed",
+          "startTime": "2026-10-24T20:04:25.6215559+07:00",
+          "endTime": "2026-10-24T20:04:25.6215914+07:00",
+          "duration": "00:00:00.0007543"
+        },
+        {
+          "testName": "DormitoryManagementSystem.Tests.HousingRequestWorkflowTests.Allowed_transitions_have_one_explicit_destination(current: UnderReview, action: Approve, expected: AwaitingMoveIn)",
+          "outcome": "Passed",
+          "startTime": "2026-10-24T20:04:25.6197813+07:00",
+          "endTime": "2026-10-24T20:04:25.6198181+07:00",
+          "duration": "00:00:00.0002258"
+        },
+        {
+          "testName": "DormitoryManagementSystem.Tests.HousingRequestWorkflowTests.Invalid_transitions_are_rejected_without_changing_state(current: Submitted, action: Approve)",
+          "outcome": "Passed",
+          "startTime": "2026-10-24T20:04:25.6193281+07:00",
+          "endTime": "2026-10-24T20:04:25.6193659+07:00",
+          "duration": "00:00:00.0000028"
+        },
+        {
+          "testName": "DormitoryManagementSystem.Tests.HousingRequestWorkflowTests.Invalid_transitions_are_rejected_without_changing_state(current: Approved, action: Cancel)",
+          "outcome": "Passed",
+          "startTime": "2026-10-24T20:04:25.6168117+07:00",
+          "endTime": "2026-10-24T20:04:25.6170224+07:00",
+          "duration": "00:00:00.0003082"
+        },
+        {
+          "testName": "DormitoryManagementSystem.Tests.OperationsMetricsPolicyTests.Percentage_is_rounded_and_clamped(part: 4, whole: 0, expected: 0)",
+          "outcome": "Passed",
+          "startTime": "2026-10-24T20:04:25.5831593+07:00",
+          "endTime": "2026-10-24T20:04:25.5839249+07:00",
+          "duration": "00:00:00.0003512"
+        },
+        {
+          "testName": "DormitoryManagementSystem.Tests.HousingRequestWorkflowTests.Manager_work_becomes_overdue_at_the_24_hour_boundary",
+          "outcome": "Passed",
+          "startTime": "2026-10-24T20:04:25.6216990+07:00",
+          "endTime": "2026-10-24T20:04:25.6217340+07:00",
+          "duration": "00:00:00.0001483"
+        },
+        {
+          "testName": "DormitoryManagementSystem.Tests.RoomCapacityPolicyTests.Blocked_and_held_counts_are_clamped_after_occupancy",
+          "outcome": "Passed",
+          "startTime": "2026-10-24T20:04:25.6235691+07:00",
+          "endTime": "2026-10-24T20:04:25.6236042+07:00",
+          "duration": "00:00:00.0001878"
+        },
+        {
+          "testName": "DormitoryManagementSystem.Tests.HousingRequestWorkflowTests.Invalid_transitions_are_rejected_without_changing_state(current: NeedsInformation, action: BeginReview)",
+          "outcome": "Passed",
+          "startTime": "2026-10-24T20:04:25.6191261+07:00",
+          "endTime": "2026-10-24T20:04:25.6191973+07:00",
+          "duration": "00:00:00.0000032"
+        },
+        {
+          "testName": "DormitoryManagementSystem.Tests.HousingRequestWorkflowTests.Allowed_transitions_have_one_explicit_destination(current: NeedsInformation, action: SubmitInformation, expected: Submitted)",
+          "outcome": "Passed",
+          "startTime": "2026-10-24T20:04:25.6198866+07:00",
+          "endTime": "2026-10-24T20:04:25.6199215+07:00",
+          "duration": "00:00:00.0000070"
+        },
+        {
+          "testName": "DormitoryManagementSystem.Tests.RoomCapacityPolicyTests.Move_in_rejects_an_invalid_hold(released: True, expired: False, holdRoomId: 1, heldBeds: 1, expectedError: \"đã được giải phóng\")",
+          "outcome": "Passed",
+          "startTime": "2026-10-24T20:04:25.6221133+07:00",
+          "endTime": "2026-10-24T20:04:25.6221478+07:00",
+          "duration": "00:00:00.0000184"
+        },
+        {
+          "testName": "DormitoryManagementSystem.Tests.OperationsMetricsPolicyTests.Percentage_is_rounded_and_clamped(part: -2, whole: 8, expected: 0)",
+          "outcome": "Passed",
+          "startTime": "2026-10-24T20:04:25.5841582+07:00",
+          "endTime": "2026-10-24T20:04:25.5841939+07:00",
+          "duration": "00:00:00.0000061"
+        },
+        {
+          "testName": "DormitoryManagementSystem.Tests.OperationsMetricsPolicyTests.Percentage_is_rounded_and_clamped(part: 1142, whole: 1280, expected: 89.2)",
+          "outcome": "Passed",
+          "startTime": "2026-10-24T20:04:25.6137239+07:00",
+          "endTime": "2026-10-24T20:04:25.6138314+07:00",
+          "duration": "00:00:00.0000083"
+        },
+        {
+          "testName": "DormitoryManagementSystem.Tests.HousingRequestWorkflowTests.Invalid_transitions_are_rejected_without_changing_state(current: Rejected, action: RequestInformation)",
+          "outcome": "Passed",
+          "startTime": "2026-10-24T20:04:25.5838490+07:00",
+          "endTime": "2026-10-24T20:04:25.6166838+07:00",
+          "duration": "00:00:00.0031553"
+        },
+        {
+          "testName": "DormitoryManagementSystem.Tests.OperationsMetricsPolicyTests.Percentage_is_rounded_and_clamped(part: 9, whole: 8, expected: 100)",
+          "outcome": "Passed",
+          "startTime": "2026-10-24T20:04:25.4707987+07:00",
+          "endTime": "2026-10-24T20:04:25.5743563+07:00",
+          "duration": "00:00:00.0961906"
+        },
+        {
+          "testName": "DormitoryManagementSystem.Tests.HousingRequestWorkflowTests.Waiting_for_student_never_counts_as_manager_sla_breach",
+          "outcome": "Passed",
+          "startTime": "2026-10-24T20:04:25.4719859+07:00",
+          "endTime": "2026-10-24T20:04:25.5777980+07:00",
+          "duration": "00:00:00.0970210"
+        },
+        {
+          "testName": "DormitoryManagementSystem.Tests.OperationsMetricsPolicyTests.Percentage_is_rounded_and_clamped(part: 0, whole: 1280, expected: 0)",
+          "outcome": "Passed",
+          "startTime": "2026-10-24T20:04:25.5840402+07:00",
+          "endTime": "2026-10-24T20:04:25.5840801+07:00",
+          "duration": "00:00:00.0000146"
+        },
+        {
+          "testName": "DormitoryManagementSystem.Tests.HousingRequestWorkflowTests.Allowed_transitions_have_one_explicit_destination(current: AwaitingMoveIn, action: ConfirmMoveIn, expected: Approved)",
+          "outcome": "Passed",
+          "startTime": "2026-10-24T20:04:25.6211751+07:00",
+          "endTime": "2026-10-24T20:04:25.6212232+07:00",
+          "duration": "00:00:00.0000025"
+        },
+        {
+          "testName": "DormitoryManagementSystem.Tests.HousingRequestWorkflowTests.Allowed_transitions_have_one_explicit_destination(current: NeedsInformation, action: Reject, expected: Rejected)",
+          "outcome": "Passed",
+          "startTime": "2026-10-24T20:04:25.6195384+07:00",
+          "endTime": "2026-10-24T20:04:25.6196997+07:00",
+          "duration": "00:00:00.0000834"
+        },
+        {
+          "testName": "DormitoryManagementSystem.Tests.HousingRequestWorkflowTests.Allowed_transitions_have_one_explicit_destination(current: Submitted, action: BeginReview, expected: UnderReview)",
+          "outcome": "Passed",
+          "startTime": "2026-10-24T20:04:25.6199899+07:00",
+          "endTime": "2026-10-24T20:04:25.6200248+07:00",
+          "duration": "00:00:00.0000031"
+        },
+        {
+          "testName": "DormitoryManagementSystem.Tests.HousingRequestWorkflowTests.Invalid_transitions_are_rejected_without_changing_state(current: UnderReview, action: ConfirmMoveIn)",
+          "outcome": "Passed",
+          "startTime": "2026-10-24T20:04:25.6171120+07:00",
+          "endTime": "2026-10-24T20:04:25.6171489+07:00",
+          "duration": "00:00:00.0000069"
+        },
+        {
+          "testName": "DormitoryManagementSystem.Tests.HousingRequestWorkflowTests.Allowed_transitions_have_one_explicit_destination(current: AwaitingMoveIn, action: Reject, expected: Rejected)",
+          "outcome": "Passed",
+          "startTime": "2026-10-24T20:04:25.6214171+07:00",
+          "endTime": "2026-10-24T20:04:25.6214575+07:00",
+          "duration": "00:00:00.0000028"
+        },
+        {
+          "testName": "DormitoryManagementSystem.Tests.HousingRequestWorkflowTests.Allowed_transitions_have_one_explicit_destination(current: UnderReview, action: RequestInformation, expected: NeedsInformation)",
+          "outcome": "Passed",
+          "startTime": "2026-10-24T20:04:25.6201871+07:00",
+          "endTime": "2026-10-24T20:04:25.6202501+07:00",
+          "duration": "00:00:00.0000026"
+        },
+        {
+          "testName": "DormitoryManagementSystem.Tests.BillingLedgerPolicyTests.Reversal_offsets_the_original_receipt",
+          "outcome": "Passed",
+          "startTime": "2026-10-24T20:04:25.6163977+07:00",
+          "endTime": "2026-10-24T20:04:25.6164567+07:00",
+          "duration": "00:00:00.0004713"
+        },
+        {
+          "testName": "DormitoryManagementSystem.Tests.BillingLedgerPolicyTests.Unpaid_invoice_becomes_overdue_only_after_due_date",
+          "outcome": "Passed",
+          "startTime": "2026-10-24T20:04:25.5838775+07:00",
+          "endTime": "2026-10-24T20:04:25.6150897+07:00",
+          "duration": "00:00:00.0022571"
+        },
+        {
+          "testName": "DormitoryManagementSystem.Tests.RoomCapacityPolicyTests.Maintenance_block_cannot_consume_an_active_hold",
+          "outcome": "Passed",
+          "startTime": "2026-10-24T20:04:25.6233035+07:00",
+          "endTime": "2026-10-24T20:04:25.6233419+07:00",
+          "duration": "00:00:00.0012052"
+        },
+        {
+          "testName": "DormitoryManagementSystem.Tests.BillingLedgerPolicyTests.Cancelled_invoice_cannot_collect_even_with_a_balance",
+          "outcome": "Passed",
+          "startTime": "2026-10-24T20:04:25.4720616+07:00",
+          "endTime": "2026-10-24T20:04:25.5777003+07:00",
+          "duration": "00:00:00.0961734"
+        },
+        {
+          "testName": "DormitoryManagementSystem.Tests.BillingLedgerPolicyTests.Fully_collected_invoice_is_paid_and_closed_for_collection",
+          "outcome": "Passed",
+          "startTime": "2026-10-24T20:04:25.6166188+07:00",
+          "endTime": "2026-10-24T20:04:25.6168529+07:00",
+          "duration": "00:00:00.0001961"
+        },
+        {
+          "testName": "DormitoryManagementSystem.Tests.RoomCapacityPolicyTests.Move_in_rejects_an_invalid_hold(released: False, expired: False, holdRoomId: 1, heldBeds: 2, expectedError: \"không giữ đúng 1 chỗ\")",
+          "outcome": "Passed",
+          "startTime": "2026-10-24T20:04:25.6220068+07:00",
+          "endTime": "2026-10-24T20:04:25.6220473+07:00",
+          "duration": "00:00:00.0003109"
+        },
+        {
+          "testName": "DormitoryManagementSystem.Tests.RoomCapacityPolicyTests.Move_in_rejects_an_invalid_hold(released: False, expired: False, holdRoomId: 2, heldBeds: 1, expectedError: \"không thuộc phòng đích\")",
+          "outcome": "Passed",
+          "startTime": "2026-10-24T20:04:25.4720397+07:00",
+          "endTime": "2026-10-24T20:04:25.6219397+07:00",
+          "duration": "00:00:00.1103471"
+        },
+        {
+          "testName": "DormitoryManagementSystem.Tests.HousingRequestWorkflowTests.Allowed_transitions_have_one_explicit_destination(current: UnderReview, action: Cancel, expected: Cancelled)",
+          "outcome": "Passed",
+          "startTime": "2026-10-24T20:04:25.6200883+07:00",
+          "endTime": "2026-10-24T20:04:25.6201228+07:00",
+          "duration": "00:00:00.0000035"
+        },
+        {
+          "testName": "DormitoryManagementSystem.Tests.RoomCapacityPolicyTests.Move_in_consumes_only_the_capacity_reserved_by_its_hold",
+          "outcome": "Passed",
+          "startTime": "2026-10-24T20:04:25.6231052+07:00",
+          "endTime": "2026-10-24T20:04:25.6231417+07:00",
+          "duration": "00:00:00.0005509"
+        },
+        {
+          "testName": "DormitoryManagementSystem.Tests.HousingRequestWorkflowTests.Allowed_transitions_have_one_explicit_destination(current: Submitted, action: RequestInformation, expected: NeedsInformation)",
+          "outcome": "Passed",
+          "startTime": "2026-10-24T20:04:25.6213148+07:00",
+          "endTime": "2026-10-24T20:04:25.6213502+07:00",
+          "duration": "00:00:00.0000034"
+        },
+        {
+          "testName": "DormitoryManagementSystem.Tests.RoomCapacityPolicyTests.Move_in_rejects_an_invalid_hold(released: False, expired: True, holdRoomId: 1, heldBeds: 1, expectedError: \"đã hết hạn\")",
+          "outcome": "Passed",
+          "startTime": "2026-10-24T20:04:25.6229332+07:00",
+          "endTime": "2026-10-24T20:04:25.6229877+07:00",
+          "duration": "00:00:00.0000138"
+        }
+      ]
+    },
+    {
+      "source": ".scratch\\report_cnppnc\\test-results\\integration-verification.trx",
+      "sha256": "5ce2f460ada364310f18babe11c15e08f4c65f110d1a4d61fa409a4c41c06295",
+      "times": {
+        "creation": "2026-10-24T20:05:41.4292484+07:00",
+        "queuing": "2026-10-24T20:05:41.4292492+07:00",
+        "start": "2026-10-24T20:05:32.9705316+07:00",
+        "finish": "2026-10-24T20:05:53.3233320+07:00"
+      },
+      "counters": {
+        "total": "5",
+        "executed": "5",
+        "passed": "5",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "by_outcome": {
+        "Passed": 5
+      },
+      "tests": [
+        {
+          "testName": "DormitoryManagementSystem.IntegrationTests.HousingPlacementIntegrationTests.Two_approvals_for_the_last_bed_create_exactly_one_hold",
+          "outcome": "Passed",
+          "startTime": "2026-10-24T20:05:41.4157894+07:00",
+          "endTime": "2026-10-24T20:05:45.7710546+07:00",
+          "duration": "00:00:04.3711075"
+        },
+        {
+          "testName": "DormitoryManagementSystem.IntegrationTests.MaintenanceCapacityIntegrationTests.Blocking_beds_cannot_consume_an_active_hold",
+          "outcome": "Passed",
+          "startTime": "2026-10-24T20:05:33.8864561+07:00",
+          "endTime": "2026-10-24T20:05:41.4017377+07:00",
+          "duration": "00:00:07.5051323"
+        },
+        {
+          "testName": "DormitoryManagementSystem.IntegrationTests.HousingPlacementIntegrationTests.Two_concurrent_confirmations_create_exactly_one_stay",
+          "outcome": "Passed",
+          "startTime": "2026-10-24T20:05:49.2276636+07:00",
+          "endTime": "2026-10-24T20:05:53.2600555+07:00",
+          "duration": "00:00:04.0324683"
+        },
+        {
+          "testName": "DormitoryManagementSystem.IntegrationTests.HousingPlacementIntegrationTests.Rejecting_an_expired_handoff_releases_the_hold_and_closes_the_request",
+          "outcome": "Passed",
+          "startTime": "2026-10-24T20:05:45.7721469+07:00",
+          "endTime": "2026-10-24T20:05:49.2271832+07:00",
+          "duration": "00:00:03.4556992"
+        },
+        {
+          "testName": "DormitoryManagementSystem.IntegrationTests.HousingPlacementIntegrationTests.Expired_hold_cannot_create_a_stay",
+          "outcome": "Passed",
+          "startTime": "2026-10-24T20:05:33.8854269+07:00",
+          "endTime": "2026-10-24T20:05:41.3987654+07:00",
+          "duration": "00:00:07.5051227"
+        }
+      ]
+    }
+  ]
+}
