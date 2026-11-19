@@ -59,21 +59,16 @@ else
         @foreach (var room in Model.Rooms)
         {
             var unavailableBeds = Math.Max(0, room.Capacity - room.Occupied - room.Assignable);
+            var cover = room.Photos.FirstOrDefault();
+            var sample = cover is null ? RoomIllustration.CoverFor(room.Id) : null;
+            var coverUrl = sample is null ? Url.Action("RoomPhoto", "Attachments", new { id = cover!.Id })
+                : Url.Content($"~/images/rooms/{sample.File}.webp");
+            var coverCaption = sample?.Caption ?? (string.IsNullOrWhiteSpace(cover?.Caption) ? $"Ảnh phòng {room.Code}" : cover.Caption);
             <article class="student-room-card">
-                @if (room.Photos.FirstOrDefault() is { } cover)
-                {
-                    <img class="room-choice-photo" src="@Url.Action("RoomPhoto", "Attachments", new { id = cover.Id })"
-                         alt="@(string.IsNullOrWhiteSpace(cover.Caption) ? $"Ảnh phòng {room.Code}" : cover.Caption)"
-                         loading="lazy" decoding="async" />
-                }
-                else
-                {
-                    var photo = RoomIllustration.ForRoom(room.Id, room.Amenities)[0];
-                    <figure class="room-illustration-cover">
-                        <img src="~/images/rooms/@(photo.File).webp" alt="@photo.Caption" loading="lazy" decoding="async" width="764" height="508" />
-                        <figcaption>Ảnh minh họa AI</figcaption>
-                    </figure>
-                }
+                <figure class="room-photo-cover">
+                    <img src="@coverUrl" alt="@coverCaption" loading="lazy" decoding="async" />
+                    <figcaption>@(sample is null ? "Ảnh thật" : "Ảnh thật · Phòng tham khảo")</figcaption>
+                </figure>
                 <header class="room-choice-header">
                     <div>
                         <p>@room.BuildingName · Tầng @room.FloorNumber · @room.RoomType</p>

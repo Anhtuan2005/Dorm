@@ -99,7 +99,7 @@ async function post(page, action, fields = {}, button) {
         await student.reload();
         assert.match(await student.locator("main").innerText(),/Hết hạn giữ giường/);
         await student.goto(baseUrl + "/Student/Rooms");
-        const card = student.locator(".student-room-card").filter({hasText:"Ảnh minh họa AI"}).first();
+        const card = student.locator(".student-room-card").filter({hasText:"Ảnh thật · Phòng tham khảo"}).first();
         await card.locator("img").evaluate(async image => { await image.decode(); });
         await card.locator("[data-apply-room]").click();
         assert.match(await student.locator("[data-room-booking]").innerText(),/giữ tạm giường trong 24 giờ/);

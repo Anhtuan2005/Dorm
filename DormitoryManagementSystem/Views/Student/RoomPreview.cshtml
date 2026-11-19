@@ -96,7 +96,7 @@
             @if (room.Photos.Count > 0)
             {
                 <div>
-                    <h2>Ảnh thực tế</h2>
+                    <h2>Ảnh thật của phòng @room.Code</h2>
                     <ul class="room-photo-grid">
                         @foreach (var photo in room.Photos)
                         {
@@ -113,7 +113,7 @@
             else
             {
                 <div>
-                    <h2>Ảnh minh họa AI</h2>
+                    <h2>Ảnh thật · Phòng tham khảo</h2>
                     <ul class="room-photo-grid">
                         @foreach (var photo in RoomIllustration.ForRoom(room.Id, room.Amenities))
                         {

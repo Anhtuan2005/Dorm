@@ -149,6 +149,19 @@ async function run() {
     await staff.getByRole("img", { name: caption }).waitFor();
 
     const sparse = await chooseRoom(student, "C-504");
+    await sparse.getByRole("heading", {name:"Ảnh thật · Phòng tham khảo", exact:true}).waitFor();
+    const examples = sparse.locator(".room-photo-grid img");
+    const samples = await examples.evaluateAll(images => Promise.all(images.map(async image => {
+      await image.decode();
+      return image.getAttribute("src").split("/").pop();
+    })));
+    assert.equal(new Set(samples).size, samples.length);
+    assert.equal(samples.length, 7);
+    for (const file of ["bathroom", "ceiling-fan", "standing-fan", "mini-fridge", "study-desk"])
+      assert.ok(samples.includes(file + ".webp"), file);
+    for (const file of ["air-conditioner", "personal-lockers", "bunk-drawers"])
+      assert.ok(!samples.includes(file + ".webp"), file);
+    assert.equal(await sparse.getByRole("link", { name: "Nguồn ảnh tham khảo" }).count(), 0);
     await sparse.locator("[data-tour-stage] canvas").waitFor({ timeout: 12000 });
     assert.equal(await sparse.locator("[data-tour-stage]").getAttribute("data-modeled-amenities"), "bath,desk,standingFan,ceilingFan,fridge");
     assert.deepEqual(await sparse.locator("[data-room-amenities] li").allTextContents(),
@@ -156,6 +169,8 @@ async function run() {
     await sparse.locator("[data-tour-stage] .room-tour-marker:visible").first().waitFor();
     if (artifacts) await student.screenshot({ path: path.join(artifacts, "room-tour-fans-and-fridge.png") });
     const preview = await chooseRoom(student);
+    await preview.getByRole("heading", {name:"Ảnh thật của phòng " + room, exact:true}).waitFor();
+    assert.equal(await preview.getByText("Nguồn ảnh tham khảo").count(), 0);
     const image = preview.getByRole("img", { name: caption });
     await image.waitFor();
     await student.waitForFunction(() => document.querySelector(".room-tour-facts img")?.naturalWidth > 0);
