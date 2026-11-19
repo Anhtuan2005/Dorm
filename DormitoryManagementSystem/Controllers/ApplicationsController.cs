@@ -25,6 +25,46 @@ public sealed class ApplicationsController(
         return Request.Headers["X-Operations-Refresh"] == "true" ? PartialView(nameof(Index), model) : View(model);
     }
 
+    [HttpGet]
+    public async Task<IActionResult> Peak([FromServices] Data.DormitoryDbContext db,
+        [FromServices] TimeProvider clock, CancellationToken token)
+    {
+        ViewData["Title"] = "Đợt đăng ký cao điểm";
+        ViewData["ActiveNav"] = "applications";
+        ViewData["Today"] = DateOnly.FromDateTime(clock.GetUtcNow().UtcDateTime.AddHours(7));
+        return View(await db.PeakIntakes.AsNoTracking().OrderByDescending(x => x.Starts).ThenByDescending(x => x.Id).ToListAsync(token));
+    }
+
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> OpenPeak(DateOnly? starts, DateOnly? ends, int holdHours,
+        [FromServices] Data.DormitoryDbContext db, [FromServices] TimeProvider clock, CancellationToken token)
+    {
+        var today = DateOnly.FromDateTime(clock.GetUtcNow().UtcDateTime.AddHours(7));
+        var error = await WorkTransaction.RunAsync(db, async () =>
+        {
+            if (starts == null || ends == null || starts < today || ends < starts || holdHours is < 1 or > 72)
+                return "Chọn ngày bắt đầu từ hôm nay, ngày kết thúc hợp lệ và thời hạn giữ từ 1 đến 72 giờ.";
+            if (await db.PeakIntakes.AnyAsync(x => x.ClosedUtc == null && x.Starts <= ends && x.Ends >= starts, token))
+                return "Khoảng ngày trùng với một đợt đã lên lịch.";
+            db.PeakIntakes.Add(new() { Starts = starts.Value, Ends = ends.Value, HoldHours = holdHours });
+            return null;
+        }, token);
+        TempData[error == null ? "Success" : "Error"] = error ?? "Đã lưu lịch đăng ký cao điểm.";
+        return RedirectToAction(nameof(Peak));
+    }
+
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> ClosePeak(int id, [FromServices] Data.DormitoryDbContext db,
+        [FromServices] TimeProvider clock, CancellationToken token)
+    {
+        var now = clock.GetUtcNow().UtcDateTime;
+        var today = DateOnly.FromDateTime(now.AddHours(7));
+        var changed = await db.PeakIntakes.Where(x => x.Id == id && x.ClosedUtc == null && x.Ends >= today)
+            .ExecuteUpdateAsync(set => set.SetProperty(x => x.ClosedUtc, now), token);
+        TempData[changed == 1 ? "Success" : "Error"] = changed == 1 ? "Đã kết thúc đợt. Các chỗ đã giữ vẫn có hiệu lực đến hạn riêng." : "Đợt đã kết thúc.";
+        return RedirectToAction(nameof(Peak));
+    }
+
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> BeginReview(ApplicationActionInput input, CancellationToken cancellationToken) =>
         RedirectWith(await applicationService.ExecuteAsync(input, HousingRequestAction.BeginReview, ManagerId, cancellationToken), "attention");

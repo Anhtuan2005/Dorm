@@ -66,6 +66,14 @@ else
                          alt="@(string.IsNullOrWhiteSpace(cover.Caption) ? $"Ảnh phòng {room.Code}" : cover.Caption)"
                          loading="lazy" decoding="async" />
                 }
+                else
+                {
+                    var photo = RoomIllustration.ForRoom(room.Id, room.Amenities)[0];
+                    <figure class="room-illustration-cover">
+                        <img src="~/images/rooms/@(photo.File).webp" alt="@photo.Caption" loading="lazy" decoding="async" width="764" height="508" />
+                        <figcaption>Ảnh minh họa AI</figcaption>
+                    </figure>
+                }
                 <header class="room-choice-header">
                     <div>
                         <p>@room.BuildingName · Tầng @room.FloorNumber · @room.RoomType</p>

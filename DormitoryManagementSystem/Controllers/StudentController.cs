@@ -13,6 +13,13 @@ public sealed class StudentController(
     UserManager<Models.ApplicationUser> userManager) : Controller
 {
     [HttpGet, ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+    public async Task<IActionResult> Profile(CancellationToken cancellationToken)
+    {
+        SetPage("Hồ sơ của tôi", "profile");
+        return View(await studentPortalService.GetMyProfileAsync(UserId, cancellationToken));
+    }
+
+    [HttpGet, ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
     public async Task<IActionResult> Dashboard(CancellationToken cancellationToken)
     {
         SetPage("Trang chủ", "dashboard");

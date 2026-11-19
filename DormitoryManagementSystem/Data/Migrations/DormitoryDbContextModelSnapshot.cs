@@ -700,6 +700,34 @@ namespace DormitoryManagementSystem.Data.Migrations
                     b.ToTable("PaymentTransactions");
                 });
 
+            modelBuilder.Entity("DormitoryManagementSystem.Models.PeakIntake", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime?>("ClosedUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateOnly>("Ends")
+                        .HasColumnType("date");
+
+                    b.Property<int>("HoldHours")
+                        .HasColumnType("int");
+
+                    b.Property<DateOnly>("Starts")
+                        .HasColumnType("date");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("PeakIntakes", t =>
+                        {
+                            t.HasCheckConstraint("CK_PeakIntakes_Window", "[Starts] <= [Ends] AND [HoldHours] BETWEEN 1 AND 72");
+                        });
+                });
+
             modelBuilder.Entity("DormitoryManagementSystem.Models.ResidenceTerm", b =>
                 {
                     b.Property<int>("Id")

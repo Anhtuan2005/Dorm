@@ -602,6 +602,13 @@ button, input, select, textarea { font-family: inherit; }
 .student-section-head { min-height: 0; margin-bottom: 16px; align-items: center; }
 .student-section-head > div > p { display: none; }
 .student-section-head h2 { font-size: 16px; }
+.my-profile { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 290px), 1fr)); gap: 16px; align-items: start; max-width: 960px; }
+.my-profile .student-section { min-width: 0; }
+.my-profile .student-section-head span { color: var(--workspace-muted); }
+.my-profile dl { margin: 0; }
+.my-profile dl > div { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); gap: 12px; padding: 12px 0; border-top: 1px solid var(--workspace-line); }
+.my-profile dd { margin: 0; overflow-wrap: anywhere; }
+.my-profile footer { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
 .student-section-head > a { font-size: 12px; font-weight: 500; }
 .live-status { font-size: 12px; font-weight: 400; }
 .live-status i { box-shadow: none; }
@@ -691,6 +698,12 @@ button, input, select, textarea { font-family: inherit; }
   display: block; width: calc(100% + 32px); max-width: none; margin: -16px -16px 2px;
   aspect-ratio: 2.6; max-height: 158px; object-fit: cover; background: var(--workspace-subtle);
 }
+.intake-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.intake-actions .heading-room-link { width: auto; }
+.room-illustration-cover { position: relative; margin: -16px -16px 2px; }
+.room-illustration-cover img { display: block; width: 100%; aspect-ratio: 2.6; height: auto; max-height: 158px; object-fit: cover; }
+.room-illustration-cover figcaption { position: absolute; bottom: 8px; right: 8px; padding: 2px 6px; border-radius: 4px; background: var(--workspace-paper); color: var(--workspace-copy); font-size: 11px; }
+.room-tour-facts .room-photo-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 260px)); }
 .room-capacity-panel { padding: 9px 10px 10px; border-radius: 7px; background: var(--workspace-selection); }
 .room-capacity-panel p {
   display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 8px; margin: 0 0 8px;

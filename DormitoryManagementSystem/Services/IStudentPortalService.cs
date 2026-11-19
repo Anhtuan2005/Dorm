@@ -9,6 +9,7 @@ public interface IStudentRoomSearch
 
 public interface IStudentPortalService : IStudentRoomSearch
 {
+    Task<MyStudentProfileViewModel?> GetMyProfileAsync(string userId, CancellationToken cancellationToken = default);
     Task<StudentRoomPreviewViewModel?> GetRoomPreviewAsync(string userId, int roomId, CancellationToken cancellationToken = default);
     Task<StudentDashboardViewModel> GetDashboardAsync(string userId, CancellationToken cancellationToken = default);
     Task<StudentNotificationsViewModel> GetNotificationsAsync(string userId, int page, CancellationToken cancellationToken = default);

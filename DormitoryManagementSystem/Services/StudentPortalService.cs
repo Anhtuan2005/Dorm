@@ -4,6 +4,7 @@ using DormitoryManagementSystem.Data;
 using DormitoryManagementSystem.Models;
 using DormitoryManagementSystem.ViewModels;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace DormitoryManagementSystem.Services;
 
@@ -16,6 +17,14 @@ public sealed class StudentPortalService(
 {
     private static readonly MaintenanceStatus[] OpenRepairStatuses =
         [MaintenanceStatus.New, MaintenanceStatus.Assigned, MaintenanceStatus.InProgress, MaintenanceStatus.WaitingParts];
+
+    public async Task<MyStudentProfileViewModel?> GetMyProfileAsync(string userId, CancellationToken cancellationToken = default)
+    {
+        var profile = await ProfileWithCurrentStay(userId).SingleOrDefaultAsync(cancellationToken);
+        if (profile is null) return null;
+        var stay = profile.Stays.SingleOrDefault();
+        return new(ToIdentity(profile), profile.Gender, stay is null ? null : ToStay(stay, []), stay?.PlannedEnd);
+    }
 
     public async Task<StudentNotificationsViewModel> GetNotificationsAsync(string userId, int page, CancellationToken cancellationToken = default)
     {
@@ -204,7 +213,17 @@ public sealed class StudentPortalService(
             x => x.StudentProfileId == profile.Id && HousingRequestWorkflow.ActiveStatuses.Contains(x.Status), cancellationToken);
         var capacity = RoomCapacityPolicy.FromRoom(room, now);
         var available = RoomBedPolicy.Available(room, now);
-        return new(ToRoomOption(room, capacity.Occupied, available.Count, photos), available, hasActiveRequest, currentStay is not null);
+        return new(ToRoomOption(room, capacity.Occupied, available.Count, photos), available, hasActiveRequest, currentStay is not null)
+        {
+            PeakHoldHours = currentStay is null ? await PeakHoursAsync(now, cancellationToken) : null
+        };
+    }
+
+    private Task<int?> PeakHoursAsync(DateTime now, CancellationToken token)
+    {
+        var today = DateOnly.FromDateTime(now.AddHours(7));
+        return db.PeakIntakes.Where(x => x.ClosedUtc == null && x.Starts <= today && today <= x.Ends)
+            .Select(x => (int?)x.HoldHours).SingleOrDefaultAsync(token);
     }
 
     private IQueryable<Room> SearchableRooms(string gender, DateTime now) => db.Rooms.AsNoTracking()
@@ -251,20 +270,30 @@ public sealed class StudentPortalService(
         SubmitHousingRequestInput input,
         CancellationToken cancellationToken = default)
     {
+        string message = "";
+        var error = await WorkTransaction.RunAsync(db, async () =>
+        {
+            var result = await PrepareSubmissionAsync(userId, input, cancellationToken);
+            message = result.Message;
+            return result.Success ? null : result.Message;
+        }, cancellationToken);
+        if (error != null) return new(false, error);
+        if (live != null) await live.NotifyOperationsAsync();
+        return new(true, message);
+    }
+
+    private async Task<StudentOperationResult> PrepareSubmissionAsync(string userId,
+        SubmitHousingRequestInput input, CancellationToken cancellationToken)
+    {
         var profile = await db.StudentProfiles
             .Include(x => x.Stays.Where(stay => stay.EndedAt == null))
             .SingleOrDefaultAsync(x => x.UserId == userId, cancellationToken);
         if (profile is null) return new(false, "Không tìm thấy hồ sơ sinh viên của tài khoản này.");
 
-        if (await db.HousingRequests.AnyAsync(
-                x => x.StudentProfileId == profile.Id && HousingRequestWorkflow.ActiveStatuses.Contains(x.Status),
-                cancellationToken))
-            return new(false, "Bạn đang có một đơn chờ xử lý. Hãy theo dõi hoặc hủy đơn đó trước.");
-
-        var now = timeProvider.GetUtcNow().UtcDateTime;
-        var room = await db.Rooms
+        var readAt = timeProvider.GetUtcNow().UtcDateTime;
+        var room = await db.Rooms.FromSqlInterpolated($"SELECT * FROM [Rooms] WITH (UPDLOCK, ROWLOCK) WHERE [Id] = {input.TargetRoomId}")
             .Include(x => x.Stays.Where(stay => stay.EndedAt == null))
-            .Include(x => x.Holds.Where(hold => hold.ReleasedAt == null && hold.ExpiresAt > now))
+            .Include(x => x.Holds.Where(hold => hold.ReleasedAt == null && hold.ExpiresAt > readAt))
             .Include(x => x.MaintenanceRequests.Where(repair => OpenRepairStatuses.Contains(repair.Status)))
             .AsSplitQuery()
             .SingleOrDefaultAsync(x => x.Id == input.TargetRoomId, cancellationToken);
@@ -273,6 +302,12 @@ public sealed class StudentPortalService(
             return new(false, "Phòng này không phù hợp chính sách lưu trú trong hồ sơ của bạn.");
         if (profile.Stays.Any(x => x.RoomId == room.Id)) return new(false, "Đây đang là phòng hiện tại của bạn.");
 
+        if (await db.HousingRequests.AnyAsync(
+                x => x.StudentProfileId == profile.Id && HousingRequestWorkflow.ActiveStatuses.Contains(x.Status),
+                cancellationToken))
+            return new(false, "Bạn đang có một đơn chờ xử lý. Hãy theo dõi hoặc hủy đơn đó trước.");
+
+        var now = timeProvider.GetUtcNow().UtcDateTime;
         var capacity = RoomCapacityPolicy.FromRoom(room, now);
         if (!capacity.CanAssign) return new(false, $"{capacity.AvailabilityReason}. Danh sách đã được cập nhật.");
         if (!RoomBedPolicy.Available(room, now).Contains(input.TargetBedNumber))
@@ -303,19 +338,17 @@ public sealed class StudentPortalService(
                 }
             ]
         };
+        var hours = currentStay is null ? await PeakHoursAsync(now, cancellationToken) : null;
+        if (hours is int holdHours)
+        {
+            request.ApprovedRoomHold = new() { RoomId = room.Id, BedNumber = input.TargetBedNumber, HeldBeds = 1,
+                ExpiresAt = now.AddHours(holdHours) };
+            request.Events.Single().Note = $"Đăng ký cao điểm. Giữ tạm giường {input.TargetBedNumber:00} đến {request.ApprovedRoomHold.ExpiresAt.AddHours(7):HH:mm dd/MM/yyyy} (giờ Việt Nam) để BQL xét hồ sơ.";
+        }
         db.HousingRequests.Add(request);
-
-        try
-        {
-            await OperationsNotifications.StageApplicationAsync(db, request, "Sinh viên gửi đơn lưu trú mới", now, cancellationToken);
-            await db.SaveChangesAsync(cancellationToken);
-            if (live is not null) await live.NotifyOperationsAsync();
-            return new(true, $"Đã gửi đơn {request.Code} cho phòng {room.Code}. Ban quản lý sẽ phản hồi trên trang Đăng ký của tôi.");
-        }
-        catch (DbUpdateException)
-        {
-            return new(false, "Không thể gửi đơn do dữ liệu vừa thay đổi. Vui lòng tải lại và thử lại.");
-        }
+        await OperationsNotifications.StageApplicationAsync(db, request, "Sinh viên gửi đơn lưu trú mới", now, cancellationToken);
+        return new(true, hours.HasValue ? $"Đã gửi đơn {request.Code}. {request.Events.Single().Note}"
+            : $"Đã gửi đơn {request.Code} cho phòng {room.Code}. Ban quản lý sẽ phản hồi trên trang Đăng ký của tôi.");
     }
 
     public async Task<StudentOperationResult> CancelHousingRequestAsync(
@@ -622,18 +655,18 @@ public sealed class StudentPortalService(
             ?? throw new InvalidOperationException("Tài khoản chưa được liên kết với hồ sơ sinh viên.");
     }
 
-    private async Task<StudentProfile> LoadProfileWithStayAsync(string userId, CancellationToken cancellationToken)
-    {
-        return await db.StudentProfiles.AsNoTracking()
+    private IQueryable<StudentProfile> ProfileWithCurrentStay(string userId) =>
+        db.StudentProfiles.AsNoTracking().Where(x => x.UserId == userId)
             .Include(x => x.User)
             .Include(x => x.Stays.Where(stay => stay.EndedAt == null))
                 .ThenInclude(x => x.Room)
                     .ThenInclude(x => x.Floor)
                         .ThenInclude(x => x.Building)
-            .AsSplitQuery()
-            .SingleOrDefaultAsync(x => x.UserId == userId, cancellationToken)
-            ?? throw new InvalidOperationException("Tài khoản chưa được liên kết với hồ sơ sinh viên.");
-    }
+            .AsSplitQuery();
+
+    private async Task<StudentProfile> LoadProfileWithStayAsync(string userId, CancellationToken cancellationToken) =>
+        await ProfileWithCurrentStay(userId).SingleOrDefaultAsync(cancellationToken)
+        ?? throw new InvalidOperationException("Tài khoản chưa được liên kết với hồ sơ sinh viên.");
 
     private static StudentIdentityViewModel ToIdentity(StudentProfile profile)
     {
@@ -702,7 +735,10 @@ public sealed class StudentPortalService(
             TargetBedNumber = request.TargetBedNumber,
             AppointmentUtc = request.AppointmentUtc,
             Inventory = request.Inventory,
-            HoldUntil = request.Status == HousingRequestStatus.AwaitingMoveIn ? request.ApprovedRoomHold?.ExpiresAt : null
+            ProvisionalHoldExpired = request.Status is HousingRequestStatus.Submitted or HousingRequestStatus.UnderReview or HousingRequestStatus.NeedsInformation
+                && request.ApprovedRoomHold is { } provisional && provisional.ExpiresAt <= now,
+            HoldUntil = HousingRequestWorkflow.IsActive(request.Status) && request.ApprovedRoomHold is { ReleasedAt: null } hold
+                && hold.ExpiresAt > now ? hold.ExpiresAt : null
         };
     }
 
@@ -712,6 +748,7 @@ public sealed class StudentPortalService(
         if (connection.State != ConnectionState.Open)
             await connection.OpenAsync(cancellationToken);
         await using DbCommand command = connection.CreateCommand();
+        command.Transaction = db.Database.CurrentTransaction?.GetDbTransaction();
         command.CommandText = "SELECT NEXT VALUE FOR [dbo].[HousingRequestNumbers]";
         var value = Convert.ToInt64(await command.ExecuteScalarAsync(cancellationToken));
         return $"DK-{now.AddHours(7):yyyy}-{value:0000}";

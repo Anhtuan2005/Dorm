@@ -76,7 +76,11 @@
                         <span>@(Model.IsTransfer ? "Lý do chuyển phòng" : "Lý do đăng ký")</span>
                         <textarea name="Reason" rows="3" minlength="10" maxlength="600" required>@Model.Draft.Reason</textarea>
                     </label>
-                    <p>Giường được giữ sau khi Ban quản lý duyệt đơn.</p>
+                    @if (Model.PeakHoldHours is int hours)
+                    {
+                        <p>Đang trong đợt cao điểm. Gửi đơn để giữ tạm giường trong @hours giờ. Ban quản lý sẽ xét hồ sơ trước khi hẹn nhận phòng.</p>
+                    }
+                    else { <p>Giường được giữ sau khi Ban quản lý duyệt đơn.</p> }
                     <button class="student-primary" type="submit">@(Model.IsTransfer ? "Gửi đơn chuyển phòng" : "Gửi đơn đăng ký ở")</button>
                 </form>
             }
@@ -88,8 +92,6 @@
         </section>
     </div>
 
-    @if (room.Photos.Count > 0 || room.Amenities.Count > 0)
-    {
         <section class="room-tour-facts">
             @if (room.Photos.Count > 0)
             {
@@ -108,6 +110,18 @@
                     </ul>
                 </div>
             }
+            else
+            {
+                <div>
+                    <h2>Ảnh minh họa AI</h2>
+                    <ul class="room-photo-grid">
+                        @foreach (var photo in RoomIllustration.ForRoom(room.Id, room.Amenities))
+                        {
+                            <li><a href="~/images/rooms/@(photo.File).webp" target="_blank" rel="noopener"><img src="~/images/rooms/@(photo.File).webp" alt="@photo.Caption" loading="lazy" /></a><small>@photo.Caption</small></li>
+                        }
+                    </ul>
+                </div>
+            }
             @if (room.Amenities.Count > 0)
             {
                 <div>
@@ -118,7 +132,6 @@
                 </div>
             }
         </section>
-    }
 </div>
 
 @section Scripts {

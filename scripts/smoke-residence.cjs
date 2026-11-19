@@ -39,6 +39,22 @@ async function post(page, action, fields = {}, button) {
     try {
         const staff = await login(browser,"manager@nepktx.local");
         const student = await login(browser,"student@nepktx.local");
+        await staff.setViewportSize({width:1440,height:960});
+        await staff.goto(baseUrl + "/Applications");
+        const actions = staff.locator(".intake-actions a");
+        const bounds = await actions.evaluateAll(links => links.map(link => {
+            const { left, right, top } = link.getBoundingClientRect();
+            return { left, right, top };
+        }));
+        assert.equal(bounds.length, 3);
+        assert.ok(bounds.every(action => Math.abs(action.top - bounds[0].top) < 1));
+        assert.ok(bounds[1].left - bounds[0].right < 18);
+        await staff.getByRole("link",{name:"Đợt cao điểm"}).click();
+        const windowFields = {starts:date(0),ends:date(3),holdHours:"24"};
+        await post(staff,"OpenPeak",windowFields);
+        assert.match(await staff.locator("main").innerText(),/Đang mở/);
+        await post(staff,"OpenPeak",windowFields);
+        assert.match(await staff.locator("body").innerText(),/trùng với một đợt/);
         await staff.goto(baseUrl + "/Renewals");
         await post(staff,"Term",{name:"Học kỳ kiểm thử",opens:date(-2),closes:date(5),starts:date(7),ends:date(120)});
         await student.goto(baseUrl + "/Renewals/Mine");
@@ -82,6 +98,30 @@ async function post(page, action, fields = {}, button) {
         }
         await student.reload();
         assert.match(await student.locator("main").innerText(),/Hết hạn giữ giường/);
-        console.log("Renewal, metered billing, reconciliation, checkout appointment, inventory and hold expiry passed.");
+        await student.goto(baseUrl + "/Student/Rooms");
+        const card = student.locator(".student-room-card").filter({hasText:"Ảnh minh họa AI"}).first();
+        await card.locator("img").evaluate(async image => { await image.decode(); });
+        await card.locator("[data-apply-room]").click();
+        assert.match(await student.locator("[data-room-booking]").innerText(),/giữ tạm giường trong 24 giờ/);
+        await student.locator(".room-photo-grid img").first().evaluate(async image => { await image.decode(); });
+        const bed = await student.locator("[name=TargetBedNumber] option").nth(1).getAttribute("value");
+        await post(student,"SubmitHousingRequest",{TargetBedNumber:bed,Reason:"Đăng ký nội trú trong đợt cao điểm."});
+        assert.match(await student.locator("main").innerText(),/Giữ giường đến/);
+        const ownNewRequest = "(SELECT Id FROM HousingRequests WHERE StudentProfileId="+person+" AND Status='Submitted')";
+        const held = "(SELECT ApprovedRoomHoldId FROM HousingRequests WHERE Id="+ownNewRequest+")";
+        assert.equal(sql("SELECT HeldBeds FROM RoomHolds WHERE Id="+held+" AND ReleasedAt IS NULL"),"1");
+        await staff.goto(baseUrl + "/Applications/Peak");
+        await post(staff,"ClosePeak");
+        assert.equal(sql("SELECT COUNT(*) FROM RoomHolds WHERE Id="+held+" AND ReleasedAt IS NULL"),"1");
+        sql("UPDATE RoomHolds SET ExpiresAt=DATEADD(minute,-1,SYSUTCDATETIME()) WHERE Id="+held);
+        for (let attempt=0; attempt<32; attempt++) {
+            if(sql("SELECT COUNT(*) FROM RoomHolds WHERE Id="+held+" AND ReleasedAt IS NOT NULL")==="1") break;
+            await new Promise(done=>setTimeout(done,1000));
+        }
+        assert.equal(sql("SELECT COUNT(*) FROM RoomHolds WHERE Id="+held+" AND ReleasedAt IS NOT NULL"),"1");
+        await student.reload();
+        assert.match(await student.locator("main").innerText(),/Hết hạn giữ tạm/);
+        assert.equal(sql("SELECT COUNT(*) FROM HousingRequests WHERE Id="+ownNewRequest),"1");
+        console.log("Renewal, billing, handover, peak registration, room photos and both hold expiries passed.");
     } finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exitCode=1; });

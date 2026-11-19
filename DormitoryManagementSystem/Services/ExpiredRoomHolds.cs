@@ -20,18 +20,23 @@ public sealed class ExpiredRoomHolds(IServiceScopeFactory scopes, TimeProvider c
                     recipients.Clear();
                     var now = clock.GetUtcNow().UtcDateTime;
                     var rows = await db.HousingRequests.Include(x => x.StudentProfile).Include(x => x.ApprovedRoomHold)
-                        .Where(x => x.Status == HousingRequestStatus.AwaitingMoveIn && x.ApprovedRoomHold != null &&
+                        .Where(x => HousingRequestWorkflow.ActiveStatuses.Contains(x.Status) && x.ApprovedRoomHold != null &&
+                            x.ApprovedRoomHold.ReleasedAt == null &&
                             x.ApprovedRoomHold.ExpiresAt <= now).OrderBy(x => x.Id).Take(100).ToListAsync(stoppingToken);
                     foreach (var row in rows)
                     {
-                        row.Status = HousingRequestStatus.Expired;
-                        row.ApprovedRoomHold!.ReleasedAt ??= now;
-                        row.ActionRequiredAt = null;
-                        row.DecisionReason = "Đã hết hạn giữ giường. Bạn có thể gửi đơn chọn phòng mới.";
-                        row.Events.Add(new() { Status = row.Status, Note = row.DecisionReason, CreatedAt = now });
+                        row.ApprovedRoomHold!.ReleasedAt = now;
+                        var note = "Hết hạn giữ tạm. Đơn vẫn chờ xử lý. Ban quản lý sẽ kiểm tra lại giường khi duyệt.";
+                        if (row.Status == HousingRequestStatus.AwaitingMoveIn)
+                        {
+                            row.Status = HousingRequestStatus.Expired;
+                            row.ActionRequiredAt = null;
+                            row.DecisionReason = note = "Đã hết hạn giữ giường. Bạn có thể gửi đơn chọn phòng mới.";
+                        }
+                        row.Events.Add(new() { Status = row.Status, Note = note, CreatedAt = now });
                         recipients.Add(row.StudentProfile.UserId);
                         if (row.StudentProfile.UserId is string recipient)
-                            db.Notifications.Add(new() { UserId = recipient, Title = "Hết hạn giữ giường", Body = row.Code + " · " + row.DecisionReason,
+                            db.Notifications.Add(new() { UserId = recipient, Title = "Hết hạn giữ giường", Body = row.Code + " · " + note,
                                 TargetUrl = "/Student/Applications", Type = "Application", CreatedAt = now });
                     }
                     return null;

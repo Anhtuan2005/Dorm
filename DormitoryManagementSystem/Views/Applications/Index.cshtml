@@ -8,8 +8,11 @@
 <div class="applications-page" data-operations-worklist="applications" data-operations-selected="@selected?.Id" data-operations-version="@selected?.RowVersion">
     <header class="operations-heading">
         <div><h1>Đơn lưu trú</h1><p>Tiếp nhận, xét duyệt và theo dõi bàn giao phòng.</p></div>
-        <a class="heading-room-link" asp-controller="Renewals" asp-action="Index">Gia hạn nội trú</a>
-        <a class="heading-room-link" asp-controller="Rooms" asp-action="Map"><svg><use href="#i-bed" /></svg>Xem sơ đồ phòng</a>
+        <div class="intake-actions">
+            <a class="heading-room-link" asp-controller="Renewals" asp-action="Index">Gia hạn nội trú</a>
+            <a class="heading-room-link" asp-action="Peak">Đợt cao điểm</a>
+            <a class="heading-room-link" asp-controller="Rooms" asp-action="Map"><svg><use href="#i-bed" /></svg>Xem sơ đồ phòng</a>
+        </div>
     </header>
 
     <div role="status">
@@ -119,6 +122,7 @@
                     @if (selected.TargetBedNumber is int bedNumber)
                     {
                         <p>Giường đã chọn <strong>@bedNumber.ToString("00")</strong></p>
+                        @if (selected.HasProvisionalHold) { <p>Giữ tạm cho đơn này đến <strong>@selected.HoldExpiresAt?.AddHours(7).ToString("HH:mm dd/MM/yyyy")</strong> (giờ Việt Nam).</p> }
                     }
                     @if (!selected.IsCheckout && selected.TargetRoom is not null)
                     {

@@ -30,7 +30,8 @@ public sealed class GeminiChatbotService(
           Chỗ có thể xếp = Sức chứa - Chỗ đang ở - Chỗ đang giữ - Chỗ tạm khóa.
         - Sinh viên chưa có lượt lưu trú chọn phòng để gửi đơn đăng ký ở. Sinh viên đang ở
           chọn phòng khác để gửi đơn chuyển phòng. Nhập lý do từ 10 đến 600 ký tự.
-          Mỗi sinh viên chỉ có một đơn lưu trú đang hoạt động.
+          Mỗi sinh viên chỉ có một đơn lưu trú đang hoạt động. Trong đợt cao điểm do Ban quản lý mở,
+          đơn đăng ký ở mới giữ tạm giường khi gửi. Hết hạn giữ tạm, giường mở lại và đơn vẫn chờ xét.
         - Đăng ký của tôi hiển thị trạng thái, lượt xử lý và nhật ký.
           Ban quản lý nhận xử lý trước khi quyết định. Nếu Cần bổ sung, sinh viên nhập
           thông tin bổ sung và bấm Gửi bổ sung và chuyển lại BQL; đơn trở về Đã gửi.

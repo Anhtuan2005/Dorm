@@ -62,6 +62,7 @@ public sealed record ApplicationAuditEventViewModel(
 
 public sealed class ApplicationCaseViewModel
 {
+    public bool HasProvisionalHold { get; init; }
     public long Id { get; init; }
     public int StudentId { get; init; }
     public string Code { get; init; } = string.Empty;

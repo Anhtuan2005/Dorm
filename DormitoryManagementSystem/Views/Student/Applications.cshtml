@@ -51,6 +51,7 @@ else
                 }
 
                 @if (request.HoldUntil is DateTime until) { <p>Giữ giường đến <strong>@until.AddHours(7).ToString("HH:mm dd/MM/yyyy")</strong></p> }
+                @if (request.ProvisionalHoldExpired) { <p><strong>Hết hạn giữ tạm.</strong> Hồ sơ vẫn chờ xử lý. Ban quản lý sẽ kiểm tra lại giường khi duyệt.</p> }
                 @if (request.AppointmentUtc is DateTime appt) { <p>Hẹn bàn giao <strong>@appt.AddHours(7).ToString("HH:mm dd/MM/yyyy")</strong></p> }
                 @if (request.Inventory != null) { <p><strong>Biên bản kiểm kê</strong> · @request.Inventory</p> }
                 @if (request.CanSupplement)

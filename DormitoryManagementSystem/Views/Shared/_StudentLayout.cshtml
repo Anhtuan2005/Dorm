@@ -56,11 +56,12 @@
                 <a class="@(activeNav == "applications" ? "active" : "")" asp-controller="Student" asp-action="Applications"><svg><use href="#s-file" /></svg><span>Đăng ký của tôi</span></a>
                 <a class="@(activeNav == "invoices" ? "active" : "")" asp-controller="Student" asp-action="Invoices"><svg><use href="#s-receipt" /></svg><span>Hóa đơn</span></a>
                 <a class="@(activeNav == "repairs" ? "active" : "")" asp-controller="Student" asp-action="Repairs"><svg><use href="#s-tool" /></svg><span>Yêu cầu hỗ trợ</span></a>
+                <a class="@(activeNav == "profile" ? "active" : "")" asp-controller="Student" asp-action="Profile" aria-current="@(activeNav == "profile" ? "page" : null)"><svg aria-hidden="true"><use href="#s-user" /></svg><span>Hồ sơ của tôi</span></a>
             </nav>
             <button class="student-help-card" type="button" data-chat-open><span><svg><use href="#s-message" /></svg></span><span><strong>Cần hỗ trợ?</strong><small>Hỏi trợ lý AI của KTX</small></span></button>
             <div class="student-account">
                 <span class="student-avatar">@initials</span>
-                <a class="student-account-copy" asp-controller="Account" asp-action="ChangePassword" title="Đổi mật khẩu"><strong>@fullName</strong><small>@currentUser?.Email</small></a>
+                <a class="student-account-copy" asp-controller="Student" asp-action="Profile" title="Hồ sơ của tôi"><strong>@fullName</strong><small>@currentUser?.Email</small></a>
                 <form asp-controller="Account" asp-action="Logout" method="post"><button type="submit" aria-label="Đăng xuất" title="Đăng xuất"><svg><use href="#s-logout" /></svg></button></form>
             </div>
         </aside>

@@ -22,6 +22,7 @@ const managerRoutes = [
 
 const studentRoutes = [
   ["/Student/Dashboard", "Chào An"],
+  ["/Student/Profile", "Hồ sơ của tôi"],
   ["/Student/Rooms", "Tìm phòng"],
   ["/Student/Applications", "Đăng ký của tôi"],
   ["/Student/Invoices", "Hóa đơn và công nợ"],
@@ -54,7 +55,19 @@ function watch(page, label, issues) {
 
 async function auditRoutes(page, label, routes, issues, mobile = false) {
   for (const [route, heading] of routes) {
-    const response = await page.goto(`${baseUrl}${route}`, { waitUntil: "networkidle" });
+    let response;
+    if (route === "/Student/Profile") {
+      if (mobile) await page.getByRole("button", { name: "Mở menu" }).click();
+      const link = mobile ? page.locator(".student-nav").getByRole("link", { name: "Hồ sơ của tôi" })
+        : page.locator(".student-account-copy");
+      [response] = await Promise.all([page.waitForResponse(r => new URL(r.url()).pathname === route && r.request().isNavigationRequest()), link.click()]);
+      await page.waitForURL(url => url.pathname === route);
+      if (!response.headers()["cache-control"]?.includes("no-store") ||
+          !await page.locator("main").getByText("student@nepktx.local", { exact: true }).isVisible())
+        issues.push(`${label}: personal profile data or private cache control is missing`);
+    } else {
+      response = await page.goto(`${baseUrl}${route}`, { waitUntil: "networkidle" });
+    }
     if (!response || response.status() >= 400) issues.push(`${label} ${route}: HTTP ${response?.status()}`);
     const h1 = await page.locator("main h1").first().textContent().catch(() => "");
     if (!h1?.includes(heading)) issues.push(`${label} ${route}: expected h1 containing '${heading}', got '${h1?.trim()}'`);

@@ -1,0 +1,53 @@
+@model MyStudentProfileViewModel
+@{
+    Layout = "_StudentLayout";
+    string Display(string? value) => string.IsNullOrWhiteSpace(value) ? "Chưa cập nhật" : value;
+}
+
+<header class="student-page-head"><h1>Hồ sơ của tôi</h1></header>
+@if (Model is null)
+{
+    <section class="student-section">
+        <h2>Tài khoản chưa liên kết với hồ sơ sinh viên</h2>
+        <p>Liên hệ Ban quản lý để đối chiếu mã sinh viên và liên kết hồ sơ của bạn.</p>
+        <a class="student-secondary" asp-controller="Home" asp-action="Privacy" asp-fragment="contact">Liên hệ Ban quản lý</a>
+    </section>
+}
+else
+{
+    <div class="my-profile">
+        <section class="student-section" aria-labelledby="profile-name">
+            <header class="student-section-head">
+                <div><h2 id="profile-name">@Model.Student.FullName</h2><span>@Model.Student.StudentCode</span></div>
+            </header>
+            <dl>
+                <div><dt>Khoa</dt><dd>@Display(Model.Student.Faculty)</dd></div>
+                <div><dt>Giới tính</dt><dd>@Display(Model.Gender)</dd></div>
+                <div><dt>Email đăng nhập</dt><dd>@Display(Model.Student.Email)</dd></div>
+                <div><dt>Số điện thoại</dt><dd>@Display(Model.Student.PhoneNumber)</dd></div>
+            </dl>
+            <footer>
+                <a class="student-secondary" asp-controller="Account" asp-action="ChangePassword">Đổi mật khẩu</a>
+                <a class="student-secondary" asp-controller="Home" asp-action="Privacy" asp-fragment="contact">Liên hệ cập nhật hồ sơ</a>
+            </footer>
+        </section>
+        <section class="student-section" aria-labelledby="profile-housing">
+            <header class="student-section-head"><h2 id="profile-housing">Chỗ ở hiện tại</h2></header>
+            @if (Model.CurrentStay is { } stay)
+            {
+                <dl>
+                    <div><dt>Phòng</dt><dd>@stay.RoomCode</dd></div>
+                    <div><dt>Vị trí</dt><dd>@stay.BuildingName · Tầng @stay.FloorNumber</dd></div>
+                    <div><dt>Giường</dt><dd>@(stay.BedNumber?.ToString("00") ?? "Chưa ghi nhận")</dd></div>
+                    <div><dt>Ngày nhận phòng</dt><dd>@TimeZoneInfo.ConvertTimeFromUtc(stay.StartedAt, TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time")).ToString("dd/MM/yyyy")</dd></div>
+                    <div><dt>Hạn lưu trú dự kiến</dt><dd>@(Model.PlannedEnd?.ToString("dd/MM/yyyy") ?? "Chưa xác định")</dd></div>
+                </dl>
+            }
+            else
+            {
+                <p>Bạn chưa có lượt lưu trú hiện tại.</p>
+                <a class="student-secondary" asp-action="Rooms">Tìm phòng</a>
+            }
+        </section>
+    </div>
+}

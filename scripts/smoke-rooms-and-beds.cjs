@@ -315,7 +315,7 @@ async function run() {
     await staff.goto(galleryUrl);
     staff.once("dialog", alert => alert.accept());
     await staff.getByRole("button", { name: "Gỡ ảnh" }).click();
-    await staff.getByText("Phòng này chưa có ảnh.", { exact: true }).waitFor();
+    await staff.getByText(/Phòng này chưa có ảnh thực tế/).waitFor();
     assert.equal((await student.request.get(imageUrl)).status(), 404);
     console.log("Room preview passed: furniture follows the room, occupied beds stay disabled, camera glides, and booking works without WebGL.");
   } finally {

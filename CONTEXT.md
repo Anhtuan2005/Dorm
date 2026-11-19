@@ -25,7 +25,7 @@ Tổng số giường vật lý của một **Phòng**.
 _Avoid_: Chỗ trống
 
 **Số giường**:
-Vị trí đánh số từ 01 đến **Sức chứa** trong một **Phòng**. Sinh viên chọn số giường khi gửi đơn. Ban quản lý duyệt để giữ giường đó và xác nhận bàn giao để ghi số giường vào **Lượt lưu trú**.
+Vị trí đánh số từ 01 đến **Sức chứa** trong một **Phòng**. Sinh viên chọn số giường khi gửi đơn. Trong đợt cao điểm do Ban quản lý mở, đơn đăng ký ở mới giữ tạm giường khi gửi. Ngoài đợt và khi chuyển phòng, giường được giữ sau khi duyệt. Chỉ khi xác nhận bàn giao mới ghi số giường vào **Lượt lưu trú**.
 
 **Ảnh phòng**:
 Ảnh do Ban quản lý tải lên trong danh mục phòng để sinh viên xem khi tìm phòng.
@@ -131,7 +131,7 @@ _Avoid_: Tỷ lệ thanh toán
 - Một **Cơ sở** chứa nhiều **Tòa**; một **Tòa** chứa nhiều **Tầng**; một **Tầng** chứa nhiều **Phòng**.
 - Một **Phòng** có nhiều **Lượt lưu trú**, **Giữ chỗ** và **Sự cố** theo thời gian.
 - Một **Hồ sơ sinh viên** có tối đa một **Lượt lưu trú** đang hoạt động và tối đa một **Đơn lưu trú** đang hoạt động.
-- Duyệt một **Đơn lưu trú** đăng ký/chuyển phòng tạo **Giữ chỗ** và chuyển sang chờ **Xác nhận nhận phòng**; chưa thay đổi **Lượt lưu trú** tại bước duyệt.
+- Duyệt một **Đơn lưu trú** đăng ký/chuyển phòng tạo hoặc gia hạn **Giữ chỗ** của chính đơn và chuyển sang chờ **Xác nhận nhận phòng**; chưa thay đổi **Lượt lưu trú** tại bước duyệt.
 - **Xác nhận nhận phòng** chỉ được dùng đúng **Giữ chỗ** một giường của chính đơn và đúng phòng đích; giữ chỗ đã hết hạn, đã giải phóng hoặc sai phòng không thể tạo **Lượt lưu trú**.
 - **Xác nhận nhận phòng** kiểm tra lại sức chứa và lượt nguồn, rồi giải phóng **Giữ chỗ**, kết thúc lượt cũ nếu có và tạo lượt mới trong cùng transaction.
 - Ban quản lý có thể từ chối **Đơn lưu trú** đang chờ nhận phòng; thao tác này giải phóng **Giữ chỗ** để sinh viên có thể nộp yêu cầu mới.
@@ -151,7 +151,7 @@ _Avoid_: Tỷ lệ thanh toán
 ## Học kỳ, bàn giao và phí theo chỉ số
 
 - Mỗi đợt gia hạn có thời gian nhận đơn và thời gian ở do Ban quản lý nhập. Khi duyệt, hệ thống cập nhật hạn dự kiến của đúng lượt đang ở.
-- Ban quản lý có thể hẹn bàn giao nhận, chuyển hoặc trả phòng. Lịch hẹn dùng giờ Việt Nam. Biên bản ghi tình trạng chìa khóa, nội thất và thiết bị tại bước xác nhận. Hết hạn giữ giường thì đơn hết hiệu lực và sinh viên được chọn lại.
+- Ban quản lý có thể hẹn bàn giao nhận, chuyển hoặc trả phòng. Lịch hẹn dùng giờ Việt Nam. Biên bản ghi tình trạng chìa khóa, nội thất và thiết bị tại bước xác nhận. Hết hạn giữ sau khi duyệt thì đơn chờ nhận phòng hết hiệu lực. Hết hạn giữ tạm trước khi duyệt chỉ mở lại giường, hồ sơ tiếp tục chờ xét.
 - Tiền phòng kỳ thu lấy giá của lượt ở gần nhất có giao với kỳ, rồi mới xét phạm vi tòa. Hai mốc đầu và cuối kỳ dùng giờ Việt Nam. Phát hành theo từng tòa và phát hành toàn KTX cho cùng kết quả trên cùng dữ liệu.
 - Với kỳ thu theo chỉ số, mỗi phòng có chỉ số đầu, cuối và đơn giá riêng cho điện và nước. Khi kỳ đã kết thúc, chia tổng tiền của phòng theo thời gian ở thực tế trong kỳ. Phân bổ số đồng còn dư theo phần lẻ lớn nhất, sau đó theo mã định danh hồ sơ. Hóa đơn sinh viên lưu từng dòng phí và tỷ lệ đã dùng. Kỳ thu theo mức cố định vẫn dùng số tiền nhập theo sinh viên.
 

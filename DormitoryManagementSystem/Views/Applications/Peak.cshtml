@@ -1,0 +1,39 @@
+@model IReadOnlyList<PeakIntake>
+@{
+    var today = (DateOnly)ViewData["Today"]!;
+    var iso = today.ToString("yyyy-MM-dd");
+}
+<header class="operations-heading">
+    <div><h1>Đợt đăng ký cao điểm</h1><p>Trong đợt, sinh viên đăng ký ở mới được giữ tạm một giường ngay khi gửi đơn. Ban quản lý vẫn xét hồ sơ trước khi bàn giao.</p></div>
+    <a class="heading-room-link" asp-action="Index">Về đơn lưu trú</a>
+</header>
+<div class="term-workspace">
+    <section class="term-panel">
+        <h2>Lên lịch nhận đơn</h2>
+        <form class="term-fields" asp-action="OpenPeak" method="post">
+            <label>Từ ngày<input type="date" name="starts" min="@iso" required /></label>
+            <label>Đến hết ngày<input type="date" name="ends" min="@iso" required /></label>
+            <label>Giữ tạm mỗi đơn (giờ)<input type="number" name="holdHours" value="24" min="1" max="72" required /></label>
+            <button class="primary" type="submit">Lưu đợt cao điểm</button>
+        </form>
+        <p>Ngày tính theo giờ Việt Nam. Hết hạn giữ tạm, giường được mở lại và hồ sơ vẫn nằm trong hàng đợi.</p>
+    </section>
+    <section class="term-panel">
+        <h2>Các đợt đăng ký</h2>
+        @if (Model.Count == 0) { <p>Chưa có đợt cao điểm. Hiện giường được giữ sau khi duyệt hồ sơ.</p> }
+        @foreach (var row in Model)
+        {
+            var ended = row.ClosedUtc.HasValue || row.Ends < today;
+            <div class="term-row">
+                <strong>@row.Starts.ToString("dd/MM/yyyy") – @row.Ends.ToString("dd/MM/yyyy")</strong>
+                <p>@(ended ? "Đã kết thúc" : row.Starts > today ? "Sắp mở" : "Đang mở") · Giữ tạm @row.HoldHours giờ</p>
+                @if (!ended)
+                {
+                    <form asp-action="ClosePeak" method="post" data-confirm="Kết thúc đợt này? Các giường đã giữ sẽ tiếp tục đến hạn riêng.">
+                        <input type="hidden" name="id" value="@row.Id" /><button class="heading-room-link" type="submit">Kết thúc đợt</button>
+                    </form>
+                }
+            </div>
+        }
+    </section>
+</div>

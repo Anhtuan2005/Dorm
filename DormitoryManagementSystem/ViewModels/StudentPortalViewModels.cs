@@ -10,6 +10,12 @@ public sealed record StudentIdentityViewModel(
     string Email,
     string Initials);
 
+public sealed record MyStudentProfileViewModel(
+    StudentIdentityViewModel Student,
+    string Gender,
+    StudentStayViewModel? CurrentStay,
+    DateOnly? PlannedEnd);
+
 public sealed record StudentStayViewModel(
     string RoomCode,
     string BuildingName,
@@ -45,6 +51,7 @@ public sealed record StudentHousingRequestViewModel(
     public DateTime? AppointmentUtc { get; init; }
     public string? Inventory { get; init; }
     public DateTime? HoldUntil { get; init; }
+    public bool ProvisionalHoldExpired { get; init; }
     public int? TargetBedNumber { get; init; }
 }
 
@@ -188,6 +195,7 @@ public sealed record StudentRoomPreviewViewModel(
     bool IsTransfer)
 {
     public bool CanApply => !HasActiveRequest && AvailableBeds.Count > 0;
+    public int? PeakHoldHours { get; init; }
     public SubmitHousingRequestInput Draft { get; init; } = new();
 }
 

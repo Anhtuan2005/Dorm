@@ -50,7 +50,8 @@ docs/**
 !docs/agents/*.md
 !docs/adr/*.md
 !.scratch/
-!.scratch/**
+!.scratch/**/*.md
+.scratch/**/publish/
 DESIGN.json
 *.doc
 *.docx
@@ -62,8 +63,8 @@ DESIGN.json
 .env
 .env.*
 !.env.example
-**/appsettings.Local.json
-**/appsettings.*.local.json
+**/appsettings.[Ll]ocal.json
+**/appsettings.*.[Ll]ocal.json
 **/secrets.json
 **/*.secrets.json
 *.pfx

@@ -14,6 +14,7 @@ public sealed class DormitoryDbContext(DbContextOptions<DormitoryDbContext> opti
     public DbSet<StudentProfile> StudentProfiles => Set<StudentProfile>();
     public DbSet<Stay> Stays => Set<Stay>();
     public DbSet<RoomHold> RoomHolds => Set<RoomHold>();
+    public DbSet<PeakIntake> PeakIntakes => Set<PeakIntake>();
     public DbSet<HousingRequest> HousingRequests => Set<HousingRequest>();
     public DbSet<HousingRequestEvent> HousingRequestEvents => Set<HousingRequestEvent>();
     public DbSet<BillingPeriod> BillingPeriods => Set<BillingPeriod>();
@@ -34,6 +35,8 @@ public sealed class DormitoryDbContext(DbContextOptions<DormitoryDbContext> opti
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
+        builder.Entity<PeakIntake>().ToTable(t => t.HasCheckConstraint("CK_PeakIntakes_Window",
+            "[Starts] <= [Ends] AND [HoldHours] BETWEEN 1 AND 72"));
         builder.Entity<RoomMeterReading>().HasKey(x => new { x.BillingPeriodId, x.RoomId });
         builder.Entity<RoomMeterReading>().HasOne(x => x.Room).WithMany().OnDelete(DeleteBehavior.Restrict);
         builder.Entity<StayRenewal>().HasIndex(x => new { x.StayId, x.ResidenceTermId }).IsUnique();
