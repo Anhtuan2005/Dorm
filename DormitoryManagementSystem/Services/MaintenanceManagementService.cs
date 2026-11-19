@@ -8,7 +8,8 @@ namespace DormitoryManagementSystem.Services;
 
 public sealed class MaintenanceManagementService(
     DormitoryDbContext db,
-    TimeProvider timeProvider) : IMaintenanceManagementService
+    TimeProvider timeProvider,
+    RealtimeUpdates? live = null) : IMaintenanceManagementService
 {
     private const int PageSize = 24;
     private static readonly MaintenanceStatus[] OpenStatuses =
@@ -41,20 +42,16 @@ public sealed class MaintenanceManagementService(
         query.Page = Math.Min(query.Page, totalPages);
 
         var rows = await filtered
-            .OrderBy(x => x.Status == MaintenanceStatus.New || x.Status == MaintenanceStatus.Assigned ||
-                          x.Status == MaintenanceStatus.InProgress || x.Status == MaintenanceStatus.WaitingParts ? 0 : 1)
-            .ThenBy(x => x.Priority == MaintenancePriority.Urgent ? 0
-                : x.Priority == MaintenancePriority.High ? 1
-                : x.Priority == MaintenancePriority.Medium ? 2 : 3)
-            .ThenBy(x => x.CreatedAt)
+            .OrderByDescending(x => x.CreatedAt)
+            .ThenByDescending(x => x.Id)
             .Skip((query.Page - 1) * PageSize)
             .Take(PageSize)
             .ToListAsync(cancellationToken);
 
-        var requestedSelectedId = query.SelectedId;
-        var selectedId = requestedSelectedId.HasValue && rows.Any(x => x.Id == requestedSelectedId.Value)
-            ? requestedSelectedId
-            : rows.FirstOrDefault()?.Id;
+        var selectedId = query.SelectedId is int requestedId &&
+            (rows.Any(x => x.Id == requestedId) || await filtered.AnyAsync(x => x.Id == requestedId, cancellationToken))
+            ? requestedId
+            : rows.FirstOrDefault(x => x.Code == query.Search?.Trim())?.Id ?? rows.FirstOrDefault()?.Id;
         query.SelectedId = selectedId;
 
         var items = rows.Select(x =>
@@ -97,11 +94,8 @@ public sealed class MaintenanceManagementService(
         };
     }
 
-    public Task<int> GetAttentionCountAsync(CancellationToken cancellationToken = default) =>
-        db.MaintenanceRequests.AsNoTracking().CountAsync(
-            x => OpenStatuses.Contains(x.Status) &&
-                 (x.Priority == MaintenancePriority.Urgent || x.Priority == MaintenancePriority.High),
-            cancellationToken);
+    public Task<int> GetOpenCountAsync(CancellationToken cancellationToken = default) =>
+        db.MaintenanceRequests.CountAsync(x => OpenStatuses.Contains(x.Status), cancellationToken);
 
     public async Task<MaintenanceOperationResult> UpdateAsync(
         UpdateMaintenanceInput input,
@@ -154,14 +148,31 @@ public sealed class MaintenanceManagementService(
                 return new(false, $"Không thể chuyển từ {StatusPresentation(request.Status).Label} sang {StatusPresentation(nextStatus).Label}.", request.Id);
 
             var completed = nextStatus is MaintenanceStatus.Resolved or MaintenanceStatus.Closed;
-            var blockedBeds = completed ? 0 : input.BlockedBeds;
+            var availableBeds = RoomBedPolicy.Available(request.Room, now, excludingIncidentId: request.Id);
+            var blockedNumbers = Array.Empty<int>();
+            if (!completed && !string.IsNullOrWhiteSpace(input.BedNumbers))
+            {
+                blockedNumbers = input.BedNumbers.Split(',', StringSplitOptions.TrimEntries)
+                    .Select(x => int.TryParse(x, out var number) ? number : 0).ToArray();
+                if (blockedNumbers.Distinct().Count() != blockedNumbers.Length || blockedNumbers.Any(x => !availableBeds.Contains(x)))
+                    return new(false, "Số giường phải khác nhau, thuộc phòng này và còn có thể tạm khóa.", request.Id);
+            }
+            else if (!completed)
+            {
+                blockedNumbers = RoomBedPolicy.ParseBlocks(request.BlockedBedNumbers).Intersect(availableBeds)
+                    .Concat(availableBeds).Distinct().Take(input.BlockedBeds).ToArray();
+            }
+            var blockedBeds = completed ? 0 : string.IsNullOrWhiteSpace(input.BedNumbers) ? input.BlockedBeds : blockedNumbers.Length;
             var capacityDecision = RoomCapacityPolicy.CanSetBlockedBeds(request.Room, request.Id, blockedBeds, now);
             if (!capacityDecision.Allowed)
                 return new(false, capacityDecision.ErrorMessage, request.Id);
+            if (blockedNumbers.Length != blockedBeds)
+                return new(false, "Không đủ giường có thể tạm khóa.", request.Id);
             request.Status = nextStatus;
             request.Priority = nextPriority;
             request.AssignedTeam = assignedTeam;
             request.BlockedBeds = blockedBeds;
+            request.BlockedBedNumbers = blockedNumbers.Length == 0 ? null : string.Join(",", blockedNumbers.Order());
             request.UpdatedAt = now;
             request.Updates.Add(new MaintenanceUpdate
             {
@@ -171,22 +182,47 @@ public sealed class MaintenanceManagementService(
                 CreatedAt = now
             });
 
-            if (request.ReporterStudent?.UserId is string reporterUserId)
+            var reporterUserId = request.ReporterStudent?.UserId;
+            var statusLabel = StatusPresentation(nextStatus).Label;
+            if (reporterUserId is not null)
             {
                 db.Notifications.Add(new Notification
                 {
                     UserId = reporterUserId,
                     Type = "Maintenance",
-                    Title = $"{request.Code} · {StatusPresentation(nextStatus).Label}",
+                    Title = $"{request.Code} · {statusLabel}",
                     Body = input.Note.Trim().Length <= 300 ? input.Note.Trim() : input.Note.Trim()[..300],
                     TargetUrl = "/Student/Repairs",
                     CreatedAt = now
                 });
             }
 
+            List<string> followerUserIds = request.ShareWithRoom
+                ? await db.MaintenanceFollowers.AsNoTracking()
+                    .Where(x => x.MaintenanceRequestId == request.Id && x.Stay.EndedAt == null
+                        && x.Stay.RoomId == request.RoomId && x.Stay.StudentProfile.UserId != null
+                        && x.Stay.StudentProfile.UserId != reporterUserId)
+                    .Select(x => x.Stay.StudentProfile.UserId!)
+                    .Distinct()
+                    .ToListAsync(cancellationToken)
+                : [];
+            foreach (var followerUserId in followerUserIds)
+            {
+                db.Notifications.Add(new Notification
+                {
+                    UserId = followerUserId,
+                    Type = "Maintenance",
+                    Title = $"{request.Code} · {statusLabel}",
+                    Body = $"Phòng {request.Room.Code} · {request.Title}",
+                    TargetUrl = $"/Student/Repairs#repair-{request.Id}",
+                    CreatedAt = now
+                });
+            }
+
             await db.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
-            return new(true, $"Đã cập nhật {request.Code} sang {StatusPresentation(nextStatus).Label.ToLowerInvariant()}.", request.Id);
+            if (live is not null) await live.NotifyOperationsAsync(followerUserIds.Append(reporterUserId).ToArray());
+            return new(true, $"Đã cập nhật {request.Code} sang {statusLabel.ToLowerInvariant()}.", request.Id);
         }
         catch (DbUpdateConcurrencyException)
         {
@@ -260,6 +296,7 @@ public sealed class MaintenanceManagementService(
             StatusClass = status.Css,
             AssignedTeam = request.AssignedTeam,
             BlockedBeds = request.BlockedBeds,
+            BlockedBedNumbers = RoomBedPolicy.ParseBlocks(request.BlockedBedNumbers),
             MaxBlockedBeds = maxBlocked,
             Capacity = capacity.Capacity,
             Occupied = capacity.Occupied,
@@ -346,7 +383,7 @@ public sealed class MaintenanceManagementService(
         return true;
     }
 
-    private static (string Label, string Css) PriorityPresentation(MaintenancePriority priority) => priority switch
+    internal static (string Label, string Css) PriorityPresentation(MaintenancePriority priority) => priority switch
     {
         MaintenancePriority.Urgent => ("Khẩn cấp", "urgent"),
         MaintenancePriority.High => ("Ưu tiên cao", "high"),
@@ -354,7 +391,7 @@ public sealed class MaintenanceManagementService(
         _ => ("Ưu tiên thấp", "low")
     };
 
-    private static (string Label, string Css) StatusPresentation(MaintenanceStatus status) => status switch
+    internal static (string Label, string Css) StatusPresentation(MaintenanceStatus status) => status switch
     {
         MaintenanceStatus.New => ("Chưa phân công", "new"),
         MaintenanceStatus.Assigned => ("Đã phân công", "assigned"),

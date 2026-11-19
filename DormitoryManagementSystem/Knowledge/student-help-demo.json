@@ -1,0 +1,37 @@
+[
+  {
+    "questions": ["Đăng ký phòng thế nào?", "Cách đăng ký phòng", "Đăng ký ở KTX thế nào?", "Đăng ký phòng ở đâu?", "Đăng ký phòng"],
+    "answer": "Mở Tìm phòng, chọn phòng phù hợp còn chỗ và gửi lý do đăng ký. Bạn có thể theo dõi tiến độ ở Đăng ký của tôi. Khi đơn được duyệt, chờ Ban quản lý xác nhận nhận phòng.",
+    "document": "Sổ tay minh họa NẾP KTX",
+    "section": "Đăng ký phòng",
+    "action": "rooms"
+  },
+  {
+    "questions": ["Chuyển phòng cần làm gì?", "Cách chuyển phòng", "Chuyển phòng thế nào?", "Chuyển phòng ở đâu?", "Thủ tục chuyển phòng"],
+    "answer": "Nếu đang ở KTX, mở Tìm phòng, chọn phòng khác phù hợp còn chỗ và gửi yêu cầu chuyển phòng. Theo dõi đơn ở Đăng ký của tôi. Lượt ở phòng mới bắt đầu khi Ban quản lý xác nhận nhận phòng.",
+    "document": "Sổ tay minh họa NẾP KTX",
+    "section": "Chuyển phòng",
+    "action": "rooms"
+  },
+  {
+    "questions": ["Trả phòng cần làm gì?", "Cách trả phòng", "Trả phòng thế nào?", "Trả phòng ở đâu?", "Thủ tục trả phòng"],
+    "answer": "Mở Đăng ký của tôi, chọn Trả phòng và gửi lý do. Lượt lưu trú kết thúc khi Ban quản lý duyệt đơn trả phòng.",
+    "document": "Sổ tay minh họa NẾP KTX",
+    "section": "Trả phòng",
+    "action": "applications"
+  },
+  {
+    "questions": ["Báo sự cố ở đâu?", "Cách báo sự cố", "Báo sự cố thế nào?", "Gửi yêu cầu sửa chữa ở đâu?", "Đăng ký sửa chữa thế nào?"],
+    "answer": "Mở Yêu cầu hỗ trợ để gửi sự cố tại phòng đang ở. Chọn nhóm sự cố, ghi mô tả và gửi kèm ảnh nếu cần. Nếu có nguy hiểm, liên hệ trực ban hoặc Ban quản lý ngay.",
+    "document": "Sổ tay minh họa NẾP KTX",
+    "section": "Báo sự cố",
+    "action": "repairs"
+  },
+  {
+    "questions": ["Tra cứu biểu phí ở đâu?", "Biểu phí KTX", "Xem biểu phí thế nào?"],
+    "answer": "Bạn có thể xem các khoản đã phát hành cho tài khoản mình tại Hóa đơn. Hãy liên hệ Ban quản lý để lấy biểu phí đang áp dụng và thời hạn chính thức.",
+    "document": "Sổ tay minh họa NẾP KTX",
+    "section": "Tra cứu biểu phí",
+    "action": "invoices"
+  }
+]

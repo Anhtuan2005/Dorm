@@ -1,0 +1,125 @@
+[
+  {
+    "dpr": 1,
+    "badges": [
+      {
+        "text": "Đang xét duyệt",
+        "display": "flex",
+        "align": "center",
+        "justify": "center",
+        "height": 28,
+        "offsetX": 0,
+        "offsetY": -0.40625
+      },
+      {
+        "text": "Đã gửi",
+        "display": "flex",
+        "align": "center",
+        "justify": "center",
+        "height": 28,
+        "offsetX": 0,
+        "offsetY": -0.40625
+      },
+      {
+        "text": "Cần bổ sung",
+        "display": "flex",
+        "align": "center",
+        "justify": "center",
+        "height": 28,
+        "offsetX": 0,
+        "offsetY": -0.40625
+      },
+      {
+        "text": "Chờ nhận phòng",
+        "display": "flex",
+        "align": "center",
+        "justify": "center",
+        "height": 28,
+        "offsetX": 0,
+        "offsetY": -0.40625
+      }
+    ]
+  },
+  {
+    "dpr": 1.25,
+    "badges": [
+      {
+        "text": "Đang xét duyệt",
+        "display": "flex",
+        "align": "center",
+        "justify": "center",
+        "height": 28,
+        "offsetX": 0,
+        "offsetY": -0.40625
+      },
+      {
+        "text": "Đã gửi",
+        "display": "flex",
+        "align": "center",
+        "justify": "center",
+        "height": 28,
+        "offsetX": 0,
+        "offsetY": -0.40625
+      },
+      {
+        "text": "Cần bổ sung",
+        "display": "flex",
+        "align": "center",
+        "justify": "center",
+        "height": 28,
+        "offsetX": 0,
+        "offsetY": -0.40625
+      },
+      {
+        "text": "Chờ nhận phòng",
+        "display": "flex",
+        "align": "center",
+        "justify": "center",
+        "height": 28,
+        "offsetX": 0,
+        "offsetY": -0.40625
+      }
+    ]
+  },
+  {
+    "dpr": 1.5,
+    "badges": [
+      {
+        "text": "Đang xét duyệt",
+        "display": "flex",
+        "align": "center",
+        "justify": "center",
+        "height": 28,
+        "offsetX": 0,
+        "offsetY": -0.40625
+      },
+      {
+        "text": "Đã gửi",
+        "display": "flex",
+        "align": "center",
+        "justify": "center",
+        "height": 28,
+        "offsetX": 0,
+        "offsetY": -0.40625
+      },
+      {
+        "text": "Cần bổ sung",
+        "display": "flex",
+        "align": "center",
+        "justify": "center",
+        "height": 28,
+        "offsetX": 0,
+        "offsetY": -0.40625
+      },
+      {
+        "text": "Chờ nhận phòng",
+        "display": "flex",
+        "align": "center",
+        "justify": "center",
+        "height": 28,
+        "offsetX": 0,
+        "offsetY": -0.40625
+      }
+    ]
+  }
+]

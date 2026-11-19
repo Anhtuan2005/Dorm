@@ -5,10 +5,13 @@
   "scripts": {
     "audit": "node scripts/audit-final-system.cjs",
     "smoke:placement": "node scripts/smoke-application-transaction.cjs",
-    "smoke:accounts": "node scripts/smoke-student-account-lifecycle.cjs"
+    "smoke:accounts": "node scripts/smoke-student-account-lifecycle.cjs",
+    "build:room-preview": "esbuild frontend/room-preview.js --bundle --minify --format=esm --legal-comments=eof --outfile=DormitoryManagementSystem/wwwroot/js/room-preview.bundle.js"
   },
   "devDependencies": {
+    "esbuild": "0.28.2",
     "playwright": "1.65.0",
-    "sharp": "0.35.5"
+    "sharp": "0.35.5",
+    "three": "0.187.0"
   }
 }

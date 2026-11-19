@@ -1,0 +1,31 @@
+@model StudentNotificationsViewModel
+
+<section class="student-section notification-page" data-live-notices="inbox" data-notice-page="@Model.Page">
+    <header class="student-section-head">
+        <div><p>Hộp thư nghiệp vụ</p><h2>@Model.TotalCount thông báo</h2></div>
+        <span>@Model.UnreadCount chưa đọc</span>
+    </header>
+    @if (Model.Notifications.Count == 0)
+    {
+        <div class="student-empty"><span><svg><use href="#s-bell" /></svg></span><h2>Chưa có thông báo</h2><p>Cập nhật từ ban quản lý sẽ xuất hiện ở đây.</p><a asp-action="Dashboard">Về trang chủ</a></div>
+    }
+    else
+    {
+        <div class="notification-page-list">
+            @foreach (var notice in Model.Notifications)
+            {
+                <a asp-action="OpenNotification" asp-route-id="@notice.Id" data-notice-id="@notice.Id" class="@(notice.IsUnread ? "unread" : "")">
+                    <i></i><span><strong>@notice.Title</strong><small>@notice.Body</small><time>@notice.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy, HH:mm")</time></span><svg><use href="#s-chevron" /></svg>
+                </a>
+            }
+        </div>
+    }
+    @if (Model.TotalPages > 1)
+    {
+        <nav class="student-pagination" aria-label="Phân trang thông báo">
+            @if (Model.Page > 1) { <a class="student-secondary" asp-action="Notifications" asp-route-page="@(Model.Page - 1)">Trang trước</a> }
+            <span>Trang @Model.Page / @Model.TotalPages</span>
+            @if (Model.Page < Model.TotalPages) { <a class="student-secondary" asp-action="Notifications" asp-route-page="@(Model.Page + 1)">Trang sau</a> }
+        </nav>
+    }
+</section>

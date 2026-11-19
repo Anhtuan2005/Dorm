@@ -34,7 +34,7 @@ function watch(page, prefix, issues) {
   const response = await page.goto(`${baseUrl}/Maintenance/Index?Status=open`, { waitUntil: "networkidle" });
   if (!response?.ok()) issues.push(`maintenance returned ${response?.status()}`);
   const text = (await page.locator(".maintenance-page").innerText()).toLocaleLowerCase("vi");
-  for (const expected of ["Sự cố & bảo trì", "Khẩn cấp", "SC-0284", "Ảnh hưởng sức chứa", "Cập nhật sự cố"]) {
+  for (const expected of ["Sự cố và bảo trì", "Khẩn cấp", "SC-0284", "Ảnh hưởng sức chứa", "Cập nhật sự cố"]) {
     if (!text.includes(expected.toLocaleLowerCase("vi"))) issues.push(`maintenance screen missing: ${expected}`);
   }
   if ((await page.locator(".maintenance-ticket").count()) < 5) issues.push("expected at least five open incidents");

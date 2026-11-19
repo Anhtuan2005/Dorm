@@ -50,8 +50,8 @@ function collectClientIssues(page, prefix, issues) {
   await desktopPage.goto(`${baseUrl}/Student/Rooms`, { waitUntil: "networkidle" });
   if ((await desktopPage.locator(".student-room-card").count()) < 1) issues.push("no assignable room cards");
   await desktopPage.locator("[data-apply-room]").first().click();
-  if (!(await desktopPage.locator("[data-application-dialog]").isVisible())) issues.push("housing application dialog did not open");
-  await desktopPage.locator("[data-dialog-close]").first().click();
+  if (!(await desktopPage.locator("[data-room-tour]").isVisible())) issues.push("room preview page did not open");
+  await desktopPage.getByRole("link", { name: "Tìm phòng", exact: true }).filter({ has: desktopPage.locator("span[aria-hidden]") }).click();
   await desktopPage.screenshot({ path: path.join(outputDir, "student-rooms-desktop.png") });
 
   await desktopPage.goto(`${baseUrl}/Student/Dashboard`, { waitUntil: "networkidle" });
@@ -74,7 +74,7 @@ function collectClientIssues(page, prefix, issues) {
   await signIn(mobilePage);
   await mobilePage.screenshot({ path: path.join(outputDir, "student-dashboard-mobile.png") });
 
-  await mobilePage.locator(".ai-launcher").click();
+  await mobilePage.getByRole("button", { name: "Mở trợ lý AI", exact: true }).click();
   if (!(await mobilePage.locator("[data-ai-assistant]").isVisible())) issues.push("mobile AI panel did not open");
   await mobilePage.screenshot({ path: path.join(outputDir, "student-chat-mobile.png") });
 

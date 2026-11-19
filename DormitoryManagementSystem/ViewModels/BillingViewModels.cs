@@ -42,6 +42,18 @@ public sealed record BillingQueueItemViewModel(
 
 public sealed record BillingInvoiceLineViewModel(string Description, string ChargeType, decimal Amount);
 
+public sealed record BillingReceiptViewModel(
+    long InvoiceId,
+    string InvoiceCode,
+    string PeriodName,
+    string StudentCode,
+    string StudentName,
+    string Code,
+    decimal Amount,
+    string MethodLabel,
+    DateTime ReceivedAt,
+    string? ReversalCode);
+
 public sealed record BillingTransactionViewModel(
     long Id,
     string Code,
@@ -54,7 +66,11 @@ public sealed record BillingTransactionViewModel(
     string? Note,
     bool IsReversal,
     bool HasBeenReversed,
-    string? ReversedCode);
+    string? ReversedCode,
+    bool CanReverse);
+
+public sealed record VnpayReviewViewModel(
+    string Reference, decimal Amount, string? ProviderReference, string? ResponseCode, string? ProviderState);
 
 public sealed class BillingInvoiceDetailViewModel
 {
@@ -76,6 +92,8 @@ public sealed class BillingInvoiceDetailViewModel
     public required string StatusLabel { get; init; }
     public required string StatusClass { get; init; }
     public bool CanCollect { get; init; }
+    public bool VnpayPending { get; init; }
+    public IReadOnlyList<VnpayReviewViewModel> VnpayReviews { get; init; } = [];
     public required string RowVersion { get; init; }
     public required IReadOnlyList<BillingInvoiceLineViewModel> Lines { get; init; }
     public required IReadOnlyList<BillingTransactionViewModel> Transactions { get; init; }

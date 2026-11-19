@@ -15,8 +15,11 @@
     <title>@ViewData["Title"] · Cổng sinh viên NẾP KTX</title>
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/student.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/workspace.css" asp-append-version="true" />
 </head>
-<body class="student-body">
+<body class="student-body" data-live-portal="student" data-live-hub="@Url.Content("~/hubs/operations")"
+      data-live-snapshot="@Url.Action("NotificationSnapshot", "Student")" data-live-login="@Url.Action("Login", "Account")">
+    <a class="skip-link" href="#main-content">Đến nội dung chính</a>
     <svg class="svg-sprite" aria-hidden="true">
         <symbol id="s-home" viewBox="0 0 24 24"><path d="m3 11 9-8 9 8v9a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></symbol>
         <symbol id="s-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></symbol>
@@ -44,13 +47,14 @@
 
     <div class="student-shell">
         <aside class="student-sidebar" data-student-sidebar>
+            <button class="icon-button drawer-close" type="button" data-navigation-close aria-label="Đóng menu"><svg><use href="#s-close" /></svg></button>
             <a class="student-brand" asp-controller="Student" asp-action="Dashboard"><strong>NẾP KTX</strong><span>Cổng sinh viên</span></a>
             <p class="student-nav-label">Việc của tôi</p>
             <nav class="student-nav">
                 <a class="@(activeNav == "dashboard" ? "active" : "")" asp-controller="Student" asp-action="Dashboard"><svg><use href="#s-home" /></svg><span>Trang chủ</span></a>
                 <a class="@(activeNav == "rooms" ? "active" : "")" asp-controller="Student" asp-action="Rooms"><svg><use href="#s-search" /></svg><span>Tìm phòng</span></a>
                 <a class="@(activeNav == "applications" ? "active" : "")" asp-controller="Student" asp-action="Applications"><svg><use href="#s-file" /></svg><span>Đăng ký của tôi</span></a>
-                <a class="@(activeNav == "invoices" ? "active" : "")" asp-controller="Student" asp-action="Invoices"><svg><use href="#s-receipt" /></svg><span>Hóa đơn</span><b>1</b></a>
+                <a class="@(activeNav == "invoices" ? "active" : "")" asp-controller="Student" asp-action="Invoices"><svg><use href="#s-receipt" /></svg><span>Hóa đơn</span></a>
                 <a class="@(activeNav == "repairs" ? "active" : "")" asp-controller="Student" asp-action="Repairs"><svg><use href="#s-tool" /></svg><span>Yêu cầu hỗ trợ</span></a>
             </nav>
             <button class="student-help-card" type="button" data-chat-open><span><svg><use href="#s-message" /></svg></span><span><strong>Cần hỗ trợ?</strong><small>Hỏi trợ lý AI của KTX</small></span></button>
@@ -62,14 +66,15 @@
         </aside>
 
         <header class="student-topbar">
-            <button class="student-mobile-menu" type="button" data-student-menu aria-label="Mở menu"><svg><use href="#s-menu" /></svg></button>
+            <button class="student-mobile-menu" type="button" data-student-menu aria-label="Mở menu" aria-expanded="false"><svg><use href="#s-menu" /></svg></button>
             <div class="student-breadcrumb"><span>Cổng sinh viên</span><strong>@ViewData["Title"]</strong></div>
             <a class="student-mobile-brand" asp-controller="Student" asp-action="Dashboard">NẾP KTX</a>
-            <a class="student-notification" asp-controller="Student" asp-action="Notifications" aria-label="Thông báo"><svg><use href="#s-bell" /></svg><span>@await Component.InvokeAsync("StudentNotificationBadge")</span></a>
+            <button class="student-mobile-chat" type="button" data-chat-open aria-label="Mở trợ lý AI" aria-haspopup="dialog" aria-controls="student-chat"><svg aria-hidden="true"><use href="#s-message" /></svg></button>
+            <a class="student-notification" asp-controller="Student" asp-action="Notifications" aria-label="Thông báo"><svg><use href="#s-bell" /></svg><span data-live-unread aria-live="polite">@await Component.InvokeAsync("StudentNotificationBadge")</span></a>
             <span class="student-top-avatar">@initials</span>
         </header>
 
-        <main class="student-main">
+        <main class="student-main" id="main-content" tabindex="-1">
             @if (TempData["Success"] is string success)
             {
                 <div class="student-flash success" role="status"><svg><use href="#s-check" /></svg><span>@success</span><button type="button" data-flash-close aria-label="Đóng"><svg><use href="#s-close" /></svg></button></div>
@@ -90,21 +95,40 @@
         <div class="student-scrim" data-student-scrim></div>
     </div>
 
-    <button class="ai-launcher" type="button" data-chat-open aria-label="Mở trợ lý AI"><svg><use href="#s-message" /></svg><span>Hỗ trợ</span></button>
-    <dialog class="ai-assistant" data-ai-assistant aria-labelledby="ai-title">
-        <header><span class="ai-mark"><svg><use href="#s-message" /></svg></span><span><strong id="ai-title">Trợ lý AI NẾP KTX</strong><small>Chỉ dùng tài liệu đã xác nhận · Dữ liệu demo</small></span><button type="button" data-chat-close aria-label="Đóng trợ lý"><svg><use href="#s-close" /></svg></button></header>
-        <div class="ai-messages" data-chat-messages>
-            <div class="ai-message assistant"><p>Chào bạn, mình có thể hướng dẫn nội quy, phí, chuyển phòng và cách báo sự cố.</p></div>
-            <div class="ai-suggestions">
-                <button type="button" data-chat-question="Đăng ký phòng thế nào?">Đăng ký phòng thế nào?</button>
-                <button type="button" data-chat-question="Chuyển phòng cần làm gì?">Chuyển phòng cần làm gì?</button>
-                <button type="button" data-chat-question="Báo sự cố ở đâu?">Báo sự cố ở đâu?</button>
+    <button class="ai-launcher" type="button" data-chat-open aria-label="Mở trợ lý AI" aria-haspopup="dialog" aria-controls="student-chat"><svg aria-hidden="true"><use href="#s-message" /></svg><span>Trợ lý KTX</span></button>
+    <dialog class="ai-assistant" id="student-chat" data-ai-assistant aria-labelledby="ai-title"
+            data-rooms="@Url.Action("Rooms", "Student")" data-applications="@Url.Action("Applications", "Student")"
+            data-invoices="@Url.Action("Invoices", "Student")" data-repairs="@Url.Action("Repairs", "Student")"
+            data-notifications="@Url.Action("Notifications", "Student")" data-password="@Url.Action("ChangePassword", "Account")"
+            data-contact="@Url.Action("Privacy", "Home")#contact">
+        <header>
+            <span class="ai-mark"><svg aria-hidden="true"><use href="#s-message" /></svg></span>
+            <div><h2 id="ai-title">Trợ lý AI NẾP KTX</h2><p>Hướng dẫn sử dụng KTX</p></div>
+            <button type="button" data-chat-close aria-label="Đóng trợ lý"><svg aria-hidden="true"><use href="#s-close" /></svg></button>
+        </header>
+        <div class="ai-messages" data-chat-messages role="log" aria-live="polite" aria-relevant="additions text">
+            <div class="ai-welcome" data-chat-welcome>
+                <h3>Bạn cần giúp việc gì?</h3>
+                <div class="ai-suggestions" aria-label="Câu hỏi thường gặp">
+                    <button type="button" data-chat-question="Đăng ký phòng thế nào?"><svg aria-hidden="true"><use href="#s-bed" /></svg>Đăng ký phòng thế nào?</button>
+                    <button type="button" data-chat-question="Thanh toán qua VNPAY ở đâu?"><svg aria-hidden="true"><use href="#s-receipt" /></svg>Thanh toán hóa đơn</button>
+                    <button type="button" data-chat-question="Báo sự cố ở đâu?"><svg aria-hidden="true"><use href="#s-tool" /></svg>Báo sự cố ở đâu?</button>
+                    <button type="button" data-chat-question="Liên hệ Ban quản lý KTX"><svg aria-hidden="true"><use href="#s-help" /></svg>Liên hệ Ban quản lý</button>
+                </div>
             </div>
         </div>
-        <form class="ai-composer" data-chat-form><input type="text" data-chat-input maxlength="240" placeholder="Hỏi về KTX..." aria-label="Câu hỏi cho trợ lý AI" /><button type="submit" aria-label="Gửi câu hỏi"><svg><use href="#s-send" /></svg></button></form>
+        <form class="ai-composer" data-chat-form asp-controller="Chatbot" asp-action="Ask" method="post">
+            <div class="ai-composer-field">
+                <textarea rows="1" data-chat-input maxlength="1000" placeholder="Nhập câu hỏi về KTX…" aria-label="Câu hỏi cho trợ lý AI" aria-describedby="ai-privacy" required></textarea>
+                <button type="submit" aria-label="Gửi câu hỏi"><svg aria-hidden="true"><use href="#s-send" /></svg></button>
+            </div>
+            <small id="ai-privacy">Giữ riêng mật khẩu và thông tin cá nhân.</small>
+        </form>
     </dialog>
 
     <script src="~/js/student.js" asp-append-version="true"></script>
+    <script src="~/js/workspace.js" asp-append-version="true"></script>
+    <partial name="_RealtimeScripts" />
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

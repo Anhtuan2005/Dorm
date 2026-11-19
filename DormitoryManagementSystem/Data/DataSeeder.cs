@@ -7,6 +7,43 @@ namespace DormitoryManagementSystem.Data;
 
 public static class DataSeeder
 {
+    private const string LegacyRoomAmenities = "Wi-Fi|Điều hòa|WC khép kín|Bàn học|Tủ cá nhân";
+    private static readonly string[] RoomAmenitySets =
+    [
+        "Wi-Fi|Quạt|Tủ cá nhân",
+        "Wi-Fi|Điều hòa|Tủ cá nhân|Bình nóng lạnh",
+        "Wi-Fi|Điều hòa|Bàn học|Tủ cá nhân",
+        "Wi-Fi|Quạt|Bàn học|Tủ lạnh",
+        "Điều hòa|Bàn học|Tủ lạnh|Tủ cá nhân",
+        "Wi-Fi|Điều hòa|Tủ cá nhân|Ban công",
+        "Wi-Fi|Quạt|Bàn học|Tủ cá nhân|Bình nóng lạnh",
+        "Wi-Fi|Điều hòa|Bàn học|Tủ cá nhân|Tủ lạnh|Bình nóng lạnh"
+    ];
+
+    public static async Task RefreshLegacyRoomAmenitiesAsync(DormitoryDbContext db)
+    {
+        if (!await db.Users.AnyAsync(x => x.NormalizedEmail == "STUDENT@NEPKTX.LOCAL")) return;
+
+        var candidates = await db.Rooms.Include(x => x.Floor).ThenInclude(x => x.Building)
+            .Where(x => x.Amenities == LegacyRoomAmenities && x.Floor.Building.SiteName == "Cơ sở Thủ Đức")
+            .ToListAsync();
+        foreach (var room in candidates)
+        {
+            var building = room.Floor.Building.Code;
+            if (building is not ("A" or "B" or "C" or "D") || room.Floor.Number is < 1 or > 5 ||
+                !string.Equals(room.Amenities, LegacyRoomAmenities, StringComparison.Ordinal))
+                continue;
+
+            for (var position = 1; position <= RoomAmenitySets.Length; position++)
+            {
+                if (room.Code != $"{building}-{room.Floor.Number}{position:00}") continue;
+                room.Amenities = RoomAmenities.Serialize(RoomAmenitySets[position - 1]);
+                break;
+            }
+        }
+        await db.SaveChangesAsync();
+    }
+
     public static async Task SeedAsync(IServiceProvider services)
     {
         var db = services.GetRequiredService<DormitoryDbContext>();
@@ -61,7 +98,7 @@ public static class DataSeeder
                         Capacity = 8,
                         MonthlyPrice = spec.Price,
                         RoomType = spec.Type,
-                        Amenities = "Wi-Fi|Điều hòa|WC khép kín|Bàn học|Tủ cá nhân"
+                        Amenities = RoomAmenities.Serialize(RoomAmenitySets[roomNumber - 1])
                     });
                 }
                 building.Floors.Add(floor);

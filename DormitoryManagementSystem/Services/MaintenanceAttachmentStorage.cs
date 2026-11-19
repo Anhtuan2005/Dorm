@@ -24,7 +24,7 @@ public sealed class MaintenanceAttachmentStorage(IWebHostEnvironment environment
                 await using var input = file.OpenReadStream();
                 var signature = new byte[12];
                 var read = await input.ReadAsync(signature.AsMemory(0, signature.Length), cancellationToken);
-                var detected = DetectImage(signature, read);
+                var detected = ImageSignature.Detect(signature.AsSpan(0, read));
                 if (detected is null) throw new InvalidDataException($"{Path.GetFileName(file.FileName)} không phải ảnh JPG, PNG hoặc WebP hợp lệ.");
                 input.Position = 0;
                 var storedName = $"{Guid.NewGuid():N}{detected.Value.Extension}";
@@ -77,11 +77,4 @@ public sealed class MaintenanceAttachmentStorage(IWebHostEnvironment environment
         return path.StartsWith(root, StringComparison.OrdinalIgnoreCase) ? path : null;
     }
 
-    private static (string Extension, string ContentType)? DetectImage(byte[] bytes, int length)
-    {
-        if (length >= 3 && bytes[0] == 0xFF && bytes[1] == 0xD8 && bytes[2] == 0xFF) return (".jpg", "image/jpeg");
-        if (length >= 8 && bytes.AsSpan(0, 8).SequenceEqual(new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A })) return (".png", "image/png");
-        if (length >= 12 && bytes.AsSpan(0, 4).SequenceEqual("RIFF"u8) && bytes.AsSpan(8, 4).SequenceEqual("WEBP"u8)) return (".webp", "image/webp");
-        return null;
-    }
 }

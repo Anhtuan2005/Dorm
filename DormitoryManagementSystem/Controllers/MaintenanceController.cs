@@ -20,7 +20,8 @@ public sealed class MaintenanceController(
     {
         ViewData["Title"] = "Sự cố";
         ViewData["ActiveNav"] = "maintenance";
-        return View(await maintenance.GetQueueAsync(query, cancellationToken));
+        var model = await maintenance.GetQueueAsync(query, cancellationToken);
+        return Request.Headers["X-Operations-Refresh"] == "true" ? PartialView(nameof(Index), model) : View(model);
     }
 
     [HttpPost, ValidateAntiForgeryToken]

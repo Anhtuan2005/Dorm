@@ -52,8 +52,9 @@ async function signIn(page, email) {
 async function submitTransfer(student) {
   await student.goto(`${baseUrl}/Student/Rooms?Building=C`, { waitUntil: "networkidle" });
   const targetCard = student.locator(".student-room-card").filter({ hasText: "C-503" }).first();
-  await targetCard.getByRole("button", { name: "Chọn phòng" }).click();
-  await student.locator("[data-application-dialog] textarea[name=Reason]").fill(informationMarker);
+  await targetCard.getByRole("link", { name: "Chọn phòng" }).click();
+  await student.locator("[data-tour-bed-select]").selectOption({ index: 1 });
+  await student.locator("[data-room-booking] textarea[name=Reason]").fill(informationMarker);
   await Promise.all([
     student.waitForURL(/\/Student\/Applications/),
     student.getByRole("button", { name: "Gửi đơn chuyển phòng" }).click()

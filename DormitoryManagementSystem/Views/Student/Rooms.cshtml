@@ -2,9 +2,22 @@
 @{
     Layout = "_StudentLayout";
     string Money(decimal value) => value.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("vi-VN"));
+    var hasFilters = Model.Query.Building is not null || Model.Query.MaxPrice is not null ||
+        Model.Query.Amenity is not null || Model.Query.Sort != "availability";
 }
 
-<section class="student-page-head room-search-head"><div><p class="student-kicker">@(Model.CurrentRoomCode is null ? "Đăng ký ở" : "Chuyển phòng") · Học kỳ I</p><h1>@(Model.CurrentRoomCode is null ? "Tìm chỗ ở đầu tiên tại KTX" : "Tìm một chỗ ở phù hợp hơn")</h1><p>Chỉ hiển thị phòng nam còn chỗ và phù hợp hồ sơ của bạn.</p></div><div class="current-room-chip"><span>Phòng hiện tại</span><strong>@(Model.CurrentRoomCode ?? "Chưa xếp")</strong></div></section>
+<div class="room-search-page">
+<header class="student-page-head room-search-head">
+    <div><h1>Tìm phòng</h1><p>Khám phá phòng còn chỗ phù hợp với hồ sơ và chọn giường trên mô hình 3D.</p></div>
+    @if (Model.CurrentRoomCode is string roomCode)
+    {
+        <a class="room-current-link" asp-action="Dashboard" asp-fragment="roommates">
+            <span class="room-current-icon"><svg aria-hidden="true"><use href="#s-bed" /></svg></span>
+            <span><small>Phòng hiện tại</small><strong>@roomCode</strong></span>
+            <span class="room-current-action">Xem bạn cùng phòng <svg aria-hidden="true"><use href="#s-arrow" /></svg></span>
+        </a>
+    }
+</header>
 
 @if (Model.ActiveRequest is not null)
 {
@@ -19,36 +32,102 @@
     <button type="submit"><svg><use href="#s-search" /></svg>Tìm phòng</button>
 </form>
 
-<section class="student-results-head"><div><h2>Phòng đang còn chỗ</h2><p>@Model.Rooms.Count kết quả phù hợp hồ sơ</p></div><a asp-action="Rooms">Xóa bộ lọc</a></section>
+<div class="student-results-head">
+    <div class="room-result-count"><h2>Phòng còn chỗ</h2><span>@Model.TotalMatches phòng</span></div>
+    @if (hasFilters)
+    {
+        <a class="filter-reset" asp-action="Rooms"><svg aria-hidden="true"><use href="#s-close" /></svg>Xóa bộ lọc</a>
+    }
+</div>
 
 @if (Model.Rooms.Count == 0)
 {
-    <section class="student-empty"><span><svg><use href="#s-search" /></svg></span><h2>Không tìm thấy phòng phù hợp</h2><p>Thử bỏ bớt tiện nghi hoặc tăng khoảng giá để xem thêm lựa chọn.</p><a asp-action="Rooms">Xóa bộ lọc</a></section>
+    <section class="student-empty"><span><svg><use href="#s-search" /></svg></span><h2>Không tìm thấy phòng phù hợp</h2>
+        @if (hasFilters)
+        {
+            <p>Thử thay đổi hoặc xóa bộ lọc để xem thêm lựa chọn.</p><a asp-action="Rooms">Xóa bộ lọc</a>
+        }
+        else
+        {
+            <p>Hiện chưa có phòng phù hợp với hồ sơ còn chỗ có thể xếp.</p>
+        }
+    </section>
 }
 else
 {
     <div class="student-room-list">
         @foreach (var room in Model.Rooms)
         {
+            var unavailableBeds = Math.Max(0, room.Capacity - room.Occupied - room.Assignable);
             <article class="student-room-card">
-                <div class="room-door"><span>@room.MatchReason</span><strong>@room.Code</strong><small>@room.BuildingName · Tầng @room.FloorNumber</small><i><svg><use href="#s-building" /></svg></i></div>
-                <div class="room-card-content">
-                    <header><div><h3>Phòng @room.Code</h3><p>Phòng @room.RoomType.ToLowerInvariant() · @room.Capacity người</p></div><span class="availability"><i></i>Còn @room.Assignable chỗ</span></header>
-                    <div class="room-amenities">@foreach (var amenity in room.Amenities.Take(4)) { <span>@amenity</span> }</div>
-                    <div class="room-occupancy"><span><i style="width:@((room.Occupied * 100) / room.Capacity)%"></i></span><small>@room.Occupied/@room.Capacity đang ở</small></div>
-                    <footer><strong>@Money(room.MonthlyPrice) đ<small>/tháng</small></strong>@if (Model.ActiveRequest is null) { <button type="button" data-apply-room data-room-id="@room.Id" data-room-code="@room.Code">Chọn phòng</button> } else { <button type="button" disabled>Đang có đơn chờ</button> }</footer>
+                @if (room.Photos.FirstOrDefault() is { } cover)
+                {
+                    <img class="room-choice-photo" src="@Url.Action("RoomPhoto", "Attachments", new { id = cover.Id })"
+                         alt="@(string.IsNullOrWhiteSpace(cover.Caption) ? $"Ảnh phòng {room.Code}" : cover.Caption)"
+                         loading="lazy" decoding="async" />
+                }
+                <header class="room-choice-header">
+                    <div>
+                        <p>@room.BuildingName · Tầng @room.FloorNumber · @room.RoomType</p>
+                        <h3>Phòng @room.Code</h3>
+                    </div>
+                    <div class="room-choice-price"><strong>@Money(room.MonthlyPrice) đ</strong><small>/ tháng</small></div>
+                </header>
+                <div class="room-choice-facts">
+                    <div class="room-capacity-panel">
+                        <p><strong class="room-choice-available">@room.Assignable chỗ có thể xếp</strong><span>@room.Occupied/@room.Capacity đang ở</span></p>
+                        <div class="room-capacity-track" aria-hidden="true">
+                            @if (room.Capacity <= 12)
+                            {
+                                @for (var slot = 0; slot < room.Capacity; slot++)
+                                {
+                                    var state = slot < room.Occupied ? "occupied" : slot < room.Occupied + unavailableBeds ? "unavailable" : "available";
+                                    <span class="room-capacity-@state"></span>
+                                }
+                            }
+                            else
+                            {
+                                @if (room.Occupied > 0) { <span class="room-capacity-occupied" style="flex-grow: @room.Occupied"></span> }
+                                @if (unavailableBeds > 0) { <span class="room-capacity-unavailable" style="flex-grow: @unavailableBeds"></span> }
+                                <span class="room-capacity-available" style="flex-grow: @room.Assignable"></span>
+                            }
+                        </div>
+                        @if (unavailableBeds > 0)
+                        {
+                            <small class="room-capacity-held">@unavailableBeds chỗ đang giữ hoặc tạm khóa</small>
+                        }
+                    </div>
+                    @if (room.Amenities.Count > 0)
+                    {
+                        <ul class="room-choice-amenities" aria-label="Tiện nghi">
+                            @foreach (var amenity in room.Amenities.Take(4)) { <li><svg aria-hidden="true"><use href="#s-check" /></svg>@amenity</li> }
+                            @if (room.Amenities.Count > 4) { <li class="room-amenities-more">+@(room.Amenities.Count - 4) tiện nghi</li> }
+                        </ul>
+                    }
                 </div>
+                <footer class="room-choice-footer">
+                    <a class="student-secondary room-preview-link" asp-action="RoomPreview" asp-route-id="@room.Id" data-apply-room data-room-code="@room.Code">
+                        <svg aria-hidden="true"><use href="#s-bed" /></svg>
+                        <span>@(Model.ActiveRequest is null ? "Chọn phòng" : "Xem phòng")</span>
+                        <svg aria-hidden="true"><use href="#s-arrow" /></svg>
+                    </a>
+                </footer>
             </article>
         }
     </div>
 }
-
-<dialog class="student-dialog" data-application-dialog aria-labelledby="application-title">
-    <form method="post" asp-action="SubmitHousingRequest">
-        <header><div><p>@(Model.CurrentRoomCode is null ? "Đăng ký ở KTX" : "Yêu cầu chuyển phòng")</p><h2 id="application-title">Chọn phòng <span data-selected-room></span></h2></div><button type="button" data-dialog-close aria-label="Đóng"><svg><use href="#s-close" /></svg></button></header>
-        <input type="hidden" name="TargetRoomId" data-selected-room-id />
-        <div class="dialog-note"><svg><use href="#s-file" /></svg><p>Gửi đơn không đồng nghĩa giữ chỗ. Ban quản lý sẽ kiểm tra điều kiện và phản hồi trong mục “Đăng ký của tôi”.</p></div>
-        <label class="student-form-field"><span>@(Model.CurrentRoomCode is null ? "Ghi chú đăng ký" : "Lý do chuyển phòng")</span><textarea name="Reason" rows="5" minlength="10" maxlength="600" required placeholder="@(Model.CurrentRoomCode is null ? "Ví dụ: Đăng ký ở KTX trong học kỳ này..." : "Ví dụ: Cần chuyển gần khu học tập hơn...")"></textarea><small>Từ 10 đến 600 ký tự</small></label>
-        <footer><button type="button" class="student-secondary" data-dialog-close>Để sau</button><button type="submit" class="student-primary">@(Model.CurrentRoomCode is null ? "Gửi đơn đăng ký ở" : "Gửi đơn chuyển phòng")</button></footer>
-    </form>
-</dialog>
+@if (Model.TotalPages > 1)
+{
+    <nav class="student-pagination" aria-label="Phân trang phòng">
+        @if (Model.Query.Page > 1)
+        {
+            <a class="student-secondary" asp-action="Rooms" asp-route-Building="@Model.Query.Building" asp-route-MaxPrice="@Model.Query.MaxPrice" asp-route-Amenity="@Model.Query.Amenity" asp-route-Sort="@Model.Query.Sort" asp-route-Page="@(Model.Query.Page - 1)">Trang trước</a>
+        }
+        <span>Trang @Model.Query.Page / @Model.TotalPages</span>
+        @if (Model.Query.Page < Model.TotalPages)
+        {
+            <a class="student-secondary" asp-action="Rooms" asp-route-Building="@Model.Query.Building" asp-route-MaxPrice="@Model.Query.MaxPrice" asp-route-Amenity="@Model.Query.Amenity" asp-route-Sort="@Model.Query.Sort" asp-route-Page="@(Model.Query.Page + 1)">Trang sau</a>
+        }
+    </nav>
+}
+</div>

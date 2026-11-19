@@ -22,6 +22,8 @@ public sealed record BillingInvoiceSnapshot(
     long Id,
     string Code,
     string PeriodName,
+    DateOnly PeriodStart,
+    DateOnly PeriodEnd,
     DateOnly DueDate,
     DateTime IssuedAt,
     BillingLedgerSummary Summary,
@@ -31,6 +33,7 @@ public sealed record BillingInvoiceSnapshot(
 public interface IBillingLedgerService
 {
     Task<BillingQueueViewModel> GetQueueAsync(BillingQueueQuery query, CancellationToken cancellationToken = default);
+    Task<BillingReceiptViewModel?> GetReceiptAsync(long transactionId, string? studentUserId, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<BillingInvoiceSnapshot>> GetStudentInvoicesAsync(int studentProfileId, CancellationToken cancellationToken = default);
     Task<decimal> GetOutstandingBalanceAsync(int studentProfileId, CancellationToken cancellationToken = default);
     Task<InvoiceIssueResult> IssueInvoicesAsync(IssueInvoicesInput input, CancellationToken cancellationToken = default);

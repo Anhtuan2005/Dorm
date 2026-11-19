@@ -10,6 +10,7 @@ public sealed class DormitoryDbContext(DbContextOptions<DormitoryDbContext> opti
     public DbSet<Building> Buildings => Set<Building>();
     public DbSet<Floor> Floors => Set<Floor>();
     public DbSet<Room> Rooms => Set<Room>();
+    public DbSet<RoomPhoto> RoomPhotos => Set<RoomPhoto>();
     public DbSet<StudentProfile> StudentProfiles => Set<StudentProfile>();
     public DbSet<Stay> Stays => Set<Stay>();
     public DbSet<RoomHold> RoomHolds => Set<RoomHold>();
@@ -19,7 +20,9 @@ public sealed class DormitoryDbContext(DbContextOptions<DormitoryDbContext> opti
     public DbSet<Invoice> Invoices => Set<Invoice>();
     public DbSet<InvoiceLine> InvoiceLines => Set<InvoiceLine>();
     public DbSet<PaymentTransaction> PaymentTransactions => Set<PaymentTransaction>();
+    public DbSet<VnpayCheckout> VnpayCheckouts => Set<VnpayCheckout>();
     public DbSet<MaintenanceRequest> MaintenanceRequests => Set<MaintenanceRequest>();
+    public DbSet<MaintenanceFollower> MaintenanceFollowers => Set<MaintenanceFollower>();
     public DbSet<MaintenanceUpdate> MaintenanceUpdates => Set<MaintenanceUpdate>();
     public DbSet<MaintenanceAttachment> MaintenanceAttachments => Set<MaintenanceAttachment>();
     public DbSet<Notification> Notifications => Set<Notification>();
@@ -48,7 +51,17 @@ public sealed class DormitoryDbContext(DbContextOptions<DormitoryDbContext> opti
             .IsUnique();
         builder.Entity<Stay>().Property(x => x.RowVersion).IsRowVersion();
         builder.Entity<Stay>().ToTable(table =>
-            table.HasCheckConstraint("CK_Stays_Chronology", "[EndedAt] IS NULL OR [EndedAt] >= [StartedAt]"));
+        {
+            table.HasCheckConstraint("CK_Stays_Chronology", "[EndedAt] IS NULL OR [EndedAt] >= [StartedAt]");
+            table.HasCheckConstraint("CK_Stays_BedNumber_Positive", "[BedNumber] IS NULL OR [BedNumber] > 0");
+        });
+        builder.Entity<Stay>().HasIndex(x => new { x.RoomId, x.BedNumber }).IsUnique()
+            .HasFilter("[EndedAt] IS NULL AND [BedNumber] IS NOT NULL");
+        builder.Entity<Stay>().HasIndex(x => x.RoomId);
+        builder.Entity<RoomHold>().ToTable(table => table.HasCheckConstraint(
+            "CK_RoomHolds_NumberedBed", "[BedNumber] IS NULL OR ([BedNumber] > 0 AND [HeldBeds] = 1)"));
+        builder.Entity<HousingRequest>().ToTable(table => table.HasCheckConstraint(
+            "CK_HousingRequests_TargetBed", "[TargetBedNumber] IS NULL OR ([TargetBedNumber] > 0 AND [TargetRoomId] IS NOT NULL)"));
         builder.Entity<Stay>()
             .HasIndex(x => x.HousingRequestId)
             .HasFilter("[HousingRequestId] IS NOT NULL")
@@ -63,6 +76,14 @@ public sealed class DormitoryDbContext(DbContextOptions<DormitoryDbContext> opti
             .WithMany(x => x.ReportedMaintenanceRequests)
             .HasForeignKey(x => x.ReporterStudentId)
             .OnDelete(DeleteBehavior.Restrict);
+        builder.Entity<MaintenanceFollower>(entity =>
+        {
+            entity.HasKey(x => new { x.MaintenanceRequestId, x.StayId });
+            entity.HasOne(x => x.MaintenanceRequest).WithMany(x => x.Followers)
+                .HasForeignKey(x => x.MaintenanceRequestId);
+            entity.HasOne(x => x.Stay).WithMany()
+                .HasForeignKey(x => x.StayId).OnDelete(DeleteBehavior.Restrict);
+        });
         builder.Entity<MaintenanceUpdate>().Property(x => x.Status).HasConversion<string>();
         builder.Entity<MaintenanceUpdate>()
             .HasOne(x => x.ActorUser)
@@ -154,6 +175,23 @@ public sealed class DormitoryDbContext(DbContextOptions<DormitoryDbContext> opti
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasSequence<long>("ReceiptNumbers").StartsAt(1001).IncrementsBy(1);
+
+        builder.Entity<VnpayCheckout>(entity =>
+        {
+            entity.HasKey(x => x.Reference);
+            entity.Property(x => x.Reference).IsUnicode(false);
+            entity.Property(x => x.Amount).HasColumnType("decimal(12,0)");
+            entity.Property(x => x.State).HasConversion<string>().HasMaxLength(16).IsUnicode(false);
+            entity.HasIndex(x => new { x.InvoiceId, x.State, x.ExpiresAtUtc });
+            entity.HasIndex(x => new { x.MerchantCode, x.ProviderTransactionNumber }).IsUnique()
+                .HasFilter("[ProviderTransactionNumber] IS NOT NULL");
+            entity.HasOne(x => x.Invoice).WithMany().HasForeignKey(x => x.InvoiceId).OnDelete(DeleteBehavior.Restrict);
+            entity.ToTable(table =>
+            {
+                table.HasCheckConstraint("CK_VnpayCheckouts_Amount", "[Amount] BETWEEN 1 AND 9999999999");
+                table.HasCheckConstraint("CK_VnpayCheckouts_Expiry", "[ExpiresAtUtc] > [CreatedAtUtc]");
+            });
+        });
 
         builder.Entity<Notification>()
             .HasOne(x => x.User)

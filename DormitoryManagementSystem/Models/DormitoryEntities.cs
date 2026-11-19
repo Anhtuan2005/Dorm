@@ -28,13 +28,23 @@ public sealed class Room
     public Floor Floor { get; set; } = null!;
     [MaxLength(12)] public string Code { get; set; } = string.Empty;
     [MaxLength(24)] public string RoomType { get; set; } = string.Empty;
-    [MaxLength(240)] public string Amenities { get; set; } = string.Empty;
+    [MaxLength(RoomAmenities.MaximumStoredLength)] public string Amenities { get; set; } = RoomAmenities.Bathroom;
     public int Capacity { get; set; }
     public decimal MonthlyPrice { get; set; }
     [Timestamp] public byte[] RowVersion { get; set; } = [];
     public ICollection<Stay> Stays { get; set; } = [];
     public ICollection<RoomHold> Holds { get; set; } = [];
     public ICollection<MaintenanceRequest> MaintenanceRequests { get; set; } = [];
+}
+
+public sealed class RoomPhoto
+{
+    public long Id { get; set; }
+    public int RoomId { get; set; }
+    public Room Room { get; set; } = null!;
+    [MaxLength(180)] public string Caption { get; set; } = string.Empty;
+    [MaxLength(24)] public string ContentType { get; set; } = string.Empty;
+    public byte[] Data { get; set; } = [];
 }
 
 public sealed class StudentProfile
@@ -60,6 +70,7 @@ public sealed class Stay
     public StudentProfile StudentProfile { get; set; } = null!;
     public int RoomId { get; set; }
     public Room Room { get; set; } = null!;
+    public int? BedNumber { get; set; }
     public long? HousingRequestId { get; set; }
     public HousingRequest? HousingRequest { get; set; }
     public DateTime StartedAt { get; set; }
@@ -73,6 +84,7 @@ public sealed class RoomHold
     public int RoomId { get; set; }
     public Room Room { get; set; } = null!;
     public int HeldBeds { get; set; }
+    public int? BedNumber { get; set; }
     public DateTime ExpiresAt { get; set; }
     public DateTime? ReleasedAt { get; set; }
 }
@@ -87,6 +99,7 @@ public sealed class HousingRequest
     public int StudentProfileId { get; set; }
     public StudentProfile StudentProfile { get; set; } = null!;
     public int? TargetRoomId { get; set; }
+    public int? TargetBedNumber { get; set; }
     public Room? TargetRoom { get; set; }
     public int? SourceStayId { get; set; }
     public Stay? SourceStay { get; set; }
@@ -132,7 +145,7 @@ public sealed class BillingPeriod
 
 public enum InvoiceStatus { Issued, Cancelled }
 
-public enum PaymentMethod { Cash, BankTransfer, Adjustment }
+public enum PaymentMethod { Cash, BankTransfer, Adjustment, VnpaySandbox }
 
 public sealed class Invoice
 {
@@ -201,11 +214,22 @@ public sealed class MaintenanceRequest
     public MaintenanceStatus Status { get; set; }
     [MaxLength(100)] public string? AssignedTeam { get; set; }
     public int BlockedBeds { get; set; }
+    [MaxLength(400)] public string? BlockedBedNumbers { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
     [Timestamp] public byte[] RowVersion { get; set; } = [];
     public ICollection<MaintenanceUpdate> Updates { get; set; } = [];
     public ICollection<MaintenanceAttachment> Attachments { get; set; } = [];
+    public bool ShareWithRoom { get; set; }
+    public ICollection<MaintenanceFollower> Followers { get; set; } = [];
+}
+
+public sealed class MaintenanceFollower
+{
+    public int MaintenanceRequestId { get; set; }
+    public MaintenanceRequest MaintenanceRequest { get; set; } = null!;
+    public int StayId { get; set; }
+    public Stay Stay { get; set; } = null!;
 }
 
 public sealed class MaintenanceAttachment

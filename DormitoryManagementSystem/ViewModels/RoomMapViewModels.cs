@@ -72,6 +72,7 @@ public sealed class RoomMapViewModel
     public required CapacityViewModel SelectedBuildingCapacity { get; init; }
     public required string SelectedBuildingName { get; init; }
     public required IReadOnlyList<BuildingSummaryViewModel> Buildings { get; init; }
+    public required IReadOnlyList<int> FloorNumbers { get; init; }
     public required IReadOnlyList<FloorMapViewModel> Floors { get; init; }
     public required IReadOnlyList<string> RoomTypes { get; init; }
     public RoomDetailViewModel? SelectedRoom { get; init; }

@@ -37,17 +37,6 @@
         toastTimer = window.setTimeout(() => toast.classList.remove("show"), 4200);
     };
 
-    document.querySelectorAll("[data-demo-message]").forEach(element => {
-        element.addEventListener("click", event => {
-            event.preventDefault();
-            showToast(element.dataset.demoMessage);
-        });
-    });
-
-    document.querySelector("[data-student-notifications]")?.addEventListener("click", () => {
-        showToast("2 thông báo mới: hóa đơn tháng 09 và yêu cầu sửa vòi nước đã được tiếp nhận.");
-    });
-
     document.querySelectorAll("form[data-confirm]").forEach(form => {
         form.addEventListener("submit", event => {
             if (!window.confirm(form.dataset.confirm)) {
@@ -59,7 +48,10 @@
     const bindDialog = (dialog, openers) => {
         if (!dialog) return;
 
-        openers.forEach(opener => opener.addEventListener("click", () => dialog.showModal()));
+        openers.forEach(opener => opener.addEventListener("click", () => {
+            if (!dialog.open) dialog.showModal();
+            dialog.querySelector('input:not([type="hidden"]), select, textarea')?.focus();
+        }));
         dialog.querySelectorAll("[data-dialog-close]").forEach(button => {
             button.addEventListener("click", () => dialog.close());
         });
@@ -68,22 +60,95 @@
         });
     };
 
-    const applicationDialog = document.querySelector("[data-application-dialog]");
-    document.querySelectorAll("[data-apply-room]").forEach(button => {
-        button.addEventListener("click", () => {
-            if (!applicationDialog) return;
-            applicationDialog.querySelector("[data-selected-room]").textContent = button.dataset.roomCode;
-            applicationDialog.querySelector("[data-selected-room-id]").value = button.dataset.roomId;
-            applicationDialog.showModal();
-            applicationDialog.querySelector("textarea")?.focus();
-        });
-    });
-    bindDialog(applicationDialog, []);
-
     const repairDialog = document.querySelector("[data-repair-dialog]");
     bindDialog(repairDialog, Array.from(document.querySelectorAll("[data-repair-open]")));
-    if (repairDialog && window.location.hash === "#new-request") {
+    if (repairDialog && (window.location.hash === "#new-request" || repairDialog.dataset.reopen === "true")) {
         repairDialog.showModal();
+        const errors = repairDialog.querySelector(".validation-summary-errors");
+        (errors ?? repairDialog.querySelector("select"))?.focus();
+    }
+
+    const attachmentInput = repairDialog?.querySelector("[data-attachment-input]");
+    if (attachmentInput) {
+        const error = repairDialog.querySelector("[data-attachment-error]");
+        const count = repairDialog.querySelector("[data-attachment-count]");
+        const previews = repairDialog.querySelector("[data-attachment-previews]");
+        const clear = repairDialog.querySelector("[data-attachment-clear]");
+        const supportedTypes = new Set(attachmentInput.accept.split(","));
+        const maximumFiles = Number(attachmentInput.dataset.maximumFiles);
+        const maximumSize = Number(attachmentInput.dataset.maximumSize);
+        let previewUrls = [];
+
+        const isSupportedImage = (file) => supportedTypes.has(file.type)
+            || ((!file.type || file.type === "application/octet-stream") && /\.(jpe?g|png|webp)$/i.test(file.name));
+
+        const selectionError = (files) => {
+            if (files.length > maximumFiles) return `Chỉ chọn tối đa ${maximumFiles} ảnh mỗi lần gửi.`;
+            const emptyFile = files.find(file => file.size === 0);
+            if (emptyFile) return `Ảnh “${emptyFile.name}” không có dữ liệu. Hãy chọn lại.`;
+            const largeFile = files.find(file => file.size > maximumSize);
+            if (largeFile) return `Ảnh “${largeFile.name}” vượt quá 5 MB. Hãy chọn lại.`;
+            const unsupportedFile = files.find(file => !isSupportedImage(file));
+            return unsupportedFile ? `Tệp “${unsupportedFile.name}” cần ở định dạng JPG, PNG hoặc WebP.` : "";
+        };
+
+        const renderSelection = () => {
+            previewUrls.forEach(url => URL.revokeObjectURL(url));
+            previewUrls = [];
+            previews.replaceChildren();
+            previews.hidden = true;
+            const files = Array.from(attachmentInput.files);
+            const message = selectionError(files);
+            attachmentInput.setCustomValidity(message);
+            if (message) attachmentInput.setAttribute("aria-invalid", "true");
+            else attachmentInput.removeAttribute("aria-invalid");
+            error.textContent = message;
+            error.hidden = !message;
+            count.textContent = "";
+            clear.hidden = !message && (!files.length || typeof DataTransfer === "function");
+            if (message || !files.length) return;
+
+            count.textContent = `Đã chọn ${files.length}/${maximumFiles} ảnh`;
+            previews.hidden = false;
+            files.forEach((file, index) => {
+                const item = document.createElement("li");
+                const thumbnail = document.createElement("img");
+                const name = document.createElement("span");
+                const url = URL.createObjectURL(file);
+                previewUrls.push(url);
+                thumbnail.src = url;
+                thumbnail.alt = "";
+                thumbnail.addEventListener("error", () => { thumbnail.hidden = true; }, { once: true });
+                name.textContent = file.name;
+                name.title = file.name;
+                item.append(thumbnail, name);
+
+                if (typeof DataTransfer === "function") {
+                    const remove = document.createElement("button");
+                    remove.type = "button";
+                    remove.textContent = "Bỏ";
+                    remove.setAttribute("aria-label", `Bỏ ảnh ${file.name}`);
+                    remove.addEventListener("click", () => {
+                        const remaining = new DataTransfer();
+                        files.filter((_, fileIndex) => fileIndex !== index).forEach(kept => remaining.items.add(kept));
+                        attachmentInput.files = remaining.files;
+                        renderSelection();
+                        const buttons = previews.querySelectorAll("button");
+                        (buttons[Math.min(index, buttons.length - 1)] ?? attachmentInput).focus();
+                    });
+                    item.append(remove);
+                }
+                previews.append(item);
+            });
+        };
+
+        attachmentInput.addEventListener("change", renderSelection);
+        clear.addEventListener("click", () => {
+            attachmentInput.value = "";
+            renderSelection();
+            attachmentInput.focus();
+        });
+        renderSelection();
     }
 
     document.querySelectorAll("[data-open-dialog]").forEach(opener => {
@@ -93,57 +158,32 @@
 
     const chatDialog = document.querySelector("[data-ai-assistant]");
     const chatMessages = document.querySelector("[data-chat-messages]");
+    const chatWelcome = document.querySelector("[data-chat-welcome]");
     const chatInput = document.querySelector("[data-chat-input]");
+    const chatForm = document.querySelector("[data-chat-form]");
+    const chatActions = {
+        rooms: "Mở Tìm phòng", applications: "Mở Đăng ký của tôi", invoices: "Xem hóa đơn",
+        repairs: "Mở Yêu cầu hỗ trợ", notifications: "Xem thông báo", password: "Đổi mật khẩu",
+        contact: "Xem thông tin liên hệ"
+    };
+    let chatBusy = false;
+    let previousChatAction = null;
+
+    const fitChatInput = () => {
+        if (!(chatInput instanceof HTMLTextAreaElement)) return;
+        chatInput.style.height = "auto";
+        chatInput.style.height = `${Math.min(chatInput.scrollHeight, 104)}px`;
+    };
 
     const openChat = () => {
-        if (!chatDialog) return;
-        if (!chatDialog.open) chatDialog.showModal();
-        window.setTimeout(() => chatInput?.focus(), 80);
+        if (!chatDialog || chatDialog.open) return;
+        chatDialog.showModal();
+        fitChatInput();
+        if (!matchMedia("(pointer: coarse)").matches) chatInput?.focus({ preventScroll: true });
     };
 
     document.querySelectorAll("[data-chat-open]").forEach(button => button.addEventListener("click", openChat));
     document.querySelector("[data-chat-close]")?.addEventListener("click", () => chatDialog?.close());
-
-    const chatAnswer = (question) => {
-        const normalized = question.toLocaleLowerCase("vi-VN");
-        if (normalized.includes("đăng ký") || normalized.includes("phòng thế nào")) {
-            return {
-                text: "Vào Tìm phòng, lọc phòng phù hợp rồi chọn “Chọn phòng”. Bạn cần nêu lý do; đơn sẽ được ban quản lý kiểm tra trước khi duyệt.",
-                source: "Quy trình đăng ký lưu trú 2026 · Mục 2 (dữ liệu demo)",
-                href: "/Student/Rooms",
-                label: "Mở trang Tìm phòng"
-            };
-        }
-        if (normalized.includes("chuyển")) {
-            return {
-                text: "Chọn phòng mới còn chỗ và gửi đơn chuyển phòng. Trong lúc đơn đang xử lý, chỗ chưa được giữ và bạn vẫn ở phòng hiện tại.",
-                source: "Quy trình chuyển phòng 2026 · Mục 3 (dữ liệu demo)",
-                href: "/Student/Rooms",
-                label: "Xem phòng còn chỗ"
-            };
-        }
-        if (normalized.includes("sự cố") || normalized.includes("sửa") || normalized.includes("hỏng")) {
-            return {
-                text: "Vào Yêu cầu hỗ trợ, chọn nhóm sự cố, mức độ ảnh hưởng và mô tả rõ vị trí. Nếu nguy hiểm tức thời, hãy gọi trực ban 028 3896 5501.",
-                source: "Quy trình tiếp nhận sửa chữa · Mục 1 (dữ liệu demo)",
-                href: "/Student/Repairs#new-request",
-                label: "Gửi yêu cầu hỗ trợ"
-            };
-        }
-        if (normalized.includes("hóa đơn") || normalized.includes("phí") || normalized.includes("thanh toán")) {
-            return {
-                text: "Bạn có thể xem từng khoản trong mục Hóa đơn. Chỉ thanh toán theo hướng dẫn chính thức của KTX; trợ lý không tự suy đoán mức phí hoặc hạn nộp.",
-                source: "Quy định thu phí KTX 2026 · Mục 4 (dữ liệu demo)",
-                href: "/Student/Invoices",
-                label: "Xem hóa đơn"
-            };
-        }
-
-        return {
-            text: "Mình chưa tìm thấy thông tin đã được xác nhận cho câu hỏi này. Bạn vui lòng liên hệ ban quản lý tại văn phòng KTX hoặc số 028 3896 5501.",
-            source: "Chưa có tài liệu phù hợp trong kho dữ liệu demo"
-        };
-    };
 
     const appendMessage = (kind, content, extraClass = "") => {
         const wrapper = document.createElement("div");
@@ -156,35 +196,105 @@
         return wrapper;
     };
 
-    const submitQuestion = (question) => {
-        const cleanQuestion = question.trim();
-        if (!cleanQuestion || !chatMessages) return;
-
-        appendMessage("user", cleanQuestion);
-        const typing = appendMessage("assistant", "Đang tìm trong tài liệu đã xác nhận…", "typing");
-        chatInput?.setAttribute("disabled", "disabled");
-
-        window.setTimeout(() => {
-            const answer = chatAnswer(cleanQuestion);
-            typing.remove();
-            const message = appendMessage("assistant", answer.text);
+    const appendChatDetails = (message, answer) => {
+        if (answer.source || answer.usedGemini) {
             const source = document.createElement("small");
             source.className = "ai-source";
-            source.textContent = `Nguồn: ${answer.source}`;
-            message.append(source);
-
-            if (answer.href) {
-                const link = document.createElement("a");
-                link.className = "ai-link";
-                link.href = answer.href;
-                link.textContent = answer.label;
-                message.append(link);
+            if (answer.source) {
+                const label = answer.source.isDemo ? "Tài liệu minh họa" : "Nguồn";
+                const reference = `${answer.source.document} · ${answer.source.section}`;
+                source.textContent = `${label} · `;
+                if (answer.source.url?.startsWith("https://")) {
+                    const link = document.createElement("a");
+                    link.href = answer.source.url;
+                    link.target = "_blank";
+                    link.rel = "noopener noreferrer";
+                    link.textContent = reference;
+                    source.append(link);
+                } else {
+                    source.append(reference);
+                }
+            } else {
+                source.textContent = "Gemini · Hướng dẫn sử dụng · AI có thể nhầm";
             }
+            message.append(source);
+        }
 
-            chatInput?.removeAttribute("disabled");
-            chatInput?.focus();
+        if (!Object.hasOwn(chatActions, answer.action)) return;
+        const href = chatDialog?.dataset[answer.action];
+        if (!href) return;
+        const link = document.createElement("a");
+        link.className = "ai-link";
+        link.href = href;
+        if (answer.action === "rooms" && answer.roomBuilding) {
+            const roomUrl = new URL(href, window.location.href);
+            roomUrl.searchParams.set("Building", answer.roomBuilding);
+            link.href = roomUrl.pathname + roomUrl.search;
+        }
+        link.textContent = chatActions[answer.action];
+        message.append(link);
+    };
+
+    const submitQuestion = async (question) => {
+        const cleanQuestion = question.trim();
+        if (!cleanQuestion || !chatMessages || !chatForm || chatBusy) return;
+        if (cleanQuestion.length > 1000) {
+            showToast("Câu hỏi không quá 1.000 ký tự.");
+            return;
+        }
+
+        chatBusy = true;
+        if (chatWelcome) chatWelcome.hidden = true;
+        chatMessages.setAttribute("aria-busy", "true");
+        appendMessage("user", cleanQuestion);
+        const typing = appendMessage("assistant", "Đang trả lời…", "typing");
+        const sendButton = chatForm.querySelector("button[type=submit]");
+        if (sendButton) sendButton.disabled = true;
+        const controller = new AbortController();
+        const timeout = window.setTimeout(() => controller.abort(), 35000);
+
+        try {
+            const response = await fetch(chatForm.action, {
+                method: "POST",
+                credentials: "same-origin",
+                headers: {
+                    "Content-Type": "application/json",
+                    "RequestVerificationToken": chatForm.querySelector('input[name="__RequestVerificationToken"]')?.value ?? ""
+                },
+                body: JSON.stringify({ message: cleanQuestion, previousAction: previousChatAction }),
+                signal: controller.signal
+            });
+            if (response.redirected || response.status === 401 || response.status === 403) {
+                throw new Error("Phiên đăng nhập đã hết hạn. Bạn vui lòng đăng nhập lại.");
+            }
+            const answer = response.headers.get("content-type")?.includes("application/json")
+                ? await response.json() : null;
+            if (!response.ok || !answer?.success || typeof answer.text !== "string") {
+                throw new Error(answer?.text || "Chưa thể nhận phản hồi. Bạn vui lòng tải lại trang rồi thử lại.");
+            }
+            typing.remove();
+            const message = appendMessage("assistant", answer.text);
+            appendChatDetails(message, answer);
+            previousChatAction = Object.hasOwn(chatActions, answer.action) ? answer.action : null;
+        } catch (error) {
+            typing.remove();
+            appendMessage("assistant", error.name === "AbortError"
+                ? "Trợ lý phản hồi lâu hơn dự kiến. Bạn vui lòng thử lại."
+                : error instanceof TypeError ? "Không thể kết nối. Bạn kiểm tra mạng rồi thử lại nhé." : error.message, "error");
+            if (chatInput && !chatInput.value) {
+                chatInput.value = cleanQuestion;
+                if (chatDialog?.open) fitChatInput();
+            }
+        } finally {
+            window.clearTimeout(timeout);
+            chatBusy = false;
+            chatMessages.setAttribute("aria-busy", "false");
+            if (sendButton) sendButton.disabled = false;
+            if (chatDialog?.open && !matchMedia("(pointer: coarse)").matches &&
+                (document.activeElement === chatDialog || document.activeElement === document.body))
+                chatInput?.focus({ preventScroll: true });
             if (chatMessages) chatMessages.scrollTop = chatMessages.scrollHeight;
-        }, 650);
+        }
     };
 
     document.querySelectorAll("[data-chat-question]").forEach(button => {
@@ -196,8 +306,19 @@
 
     document.querySelector("[data-chat-form]")?.addEventListener("submit", event => {
         event.preventDefault();
+        if (chatBusy) return;
         const question = chatInput?.value ?? "";
-        if (chatInput) chatInput.value = "";
+        if (chatInput) {
+            chatInput.value = "";
+            fitChatInput();
+        }
         submitQuestion(question);
+    });
+
+    chatInput?.addEventListener("input", fitChatInput);
+    chatInput?.addEventListener("keydown", event => {
+        if (event.key !== "Enter" || event.shiftKey || event.isComposing) return;
+        event.preventDefault();
+        if (!chatBusy && chatInput.value.trim()) chatForm?.requestSubmit();
     });
 })();

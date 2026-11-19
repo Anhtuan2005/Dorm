@@ -1,29 +1,111 @@
 @model StudentInvoicesViewModel
 @{
     Layout = "_StudentLayout";
+    var unpaidCount = Model.Invoices.Count(x => x.NeedsPayment);
+    var vnpayEnabled = ViewData["VnpayEnabled"] is true;
+    var showGuide = Model.Invoices.Any(x => x.NeedsPayment && (!vnpayEnabled || !VnpayCheckout.SupportsAmount(x.Balance)));
     string Money(decimal value) => value.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("vi-VN"));
+    string Change(decimal value) => value > 0 ? $"Tăng {Money(value)} đ" : value < 0 ? $"Giảm {Money(-value)} đ" : "Không đổi";
 }
 
-<section class="student-page-head"><div><p class="student-kicker">Tài chính cá nhân</p><h1>Hóa đơn và công nợ</h1><p>Kiểm tra từng khoản phí, hạn thanh toán và lịch sử các kỳ trước.</p></div></section>
+<section class="student-page-head"><div><h1>Hóa đơn và công nợ</h1><p>Xem số tiền cần trả, hạn thanh toán và các khoản đã ghi nhận.</p></div></section>
 
-<section class="invoice-overview">
-    <div><span class="overview-icon"><svg><use href="#s-wallet" /></svg></span><span><small>Tổng cần thanh toán</small><strong>@Money(Model.OutstandingBalance) đ</strong></span></div>
-    <div><small>Kỳ đang mở</small><strong>@Model.Invoices.Count(x => x.NeedsPayment) hóa đơn</strong></div>
-    <div><small>Đã cân đối</small><strong>@Model.Invoices.Count(x => !x.NeedsPayment && x.StatusClass == "paid") kỳ</strong></div>
-    <button type="button" data-demo-message="Thanh toán trực tuyến chưa được bật. Vui lòng thanh toán tại văn phòng KTX hoặc theo thông tin chuyển khoản trên thông báo chính thức.">Hướng dẫn thanh toán</button>
-</section>
+@if (Model.Invoices.Count == 0)
+{
+    <section class="student-empty"><span aria-hidden="true"><svg><use href="#s-wallet" /></svg></span><h2>Bạn chưa có hóa đơn</h2><p>Hóa đơn sẽ xuất hiện khi Ban quản lý phát hành kỳ thu.</p></section>
+    return;
+}
+
+<dl class="invoice-overview">
+    <div><dt>Tổng cần thanh toán</dt><dd>@Money(Model.OutstandingBalance) đ</dd></div>
+    <div><dt>Chưa thanh toán đủ</dt><dd>@unpaidCount hóa đơn</dd></div>
+    <div><dt>Đã thanh toán</dt><dd>@Model.Invoices.Count(x => x.StatusClass == "paid") hóa đơn</dd></div>
+</dl>
+
+@if (unpaidCount > 0)
+{
+    <details class="payment-guide" open="@showGuide">
+        <summary>Hướng dẫn thanh toán</summary>
+        <p id="payment-guide">Thanh toán tại văn phòng KTX hoặc chuyển khoản theo thông báo chính thức của Ban quản lý. Sau khi khoản thu được ghi nhận, bạn có thể xem giao dịch trong lịch sử khoản thu của hóa đơn.</p>
+    </details>
+}
 
 <div class="student-invoice-list">
     @foreach (var invoice in Model.Invoices)
     {
-        <article class="student-invoice-card">
+        <article class="student-invoice-card" id="invoice-@invoice.Id">
             <header><div><span class="invoice-status @invoice.StatusClass">@invoice.StatusLabel</span><h2>@invoice.PeriodName</h2><p>@invoice.Code · Hạn @invoice.DueDate.ToString("dd/MM/yyyy")</p></div><div class="invoice-total"><small>@(invoice.NeedsPayment ? "Còn phải trả" : "Tổng hóa đơn")</small><strong>@Money(invoice.NeedsPayment ? invoice.Balance : invoice.TotalAmount) đ</strong></div></header>
+            @if (invoice.NeedsPayment)
+            {
+                @if (vnpayEnabled && VnpayCheckout.SupportsAmount(invoice.Balance))
+                {
+                    <form asp-controller="VnpayPayments" asp-action="Start" method="post" class="invoice-pay-row">
+                        <input type="hidden" name="invoiceId" value="@invoice.Id" />
+                        <p class="invoice-pay-copy"><strong>VNPAY Sandbox</strong><small>Giao dịch thử nghiệm, không trừ tiền thật.</small></p>
+                        <button class="student-primary" type="submit"><svg aria-hidden="true"><use href="#s-wallet" /></svg>Thanh toán qua VNPAY</button>
+                    </form>
+                }
+                else
+                {
+                    var vnpayNote = !vnpayEnabled ? "VNPAY Sandbox chưa được bật trên bản đang chạy."
+                        : invoice.Balance < VnpayCheckout.MinimumAmount ? $"VNPAY nhận khoản thanh toán từ {Money(VnpayCheckout.MinimumAmount)} đ."
+                        : "Số tiền còn phải trả không đáp ứng điều kiện thanh toán qua VNPAY.";
+                    var noteId = $"vnpay-note-{invoice.Id}";
+                    <div class="invoice-pay-row">
+                        <p class="invoice-pay-copy" id="@noteId">@vnpayNote</p>
+                        <div class="invoice-pay-actions">
+                            <button class="student-primary" type="button" disabled aria-describedby="@noteId"><svg aria-hidden="true"><use href="#s-wallet" /></svg>Thanh toán qua VNPAY</button>
+                            <a class="student-secondary" href="#payment-guide">Cách thanh toán</a>
+                        </div>
+                    </div>
+                }
+            }
             <details open="@invoice.NeedsPayment"><summary>Chi tiết các khoản phí <svg><use href="#s-chevron" /></svg></summary><div class="invoice-lines">@foreach (var line in invoice.Lines) { <div><span>@line.Description</span><strong>@Money(line.Amount) đ</strong></div> }<div class="invoice-line-total"><span>Tổng cộng</span><strong>@Money(invoice.TotalAmount) đ</strong></div>@if (invoice.PaidAmount > 0) { <div><span>Đã ghi nhận thu</span><strong>-@Money(invoice.PaidAmount) đ</strong></div> }<div class="invoice-line-total"><span>Còn phải thanh toán</span><strong>@Money(invoice.Balance) đ</strong></div></div></details>
+            @if (invoice.Comparison is { } comparison)
+            {
+                <details class="invoice-comparison">
+                    <summary><span>So với @comparison.PreviousPeriod</span><strong>@Change(comparison.Difference)</strong><svg aria-hidden="true"><use href="#s-chevron" /></svg></summary>
+                    <div class="invoice-comparison-body">
+                        @if (comparison.Changes.Count == 0)
+                        {
+                            <p>@(comparison.Difference == 0 ? "Các khoản phí giữ nguyên." : "Không xác định được khoản thay đổi từ các dòng phí hiện có.")</p>
+                        }
+                        else
+                        {
+                            <dl>
+                                @foreach (var charge in comparison.Changes)
+                                {
+                                    <div><dt>@charge.Label</dt><dd><strong>@Change(charge.Difference)</strong><span>@Money(charge.PreviousAmount) đ → @Money(charge.CurrentAmount) đ</span></dd></div>
+                                }
+                            </dl>
+                        }
+                        <a href="#invoice-@comparison.PreviousInvoiceId">Xem hóa đơn dùng để so sánh <svg aria-hidden="true"><use href="#s-arrow" /></svg></a>
+                    </div>
+                </details>
+            }
             @if (invoice.Transactions.Count > 0)
             {
-                <details class="invoice-transactions"><summary>Lịch sử khoản thu (@invoice.Transactions.Count) <svg><use href="#s-chevron" /></svg></summary><div>@foreach (var transaction in invoice.Transactions) { <article class="@(transaction.IsReversal ? "reversal" : "")"><span><strong>@transaction.Code</strong><small>@transaction.MethodLabel · @transaction.ReceivedAt.ToLocalTime().ToString("dd/MM/yyyy, HH:mm")</small>@if (!string.IsNullOrWhiteSpace(transaction.Note)) { <em>@transaction.Note</em> }</span><b>@(transaction.Amount > 0 ? "+" : "")@Money(transaction.Amount) đ</b></article> }</div></details>
+                <details class="invoice-transactions" open="@(Context.Request.Query["receiptInvoice"] == invoice.Id.ToString())">
+                    <summary>Lịch sử khoản thu (@invoice.Transactions.Count) <svg><use href="#s-chevron" /></svg></summary>
+                    <div>
+                        @foreach (var transaction in invoice.Transactions)
+                        {
+                            <article class="@(transaction.IsReversal ? "reversal" : "")">
+                                <span>
+                                    <strong>@transaction.Code</strong><small>@transaction.MethodLabel · @transaction.ReceivedAt.ToLocalTime().ToString("dd/MM/yyyy, HH:mm")</small>
+                                    @if (!string.IsNullOrWhiteSpace(transaction.Note)) { <em>@transaction.Note</em> }
+                                    @if (!transaction.IsReversal && transaction.Amount > 0)
+                                    {
+                                        <a class="receipt-link" asp-controller="Receipts" asp-action="Details" asp-route-id="@transaction.Id" aria-label="Biên nhận @transaction.Code">Xem biên nhận</a>
+                                        @if (transaction.HasBeenReversed) { <small>Đã hoàn tác</small> }
+                                    }
+                                </span>
+                                <b>@(transaction.Amount > 0 ? "+" : "")@Money(transaction.Amount) đ</b>
+                            </article>
+                        }
+                    </div>
+                </details>
             }
-            @if (invoice.NeedsPayment) { <footer><p><svg><use href="#s-calendar" /></svg>Thanh toán đúng hạn để không ảnh hưởng quyền đăng ký.</p><button type="button" data-demo-message="Thanh toán trực tuyến chưa được bật. Vui lòng thanh toán tại văn phòng KTX hoặc theo hướng dẫn chính thức.">Xem hướng dẫn</button></footer> }
         </article>
     }
 </div>

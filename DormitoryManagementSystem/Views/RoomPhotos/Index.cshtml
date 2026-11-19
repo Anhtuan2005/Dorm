@@ -1,0 +1,46 @@
+@model RoomPhotoGalleryViewModel
+
+<section class="operations-heading">
+    <div>
+        <h1>Ảnh phòng @Model.RoomCode</h1>
+        <p>@Model.Photos.Count/@Model.MaximumPhotos ảnh. Sinh viên xem các ảnh này khi tìm phòng.</p>
+    </div>
+    <a class="heading-room-link quiet" asp-controller="Rooms" asp-action="Catalog"
+       asp-route-BuildingId="@Model.BuildingId" asp-route-FloorId="@Model.FloorId">Về danh mục phòng</a>
+</section>
+
+@if (Model.Photos.Count < Model.MaximumPhotos)
+{
+    <form class="room-photo-upload" asp-action="Upload" method="post" enctype="multipart/form-data">
+        <input type="hidden" name="roomId" value="@Model.RoomId" />
+        <label><span>Chọn ảnh phòng</span><input type="file" name="photo" accept="image/jpeg,image/png,image/webp" required /></label>
+        <label><span>Chú thích (tùy chọn)</span><input name="caption" maxlength="180" placeholder="Ví dụ: Khu vực bàn học" /></label>
+        <button class="heading-room-link" type="submit">Tải ảnh lên</button>
+        <small>JPG, PNG hoặc WebP, tối đa 5 MB mỗi ảnh.</small>
+    </form>
+}
+
+@if (Model.Photos.Count == 0)
+{
+    <p class="room-photo-empty">Phòng này chưa có ảnh.</p>
+}
+else
+{
+    <ul class="room-photo-grid management-room-photos">
+        @foreach (var photo in Model.Photos)
+        {
+            var caption = string.IsNullOrWhiteSpace(photo.Caption) ? $"Ảnh phòng {Model.RoomCode}" : photo.Caption;
+            <li>
+                <a asp-controller="Attachments" asp-action="RoomPhoto" asp-route-id="@photo.Id" target="_blank" rel="noopener">
+                    <img src="@Url.Action("RoomPhoto", "Attachments", new { id = photo.Id })" alt="@caption" loading="lazy" />
+                </a>
+                <p>@caption</p>
+                <form asp-action="Remove" method="post" data-confirm="Gỡ ảnh này khỏi phòng @Model.RoomCode?">
+                    <input type="hidden" name="roomId" value="@Model.RoomId" />
+                    <input type="hidden" name="id" value="@photo.Id" />
+                    <button class="heading-room-link quiet" type="submit">Gỡ ảnh</button>
+                </form>
+            </li>
+        }
+    </ul>
+}

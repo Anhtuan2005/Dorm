@@ -1,6 +1,9 @@
 const { chromium } = require("playwright");
 const { spawnSync } = require("child_process");
 const { baseUrl, e2ePassword } = require("./e2e-config.cjs");
+const database = process.env.DORM_BROWSER_FIXTURE_DB || "DormitoryManagementSystem";
+if (process.env.DORM_BROWSER_FIXTURE_DB && !/^DormitoryManagementSystem_Test_[a-f0-9]{32}$/.test(database))
+  throw new Error("Expected a disposable SQL fixture database.");
 
 const marker = "[E2E] Thu phi va hoan tac";
 const sqlcmd = "C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn\\SQLCMD.EXE";
@@ -8,7 +11,7 @@ const server = "DESKTOP-OSSBOT1\\TUANANH";
 
 function runSql(sql) {
   const settings = "SET ANSI_NULLS ON; SET QUOTED_IDENTIFIER ON; SET ANSI_PADDING ON; SET ANSI_WARNINGS ON; SET CONCAT_NULL_YIELDS_NULL ON; SET ARITHABORT ON; SET NUMERIC_ROUNDABORT OFF;";
-  const result = spawnSync(sqlcmd, ["-S", server, "-d", "DormitoryManagementSystem", "-E", "-b", "-Q", `${settings} ${sql}`], { encoding: "utf8" });
+  const result = spawnSync(sqlcmd, ["-S", server, "-d", database, "-E", "-C", "-b", "-Q", `${settings} ${sql}`], { encoding: "utf8" });
   if (result.status !== 0) throw new Error(`SQL failed: ${result.stderr || result.stdout}`);
   return result.stdout;
 }
@@ -25,8 +28,8 @@ UPDATE Invoices SET LedgerUpdatedAt = NULL WHERE Id = @InvoiceId;`);
 
 async function signIn(page) {
   await page.goto(`${baseUrl}/Account/Login`, { waitUntil: "networkidle" });
-  await page.getByLabel("Email").fill("manager@nepktx.local");
-  await page.getByLabel("Mật khẩu").fill(e2ePassword);
+  await page.getByLabel("Email", { exact: true }).fill("manager@nepktx.local");
+  await page.getByLabel("Mật khẩu", { exact: true }).fill(e2ePassword);
   await Promise.all([
     page.waitForLoadState("networkidle"),
     page.getByRole("button", { name: "Đăng nhập" }).click()
@@ -47,6 +50,7 @@ async function signIn(page) {
 
     await page.locator('select[name="Method"]').selectOption("Cash");
     await page.locator('input[name="Amount"]').fill("123000");
+    await page.locator(".collection-form .optional-note summary").click();
     await page.locator('textarea[name="Note"]').fill(marker);
     const paymentPayload = await page.locator(".collection-form").evaluate(form => Object.fromEntries(new FormData(form)));
     await Promise.all([
@@ -58,6 +62,10 @@ async function signIn(page) {
     const historyText = await page.locator(".billing-history").innerText();
     const receiptCode = historyText.match(/THU-\d{8}-\d{6}/)?.[0];
     if (!receiptCode || !historyText.includes(marker)) issues.push("payment audit entry is incomplete");
+    const receiptLink = page.getByRole("link", { name: `Biên nhận ${receiptCode}`, exact: true });
+    const receiptUrl = new URL(await receiptLink.getAttribute("href"), baseUrl).href;
+    const receipt = await page.request.get(receiptUrl);
+    if (!receipt.ok() || !(await receipt.text()).includes("123.000")) issues.push("printable receipt did not reflect the amount");
 
     await page.request.post(`${baseUrl}/Billing/RecordPayment`, { form: paymentPayload });
     await page.reload({ waitUntil: "networkidle" });
@@ -88,6 +96,8 @@ async function signIn(page) {
     if (!afterReversal.includes("1.471.000")) issues.push(`reversal did not restore balance: ${afterReversal}`);
     const finalHistory = await page.locator(".billing-history").innerText();
     if (!finalHistory.includes("Đã hoàn tác") || !finalHistory.includes("Điều chỉnh")) issues.push("reversal audit relationship is missing");
+    const reversedReceipt = await page.request.get(receiptUrl);
+    if (!reversedReceipt.ok() || !(await reversedReceipt.text()).includes("receipt-reversed")) issues.push("original receipt is missing its reversal notice");
 
     const effective = runSql(`SET NOCOUNT ON; SELECT COUNT(*) FROM PaymentTransactions WHERE InvoiceId=(SELECT Id FROM Invoices WHERE Code=N'HD-MGR-0001') AND CHARINDEX(N'${marker}', Note) > 0;`).trim();
     if (!effective.endsWith("2")) issues.push(`expected one receipt and one reversal, SQL returned: ${effective}`);

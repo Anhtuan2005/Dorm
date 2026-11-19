@@ -1,0 +1,21 @@
+{
+  "unit_tests_passed": 54,
+  "sql_integration_tests_skipped": 5,
+  "captured_route_checks": 30,
+  "extra_viewport_checks": 35,
+  "interaction_groups_passed": 17,
+  "page_overflow_count": 0,
+  "http_failures": 0,
+  "browser_errors": [],
+  "small_text_before": 830,
+  "small_text_after": 217,
+  "widths_verified": [
+    360,
+    430,
+    768,
+    1024,
+    1280,
+    1440,
+    1920
+  ]
+}

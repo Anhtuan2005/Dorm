@@ -1,20 +1,19 @@
-using DormitoryManagementSystem.Data;
 using DormitoryManagementSystem.Models;
+using DormitoryManagementSystem.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace DormitoryManagementSystem.ViewComponents;
 
 public sealed class StudentNotificationBadgeViewComponent(
-    DormitoryDbContext db,
+    IStudentPortalService portal,
     UserManager<ApplicationUser> userManager) : ViewComponent
 {
     public async Task<IViewComponentResult> InvokeAsync()
     {
         var userId = userManager.GetUserId(UserClaimsPrincipal);
         if (userId is null) return Content("0");
-        var count = await db.Notifications.AsNoTracking().CountAsync(x => x.UserId == userId && x.ReadAt == null);
+        var count = await portal.GetUnreadNotificationCountAsync(userId, HttpContext.RequestAborted);
         return Content(count > 99 ? "99+" : count.ToString());
     }
 }

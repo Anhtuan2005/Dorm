@@ -8,10 +8,15 @@ using Microsoft.EntityFrameworkCore.Storage;
 
 namespace DormitoryManagementSystem.Services;
 
-public sealed class BillingLedgerService(
-    DormitoryDbContext db,
-    TimeProvider timeProvider) : IBillingLedgerService
+public sealed partial class BillingLedgerService(
+    DormitoryDbContext context,
+    TimeProvider clock,
+    RealtimeUpdates? realtime = null) : IBillingLedgerService
 {
+    private readonly DormitoryDbContext db = context;
+    private readonly TimeProvider timeProvider = clock;
+    private readonly RealtimeUpdates? live = realtime;
+    private const string VnpayIdempotencyPrefix = "vnpay-sandbox:";
     private const int PageSize = 20;
     private static readonly TimeZoneInfo BusinessTimeZone = ResolveBusinessTimeZone();
 
@@ -53,6 +58,7 @@ public sealed class BillingLedgerService(
             .OrderBy(x => x.IsCancelled ? 4 : x.TotalAmount <= x.CollectedAmount ? 3 : x.DueDate < businessDate ? 0 : x.CollectedAmount > 0 ? 1 : 2)
             .ThenBy(x => x.DueDate)
             .ThenByDescending(x => x.IssuedAt)
+            .ThenByDescending(x => x.Id)
             .Skip((query.Page - 1) * PageSize)
             .Take(PageSize)
             .ToListAsync(cancellationToken);
@@ -155,6 +161,7 @@ public sealed class BillingLedgerService(
                 var now = timeProvider.GetUtcNow().UtcDateTime;
                 var issued = 0;
                 var skipped = 0;
+                var notifiedUsers = new HashSet<string>(StringComparer.Ordinal);
 
                 foreach (var stay in stays.GroupBy(x => x.StudentProfileId).Select(x => x.OrderByDescending(y => y.StartedAt).First()))
                 {
@@ -186,6 +193,7 @@ public sealed class BillingLedgerService(
                     db.Invoices.Add(invoice);
                     if (!string.IsNullOrWhiteSpace(stay.StudentProfile.UserId))
                     {
+                        notifiedUsers.Add(stay.StudentProfile.UserId);
                         db.Notifications.Add(new Notification
                         {
                             UserId = stay.StudentProfile.UserId,
@@ -201,6 +209,7 @@ public sealed class BillingLedgerService(
 
                 await db.SaveChangesAsync(cancellationToken);
                 await transaction.CommitAsync(cancellationToken);
+                if (issued != 0 && live is not null) await live.NotifyOperationsAsync(notifiedUsers.ToArray());
                 var scope = string.IsNullOrWhiteSpace(input.BuildingCode) ? "toàn KTX" : $"tòa {input.BuildingCode.Trim().ToUpperInvariant()}";
                 return new(true, $"Đã phát hành {issued} hóa đơn cho {scope}; bỏ qua {skipped} hóa đơn đã tồn tại.", period.Id, issued, skipped);
             }
@@ -223,6 +232,8 @@ public sealed class BillingLedgerService(
             .Include(x => x.Transactions).ThenInclude(x => x.ReversalTransaction)
             .Where(x => x.StudentProfileId == studentProfileId)
             .OrderByDescending(x => x.BillingPeriod.StartDate)
+            .ThenByDescending(x => x.BillingPeriod.EndDate)
+            .ThenByDescending(x => x.Id)
             .AsSplitQuery()
             .ToListAsync(cancellationToken);
 
@@ -252,6 +263,8 @@ public sealed class BillingLedgerService(
         CancellationToken cancellationToken = default)
     {
         var idempotencyKey = input.IdempotencyKey.Trim();
+        if (idempotencyKey.StartsWith(VnpayIdempotencyPrefix, StringComparison.OrdinalIgnoreCase))
+            return new(false, "Mã ghi nhận thu không hợp lệ.", input.InvoiceId);
         var duplicate = await FindByIdempotencyAsync(idempotencyKey, cancellationToken);
         if (duplicate is not null)
             return new(true, $"Khoản thu {duplicate.Code} đã được ghi nhận trước đó.", duplicate.InvoiceId, duplicate.Code);
@@ -301,30 +314,28 @@ public sealed class BillingLedgerService(
                 return new(false, $"Số tiền vượt công nợ hiện tại {summary.Balance:N0} đ.", invoice.Id);
 
             var now = timeProvider.GetUtcNow().UtcDateTime;
+            if (await PendingVnpayCheckouts(invoice.Id, now).AnyAsync(cancellationToken))
+                return new(false, "Hóa đơn đang chờ VNPAY xác nhận. Hãy kiểm tra lại trước khi ghi nhận thu.", invoice.Id);
+
             var receivedAt = ToUtc(input.ReceivedAt!.Value);
             if (receivedAt > now.AddMinutes(5))
                 return new(false, "Thời điểm nhận tiền không thể ở tương lai.", invoice.Id);
 
-            var code = await NextReceiptCodeAsync(now, cancellationToken);
-            invoice.LedgerUpdatedAt = now;
             db.Entry(invoice).Property(x => x.RowVersion).OriginalValue = Convert.FromBase64String(input.RowVersion);
-            db.PaymentTransactions.Add(new PaymentTransaction
+            var code = await AppendCollectionAsync(invoice, new PaymentTransaction
             {
-                InvoiceId = invoice.Id,
-                Code = code,
                 Amount = input.Amount,
                 Method = method,
                 ReceivedAt = receivedAt,
-                RecordedAt = now,
                 RecordedByUserId = managerUserId,
                 ExternalReference = NullIfWhiteSpace(input.ExternalReference),
                 IdempotencyKey = idempotencyKey,
                 Note = NullIfWhiteSpace(input.Note)
-            });
-            AddNotification(invoice, now, "Đã ghi nhận khoản thu", $"{code} · {input.Amount:N0} đ đã được ghi nhận cho {invoice.Code}.");
+            }, now, cancellationToken);
 
             await db.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
+            if (live is not null) await live.NotifyOperationsAsync(invoice.StudentProfile.UserId);
             return new(true, $"Đã ghi nhận {code} · {input.Amount:N0} đ.", invoice.Id, code);
         }
         catch (DbUpdateConcurrencyException)
@@ -349,6 +360,8 @@ public sealed class BillingLedgerService(
         CancellationToken cancellationToken = default)
     {
         var idempotencyKey = input.IdempotencyKey.Trim();
+        if (idempotencyKey.StartsWith(VnpayIdempotencyPrefix, StringComparison.OrdinalIgnoreCase))
+            return new(false, "Mã hoàn tác không hợp lệ.", 0);
         var duplicate = await FindByIdempotencyAsync(idempotencyKey, cancellationToken);
         if (duplicate is not null)
             return new(true, $"Hoàn tác {duplicate.Code} đã được ghi nhận trước đó.", duplicate.InvoiceId, duplicate.Code);
@@ -382,6 +395,8 @@ public sealed class BillingLedgerService(
                 .SingleOrDefaultAsync(x => x.Id == input.TransactionId, cancellationToken);
             if (original is null)
                 return new(false, "Không tìm thấy giao dịch thu.", 0);
+            if (original.Method == PaymentMethod.VnpaySandbox)
+                return new(false, "Khoản thu VNPAY cần đối soát trên cổng thanh toán; hoàn tác thủ công không hoàn tiền VNPAY.", original.InvoiceId);
             if (original.Amount <= 0 || original.ReversesTransactionId is not null)
                 return new(false, "Chỉ có thể hoàn tác một khoản thu gốc.", original.InvoiceId);
             if (original.ReversalTransaction is not null)
@@ -411,6 +426,7 @@ public sealed class BillingLedgerService(
 
             await db.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
+            if (live is not null) await live.NotifyOperationsAsync(original.Invoice.StudentProfile.UserId);
             return new(true, $"Đã hoàn tác {original.Code} bằng {code}.", original.InvoiceId, code);
         }
         catch (DbUpdateConcurrencyException)
@@ -469,8 +485,13 @@ public sealed class BillingLedgerService(
         if (query.MaxBalance.HasValue)
             source = source.Where(x => x.TotalAmount - x.CollectedAmount <= query.MaxBalance.Value);
 
+        var tomorrow = businessDate.AddDays(1);
+        var dueSoonEnd = businessDate.AddDays(7);
         source = query.Status?.ToLowerInvariant() switch
         {
+            "outstanding" => source.Where(x => !x.IsCancelled && x.TotalAmount > x.CollectedAmount),
+            "due-soon" => source.Where(x => !x.IsCancelled && x.TotalAmount > x.CollectedAmount
+                && x.DueDate >= tomorrow && x.DueDate <= dueSoonEnd),
             "overdue" => source.Where(x => !x.IsCancelled && x.TotalAmount > x.CollectedAmount && x.DueDate < businessDate),
             "partial" => source.Where(x => !x.IsCancelled && x.CollectedAmount > 0 && x.CollectedAmount < x.TotalAmount && x.DueDate >= businessDate),
             "paid" => source.Where(x => !x.IsCancelled && x.CollectedAmount >= x.TotalAmount),
@@ -479,6 +500,22 @@ public sealed class BillingLedgerService(
             _ => source
         };
         return source;
+    }
+
+    public async Task<BillingReceiptViewModel?> GetReceiptAsync(long transactionId, string? studentUserId, CancellationToken cancellationToken = default)
+    {
+        var records = db.PaymentTransactions.AsNoTracking().Where(x => x.Id == transactionId && x.Amount > 0 && x.ReversesTransactionId == null);
+        if (studentUserId is not null) records = records.Where(x => x.Invoice.StudentProfile.UserId == studentUserId);
+        var receipt = await records.Select(x => new
+        {
+            x.InvoiceId, InvoiceCode = x.Invoice.Code, PeriodName = x.Invoice.BillingPeriod.Name,
+            x.Invoice.StudentProfile.StudentCode, StudentName = x.Invoice.StudentProfile.FullName,
+            x.Code, x.Amount, x.Method, x.ReceivedAt,
+            ReversalCode = x.ReversalTransaction == null ? null : x.ReversalTransaction.Code
+        }).SingleOrDefaultAsync(cancellationToken);
+        return receipt is null ? null : new(receipt.InvoiceId, receipt.InvoiceCode, receipt.PeriodName,
+            receipt.StudentCode, receipt.StudentName, receipt.Code, receipt.Amount, MethodLabel(receipt.Method),
+            ToBusinessLocal(receipt.ReceivedAt), receipt.ReversalCode);
     }
 
     private async Task<BillingInvoiceDetailViewModel?> LoadDetailAsync(
@@ -498,6 +535,13 @@ public sealed class BillingLedgerService(
         if (invoice is null) return null;
 
         var summary = Summarize(invoice, businessDate);
+        var vnpayPending = summary.CanCollect &&
+            await PendingVnpayCheckouts(invoice.Id, timeProvider.GetUtcNow().UtcDateTime).AnyAsync(cancellationToken);
+        var vnpayReviews = await db.VnpayCheckouts.AsNoTracking()
+            .Where(x => x.InvoiceId == invoice.Id && x.State == VnpayCheckoutState.NeedsReview)
+            .OrderByDescending(x => x.ConfirmedAtUtc)
+            .Select(x => new VnpayReviewViewModel(x.Reference, x.Amount, x.ProviderTransactionNumber, x.ResponseCode, x.ProviderState))
+            .ToListAsync(cancellationToken);
         return new BillingInvoiceDetailViewModel
         {
             Id = invoice.Id,
@@ -517,7 +561,9 @@ public sealed class BillingLedgerService(
             Balance = summary.Balance,
             StatusLabel = summary.StatusLabel,
             StatusClass = summary.StatusClass,
-            CanCollect = summary.CanCollect,
+            CanCollect = summary.CanCollect && !vnpayPending,
+            VnpayPending = vnpayPending,
+            VnpayReviews = vnpayReviews,
             RowVersion = Convert.ToBase64String(invoice.RowVersion),
             Lines = invoice.Lines.OrderBy(x => x.Id)
                 .Select(x => new BillingInvoiceLineViewModel(x.Description, x.ChargeType, x.Amount))
@@ -533,6 +579,8 @@ public sealed class BillingLedgerService(
             invoice.Id,
             invoice.Code,
             invoice.BillingPeriod.Name,
+            invoice.BillingPeriod.StartDate,
+            invoice.BillingPeriod.EndDate,
             invoice.BillingPeriod.DueDate,
             invoice.IssuedAt,
             summary,
@@ -557,7 +605,8 @@ public sealed class BillingLedgerService(
                     ledger.Note,
                     ledger.IsReversal,
                     ledger.HasBeenReversed,
-                    ledger.ReversedCode);
+                    ledger.ReversedCode,
+                    x.Method != PaymentMethod.VnpaySandbox && ledger.Amount > 0 && !ledger.IsReversal && !ledger.HasBeenReversed);
             }).ToList();
 
     private static BillingLedgerTransaction ToLedgerTransaction(PaymentTransaction transaction) => new(
@@ -567,7 +616,7 @@ public sealed class BillingLedgerService(
         MethodLabel(transaction.Method),
         transaction.ReceivedAt,
         transaction.RecordedAt,
-        transaction.RecordedByUser?.FullName ?? "Dữ liệu chuyển đổi",
+        transaction.RecordedByUser?.FullName ?? (transaction.Method == PaymentMethod.VnpaySandbox ? "VNPAY Sandbox" : "Dữ liệu chuyển đổi"),
         transaction.ExternalReference,
         transaction.Note,
         transaction.ReversesTransactionId.HasValue,
@@ -635,6 +684,20 @@ public sealed class BillingLedgerService(
         return $"THU-{ToBusinessLocal(now):yyyyMMdd}-{value:000000}";
     }
 
+    private async Task<string> AppendCollectionAsync(
+        Invoice invoice, PaymentTransaction collection, DateTime now, CancellationToken cancellationToken)
+    {
+        collection.InvoiceId = invoice.Id;
+        collection.Code = await NextReceiptCodeAsync(now, cancellationToken);
+        collection.RecordedAt = now;
+        invoice.LedgerUpdatedAt = now;
+        db.Entry(invoice).Property(x => x.LedgerUpdatedAt).IsModified = true;
+        db.PaymentTransactions.Add(collection);
+        AddNotification(invoice, now, "Đã ghi nhận khoản thu",
+            $"{collection.Code} · {collection.Amount:N0} đ đã được ghi nhận cho {invoice.Code}.");
+        return collection.Code;
+    }
+
     private static bool HasCurrentVersion(Invoice invoice, string rowVersion)
     {
         try
@@ -681,6 +744,7 @@ public sealed class BillingLedgerService(
     {
         PaymentMethod.Cash => "Tiền mặt",
         PaymentMethod.BankTransfer => "Chuyển khoản",
+        PaymentMethod.VnpaySandbox => "VNPAY Sandbox",
         _ => "Điều chỉnh"
     };
 

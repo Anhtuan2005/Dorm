@@ -1,6 +1,42 @@
-﻿@{
-    ViewData["Title"] = "Privacy Policy";
+﻿@inject Microsoft.Extensions.Options.IOptions<DormitoryManagementSystem.Services.StudentSupportOptions> StudentSupport
+@{
+    Layout = "_InfoLayout";
+    ViewData["Title"] = "Thông tin dữ liệu và hỗ trợ";
+    var contact = StudentSupport.Value;
 }
-<h1>@ViewData["Title"]</h1>
 
-<p>Use this page to detail your site's privacy policy.</p>
+<article class="data-page">
+    <h1>Thông tin dữ liệu và hỗ trợ</h1>
+    <section>
+        <h2>Hồ sơ và ảnh hiện trường</h2>
+        <p>Ban quản lý dùng thông tin trong hồ sơ sinh viên để xử lý lưu trú, thu phí và sửa chữa. Ảnh đính kèm yêu cầu sửa chữa chỉ mở được bởi người đã gửi yêu cầu và người có quyền quản lý.</p>
+    </section>
+    <section>
+        <h2>Câu hỏi gửi cho trợ lý</h2>
+        <p>NẾP KTX có thể gửi câu hỏi mẫu về thao tác tới Google Gemini. Nội dung bạn nhập, lịch sử trò chuyện và hồ sơ sinh viên được xử lý trong NẾP KTX. Cuộc trò chuyện hiển thị trên trang đang mở.</p>
+    </section>
+    <section id="contact">
+        <h2>Liên hệ Ban quản lý KTX</h2>
+        <p>Bạn có thể gặp Ban quản lý tại @contact.OfficeLocation để được hỗ trợ về lưu trú, tài khoản và hồ sơ.</p>
+        @if (contact.PhoneLink is { } phoneLink)
+        {
+            <p>Điện thoại: <a href="@phoneLink">@contact.PhoneNumber</a></p>
+        }
+        @if (contact.EmailLink is { } emailLink)
+        {
+            <p>Email: <a href="@emailLink">@contact.EmailAddress</a></p>
+        }
+        @if (contact.PhoneLink is null && contact.EmailLink is null)
+        {
+            <p>Hệ thống chưa có số điện thoại và email chính thức của Ban quản lý.</p>
+        }
+    </section>
+    @if (User.Identity?.IsAuthenticated == true)
+    {
+        <a class="info-primary" asp-controller="Home" asp-action="Index">Về trang của tôi</a>
+    }
+    else
+    {
+        <a class="info-primary" asp-controller="Account" asp-action="Login">Về trang đăng nhập</a>
+    }
+</article>

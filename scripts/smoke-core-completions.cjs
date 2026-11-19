@@ -3,6 +3,9 @@ const path = require("path");
 const { spawnSync } = require("child_process");
 const { chromium } = require("playwright");
 const { baseUrl, e2ePassword } = require("./e2e-config.cjs");
+const database = process.env.DORM_BROWSER_FIXTURE_DB || "DormitoryManagementSystem";
+if (process.env.DORM_BROWSER_FIXTURE_DB && !/^DormitoryManagementSystem_Test_[a-f0-9]{32}$/.test(database))
+  throw new Error("Expected a disposable SQL fixture database.");
 
 const sqlcmd = "C:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\170\\Tools\\Binn\\SQLCMD.EXE";
 const server = "DESKTOP-OSSBOT1\\TUANANH";
@@ -14,7 +17,7 @@ const uploadPath = path.resolve(__dirname, "..", "artifacts", "e2e-tiny.png");
 
 function runSql(sql, scalar = false) {
   const settings = "SET ANSI_NULLS ON; SET QUOTED_IDENTIFIER ON; SET ANSI_PADDING ON; SET ANSI_WARNINGS ON; SET CONCAT_NULL_YIELDS_NULL ON; SET ARITHABORT ON; SET NUMERIC_ROUNDABORT OFF;";
-  const args = ["-S", server, "-d", "DormitoryManagementSystem", "-E", "-b"];
+  const args = ["-S", server, "-d", database, "-E", "-C", "-b"];
   if (scalar) args.push("-h", "-1", "-W");
   args.push("-Q", `${settings} ${sql}`);
   const result = spawnSync(sqlcmd, args, { encoding: "utf8" });
@@ -52,8 +55,8 @@ DELETE FROM Buildings WHERE Id=@BuildingId;`);
 
 async function signIn(page, email) {
   await page.goto(`${baseUrl}/Account/Login`, { waitUntil: "networkidle" });
-  await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Mật khẩu").fill(e2ePassword);
+  await page.getByLabel("Email", { exact: true }).fill(email);
+  await page.getByLabel("Mật khẩu", { exact: true }).fill(e2ePassword);
   await Promise.all([page.waitForLoadState("networkidle"), page.getByRole("button", { name: "Đăng nhập" }).click()]);
 }
 
@@ -97,7 +100,7 @@ async function submitDialog(page, id, fields, submitName) {
     await submitDialog(manager, "edit-profile-dialog", { Faculty: "Khoa Kiểm thử phần mềm" }, "Lưu hồ sơ");
     if (!(await manager.locator(".main-content").innerText()).includes("Khoa Kiểm thử phần mềm")) issues.push("student profile update was not reflected");
 
-    runSql(`SET NOCOUNT ON; INSERT INTO Stays(StudentProfileId,RoomId,StartedAt) SELECT s.Id,r.Id,SYSUTCDATETIME() FROM StudentProfiles s CROSS JOIN Rooms r WHERE s.StudentCode=N'${studentCode}' AND r.Code=N'QA-101';`);
+    runSql(`SET NOCOUNT ON; INSERT INTO Stays(StudentProfileId,RoomId,StartedAt) SELECT s.Id,r.Id,'20260901' FROM StudentProfiles s CROSS JOIN Rooms r WHERE s.StudentCode=N'${studentCode}' AND r.Code=N'QA-101';`);
     await manager.goto(`${baseUrl}/Billing`, { waitUntil: "networkidle" });
     await manager.getByRole("button", { name: "Phát hành kỳ thu" }).click();
     await submitDialog(manager, "issue-invoices-dialog", { PeriodCode: periodCode, PeriodName: "Kỳ kiểm thử E2E", StartDate: "2026-09-01", EndDate: "2026-09-30", DueDate: "2026-09-15", BuildingCode: buildingCode, ElectricityAmount: "120000", WaterAmount: "80000", ServiceAmount: "50000" }, "Phát hành hóa đơn");
@@ -122,6 +125,7 @@ async function submitDialog(page, id, fields, submitName) {
     await repairDialog.locator('[name="Priority"]').selectOption("Medium");
     await repairDialog.locator('[name="Title"]').fill(repairTitle);
     await repairDialog.locator('[name="Description"]').fill("Vòi nước rò liên tục tại bồn rửa, cần kiểm tra trong ngày.");
+    await repairDialog.getByLabel("Chia sẻ sự cố với bạn cùng phòng").check();
     await repairDialog.locator('[name="Attachments"]').setInputFiles(uploadPath);
     await Promise.all([student.waitForLoadState("networkidle"), repairDialog.getByRole("button", { name: "Gửi yêu cầu" }).click()]);
     const repairCard = student.locator(".repair-card").filter({ hasText: repairTitle }).first();
@@ -131,9 +135,49 @@ async function submitDialog(page, id, fields, submitName) {
       issues.push(`repair attachment was not displayed (database=${attachmentCount}, feedback=${feedback.includes("không phải ảnh") ? "invalid-image" : feedback.includes("Đã gửi yêu cầu") ? "saved" : "none"})`);
     }
     else {
+      if (!await repairCard.getByText("Đã chia sẻ tiêu đề và tiến độ với phòng.").isVisible())
+        issues.push("repair sharing checkbox was not saved");
       const attachmentUrl = new URL(await repairCard.locator(".repair-attachments img").getAttribute("src"), baseUrl).href;
       const response = await student.request.get(attachmentUrl);
       if (!response.ok() || response.headers()["content-type"] !== "image/png") issues.push(`protected attachment response invalid: ${response.status()}`);
+    }
+
+    if (process.env.DORM_BROWSER_FIXTURE_DB) {
+      runSql(`
+INSERT MaintenanceRequests (RoomId, ReporterStudentId, Code, Title, Category, Description, Priority, Status, BlockedBeds, CreatedAt, UpdatedAt, ShareWithRoom)
+SELECT TOP (1) currentStay.RoomId, roommate.StudentProfileId, N'SC-E2E-FOLLOW', N'Điều hòa ngừng hoạt động', N'Thiết bị phòng',
+       N'Ghi chú riêng của người báo', N'Medium', N'New', 0, SYSUTCDATETIME(), SYSUTCDATETIME(), 1
+FROM AspNetUsers u
+JOIN StudentProfiles studentProfile ON studentProfile.UserId=u.Id
+JOIN Stays currentStay ON currentStay.StudentProfileId=studentProfile.Id AND currentStay.EndedAt IS NULL
+JOIN Stays roommate ON roommate.RoomId=currentStay.RoomId AND roommate.EndedAt IS NULL AND roommate.StudentProfileId<>studentProfile.Id
+WHERE u.Email=N'student@nepktx.local'
+ORDER BY roommate.Id;`);
+      await student.reload({ waitUntil: "networkidle" });
+      const shared = student.locator(".shared-repair").filter({ hasText: "SC-E2E-FOLLOW" });
+      await shared.getByRole("button", { name: "Theo dõi sự cố" }).click();
+      await shared.getByRole("button", { name: "Ngừng theo dõi" }).waitFor();
+      if ((await shared.innerText()).includes("Ghi chú riêng của người báo")) issues.push("shared repair exposed the description");
+      await student.goto(`${baseUrl}/Student/Notifications`, { waitUntil: "networkidle" });
+
+      await manager.goto(`${baseUrl}/Maintenance?Search=SC-E2E-FOLLOW`, { waitUntil: "networkidle" });
+      const update = manager.locator(".maintenance-action-form");
+      await update.locator('[name="Status"]').selectOption("InProgress");
+      await update.locator('[name="AssignedTeam"]').selectOption("Tổ Thiết bị");
+      await update.locator('[name="Note"]').fill("Ghi chú cập nhật riêng của Ban quản lý.");
+      await update.getByRole("button", { name: "Lưu cập nhật" }).click();
+      const notice = student.getByRole("link").filter({ hasText: /SC-E2E-FOLLOW · Đang xử lý/ });
+      await notice.waitFor({ timeout: 12000 });
+      await notice.click();
+      await shared.getByText("Đang xử lý", { exact: true }).waitFor();
+      await shared.getByRole("button", { name: "Ngừng theo dõi" }).click();
+      await shared.getByRole("button", { name: "Theo dõi sự cố" }).waitFor();
+
+      await student.goto(`${baseUrl}/Student/Invoices`, { waitUntil: "networkidle" });
+      const comparison = student.locator(".student-invoice-card").filter({ hasText: "HD-2026-09-02106" }).locator(".invoice-comparison");
+      await comparison.locator("summary").click();
+      if (!(await comparison.innerText()).includes("Tăng 47.000 đ") || !await comparison.getByText("Tiền điện", { exact: true }).isVisible())
+        issues.push("invoice did not show the expected previous-period total and charge changes");
     }
 
     await studentContext.close();

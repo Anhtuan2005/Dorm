@@ -1,0 +1,20 @@
+@model IReadOnlyList<StudentNotificationViewModel>
+
+<section class="student-section notification-panel" data-live-notices="recent">
+    <header class="student-section-head"><div><h2>Thông báo mới</h2></div><a asp-action="Notifications">Xem tất cả</a></header>
+    @if (Model.Count == 0)
+    {
+        <div class="student-empty compact"><strong>Chưa có thông báo</strong><p>Cập nhật mới sẽ xuất hiện tại đây.</p></div>
+    }
+    else
+    {
+        <div class="student-notification-list">
+            @foreach (var notice in Model)
+            {
+                <a asp-action="OpenNotification" asp-route-id="@notice.Id" data-notice-id="@notice.Id" class="@(notice.IsUnread ? "unread" : "")">
+                    <i></i><span><strong>@notice.Title</strong><small>@notice.Body</small><time>@notice.CreatedAt.ToLocalTime().ToString("dd/MM, HH:mm")</time></span>
+                </a>
+            }
+        </div>
+    }
+</section>

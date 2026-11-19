@@ -9,14 +9,17 @@ namespace DormitoryManagementSystem.Services;
 public sealed class ApplicationManagementService(
     DormitoryDbContext db,
     IBillingLedgerService billingLedger,
-    TimeProvider timeProvider) : IApplicationManagementService
+    TimeProvider timeProvider,
+    RealtimeUpdates? live = null) : IApplicationManagementService
 {
     private const int PageSize = 24;
+    private const string SupplementLabel = "Đã bổ sung";
+    private const string LegacySupplementPrefix = "Sinh viên bổ sung: ";
     private static readonly MaintenanceStatus[] OpenMaintenanceStatuses =
         [MaintenanceStatus.New, MaintenanceStatus.Assigned, MaintenanceStatus.InProgress, MaintenanceStatus.WaitingParts];
 
-    public Task<int> GetActiveCountAsync(CancellationToken cancellationToken = default) =>
-        db.HousingRequests.CountAsync(x => HousingRequestWorkflow.ActiveStatuses.Contains(x.Status), cancellationToken);
+    public Task<int> GetManagementWorkCountAsync(CancellationToken cancellationToken = default) =>
+        db.HousingRequests.CountAsync(x => HousingRequestWorkflow.ManagementStatuses.Contains(x.Status), cancellationToken);
 
     public async Task<ApplicationQueueViewModel> GetQueueAsync(
         ApplicationQueueQuery query,
@@ -45,20 +48,16 @@ public sealed class ApplicationManagementService(
         query.Page = Math.Min(query.Page, totalPages);
 
         var rows = await filtered
-            .OrderByDescending(x => (x.Status == HousingRequestStatus.Submitted || x.Status == HousingRequestStatus.UnderReview || x.Status == HousingRequestStatus.AwaitingMoveIn) &&
-                                    (x.ActionRequiredAt ?? x.SubmittedAt) <= overdueAt)
-            .ThenBy(x => x.Status == HousingRequestStatus.AwaitingMoveIn ? 0
-                : x.Status == HousingRequestStatus.UnderReview ? 1
-                : x.Status == HousingRequestStatus.Submitted ? 2
-                : x.Status == HousingRequestStatus.NeedsInformation ? 3 : 4)
-            .ThenBy(x => x.ActionRequiredAt ?? x.SubmittedAt)
+            .OrderByDescending(x => x.SubmittedAt)
+            .ThenByDescending(x => x.Id)
             .Skip((query.Page - 1) * PageSize)
             .Take(PageSize)
             .ToListAsync(cancellationToken);
 
-        var selectedId = query.SelectedId.HasValue && rows.Any(x => x.Id == query.SelectedId.Value)
-            ? query.SelectedId
-            : rows.FirstOrDefault()?.Id;
+        var selectedId = query.SelectedId is long requestedId &&
+            (rows.Any(x => x.Id == requestedId) || await filtered.AnyAsync(x => x.Id == requestedId, cancellationToken))
+            ? requestedId
+            : rows.FirstOrDefault(x => x.Code == query.Search?.Trim())?.Id ?? rows.FirstOrDefault()?.Id;
         query.SelectedId = selectedId;
 
         var items = rows.Select(x =>
@@ -71,7 +70,7 @@ public sealed class ApplicationManagementService(
                 x.StudentName,
                 Initials(x.StudentName),
                 HousingRequestWorkflow.TypeLabel(x.Type),
-                workflow.StatusLabel,
+                x.ReturnedWithSupplement ? SupplementLabel : workflow.StatusLabel,
                 workflow.StatusClass,
                 x.CurrentRoomCode,
                 x.TargetRoomCode,
@@ -176,6 +175,7 @@ public sealed class ApplicationManagementService(
 
             await db.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
+            if (live is not null) await live.NotifyOperationsAsync(request.StudentProfile.UserId);
             return new(true, action switch
             {
                 HousingRequestAction.RequestInformation => $"Đã yêu cầu bổ sung cho đơn {request.Code}.",
@@ -223,10 +223,12 @@ public sealed class ApplicationManagementService(
 
             if (request.Type is HousingRequestType.Registration or HousingRequestType.Transfer)
             {
+                request.TargetBedNumber ??= RoomBedPolicy.Available(request.TargetRoom!, now)[0];
                 request.ApprovedRoomHold = new RoomHold
                 {
                     RoomId = request.TargetRoomId!.Value,
                     HeldBeds = 1,
+                    BedNumber = request.TargetBedNumber,
                     ExpiresAt = now.AddDays(7)
                 };
             }
@@ -236,7 +238,7 @@ public sealed class ApplicationManagementService(
             request.DecisionReason = string.IsNullOrWhiteSpace(input.Reason)
                 ? request.Type == HousingRequestType.Checkout
                     ? "Đã xác nhận trả phòng và kết thúc lượt lưu trú."
-                    : $"Đã duyệt phòng {request.TargetRoom!.Code}; giữ 1 chỗ trong 7 ngày để hoàn tất nhận phòng."
+                    : $"Đã duyệt phòng {request.TargetRoom!.Code}; giữ giường {request.TargetBedNumber:00} trong 7 ngày để hoàn tất nhận phòng."
                 : input.Reason.Trim();
             request.ReviewedAt = now;
             request.ReviewedByUserId = managerUserId;
@@ -244,14 +246,15 @@ public sealed class ApplicationManagementService(
 
             var outcome = request.Type == HousingRequestType.Checkout
                 ? "Yêu cầu trả phòng đã được duyệt. Lượt lưu trú hiện tại đã kết thúc."
-                : $"Đơn đã được duyệt và giữ chỗ tại {request.TargetRoom!.Code} đến {now.AddDays(7).AddHours(7):dd/MM/yyyy}. Hãy liên hệ Ban quản lý để nhận phòng.";
+                : $"Đã giữ giường {request.TargetBedNumber:00} tại {request.TargetRoom!.Code} đến {now.AddDays(7).AddHours(7):dd/MM/yyyy}. Hãy liên hệ Ban quản lý để nhận phòng.";
             AddNotification(request.StudentProfile.UserId, request.Type == HousingRequestType.Checkout ? $"Đơn {request.Code} đã được duyệt" : $"Đơn {request.Code} chờ nhận phòng", outcome, now);
 
             await db.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
+            if (live is not null) await live.NotifyOperationsAsync(request.StudentProfile.UserId);
             return request.Type == HousingRequestType.Checkout
                 ? new(true, $"Đã duyệt {request.Code} và xác nhận trả phòng.", request.Id)
-                : new(true, $"Đã duyệt {request.Code} và giữ 1 chỗ tại {request.TargetRoom!.Code} trong 7 ngày. Chưa bắt đầu lượt ở.", request.Id);
+                : new(true, $"Đã duyệt {request.Code} và giữ giường {request.TargetBedNumber:00} tại {request.TargetRoom!.Code} trong 7 ngày. Chưa bắt đầu lượt ở.", request.Id);
         }
         catch (DbUpdateConcurrencyException)
         {
@@ -292,12 +295,17 @@ public sealed class ApplicationManagementService(
             var moveInError = ValidateMoveIn(request, currentStay, request.TargetRoom, now);
             if (moveInError is not null) return new(false, moveInError, request.Id);
 
+            var hold = request.ApprovedRoomHold;
+            request.TargetBedNumber = hold.BedNumber ??
+                RoomBedPolicy.Available(request.TargetRoom, now, excludingHoldId: hold.Id)[0];
+            hold.BedNumber = request.TargetBedNumber;
             if (request.Type == HousingRequestType.Transfer) currentStay!.EndedAt = now;
-            request.ApprovedRoomHold.ReleasedAt = now;
+            hold.ReleasedAt = now;
             db.Stays.Add(new Stay
             {
                 StudentProfileId = request.StudentProfileId,
                 RoomId = request.TargetRoom.Id,
+                BedNumber = request.TargetBedNumber,
                 HousingRequestId = request.Id,
                 StartedAt = now
             });
@@ -305,13 +313,14 @@ public sealed class ApplicationManagementService(
             request.ActionRequiredAt = null;
             request.MoveInConfirmedAt = now;
             request.DecisionReason = string.IsNullOrWhiteSpace(input.Reason)
-                ? $"Đã bàn giao và xác nhận nhận phòng {request.TargetRoom.Code}."
+                ? $"Đã bàn giao giường {request.TargetBedNumber:00}, phòng {request.TargetRoom.Code}."
                 : input.Reason.Trim();
             request.Events.Add(NewEvent(request.Id, request.Status, request.DecisionReason, managerUserId, now));
             AddNotification(request.StudentProfile.UserId, $"Đã nhận phòng {request.TargetRoom.Code}", $"Lượt lưu trú của bạn bắt đầu từ {now.AddHours(7):dd/MM/yyyy HH:mm}.", now);
 
             await db.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
+            if (live is not null) await live.NotifyOperationsAsync(request.StudentProfile.UserId);
             return new(true, $"Đã xác nhận {request.StudentProfile.FullName} nhận phòng {request.TargetRoom.Code}.", request.Id);
         }
         catch (DbUpdateConcurrencyException)
@@ -350,7 +359,7 @@ public sealed class ApplicationManagementService(
 
         var decision = RoomCapacityPolicy.CanReserve(request.TargetRoom, requestedBeds: 1, now);
         return decision.Allowed
-            ? null
+            ? ValidateRequestedBed(request, request.TargetRoom, now)
             : $"{decision.ErrorMessage} Không có thay đổi nào được ghi nhận.";
     }
 
@@ -376,6 +385,7 @@ public sealed class ApplicationManagementService(
         var approvalTransition = HousingRequestWorkflow.Transition(request.Status, HousingRequestAction.Approve, request.Type);
         var approvalBlock = approvalTransition.Allowed
             ? ValidateApprovalForDisplay(request, currentStay, current, target)
+                ?? (targetRoom is null ? null : ValidateRequestedBed(request, targetRoom, now))
             : request.Status switch
             {
                 HousingRequestStatus.Submitted => "Nhận xử lý đơn trước khi ra quyết định.",
@@ -386,17 +396,28 @@ public sealed class ApplicationManagementService(
         var outstanding = await billingLedger.GetOutstandingBalanceAsync(request.StudentProfileId, cancellationToken);
         var repairCount = await db.MaintenanceRequests.AsNoTracking()
             .CountAsync(x => x.ReporterStudentId == request.StudentProfileId && OpenMaintenanceStatuses.Contains(x.Status), cancellationToken);
-        var events = request.Events.OrderByDescending(x => x.CreatedAt)
+        // The initial submission precedes the first request for information. The only transition back
+        // to Submitted after that event is a student supplement, including on older records.
+        var firstInformationEventId = request.Events
+            .Where(x => x.Status == HousingRequestStatus.NeedsInformation)
+            .Min(x => (long?)x.Id);
+        var events = request.Events.OrderByDescending(x => x.CreatedAt).ThenByDescending(x => x.Id)
             .Select(x =>
             {
                 var eventStatus = HousingRequestWorkflow.Presentation(x.Status);
+                var isSupplement = x.Status == HousingRequestStatus.Submitted && x.Id > firstInformationEventId;
+                var note = isSupplement && x.Note.StartsWith(LegacySupplementPrefix, StringComparison.Ordinal)
+                    ? x.Note[LegacySupplementPrefix.Length..]
+                    : x.Note;
                 return new ApplicationAuditEventViewModel(
-                    eventStatus.Label,
+                    isSupplement ? SupplementLabel : eventStatus.Label,
                     eventStatus.Css,
-                    x.Note,
+                    note,
                     x.ActorUser?.FullName ?? (x.ActorUserId is null ? "Hệ thống" : request.StudentProfile.FullName),
-                    x.CreatedAt);
+                    x.CreatedAt,
+                    isSupplement);
             }).ToList();
+        var latestSupplement = events.FirstOrDefault(x => x.IsSupplement);
         if (events.Count == 0)
             events.Add(new("Đã gửi", "submitted", "Sinh viên đã gửi yêu cầu.", request.StudentProfile.FullName, request.SubmittedAt));
 
@@ -415,7 +436,8 @@ public sealed class ApplicationManagementService(
             Email = request.StudentProfile.User?.Email,
             TypeLabel = HousingRequestWorkflow.TypeLabel(request.Type),
             RequestType = request.Type.ToString(),
-            StatusLabel = workflow.StatusLabel,
+            StatusLabel = request.Status == HousingRequestStatus.Submitted && latestSupplement is not null
+                ? SupplementLabel : workflow.StatusLabel,
             StatusClass = workflow.StatusClass,
             StudentReason = request.StudentReason,
             DecisionReason = request.DecisionReason,
@@ -426,6 +448,7 @@ public sealed class ApplicationManagementService(
             NextActionLabel = workflow.NextActionLabel,
             CurrentRoom = current,
             TargetRoom = target,
+            TargetBedNumber = request.TargetBedNumber,
             OutstandingBalance = Math.Max(0, outstanding),
             OpenRepairCount = repairCount,
             CanStartReview = HousingRequestWorkflow.Can(request.Status, HousingRequestAction.BeginReview),
@@ -436,6 +459,7 @@ public sealed class ApplicationManagementService(
             CanConfirmMoveIn = HousingRequestWorkflow.Can(request.Status, HousingRequestAction.ConfirmMoveIn) && approvalBlock is null,
             HoldExpiresAt = request.ApprovedRoomHold?.ExpiresAt,
             ApprovalBlockReason = approvalBlock,
+            LatestSupplement = latestSupplement,
             Events = events
         };
     }
@@ -474,7 +498,22 @@ public sealed class ApplicationManagementService(
             return "Lượt lưu trú nguồn đã thay đổi; chưa thể nhận phòng.";
 
         var holdDecision = RoomCapacityPolicy.CanConsumeHold(targetRoom, request.ApprovedRoomHold, requiredBeds: 1, now);
-        return holdDecision.Allowed ? null : holdDecision.ErrorMessage;
+        if (!holdDecision.Allowed) return holdDecision.ErrorMessage;
+
+        var hold = request.ApprovedRoomHold!;
+        if (request.TargetBedNumber is int requested && requested != hold.BedNumber)
+            return "Chỗ giữ không đúng số giường của đơn.";
+        var available = RoomBedPolicy.Available(targetRoom, now, excludingHoldId: hold.Id);
+        return (hold.BedNumber is int number ? available.Contains(number) : available.Count > 0)
+            ? null : "Giường giữ cho đơn không còn có thể bàn giao. Hãy kiểm tra lại chỗ giữ.";
+    }
+
+    private static string? ValidateRequestedBed(HousingRequest request, Room room, DateTime now)
+    {
+        var available = RoomBedPolicy.Available(room, now);
+        if (request.TargetBedNumber is int number && !available.Contains(number))
+            return $"Giường {number:00} không còn có thể xếp. Hãy từ chối đơn để sinh viên chọn lại.";
+        return available.Count == 0 ? "Phòng không còn giường có thể xếp." : null;
     }
 
     private async Task<Room?> LoadRoomAsync(int roomId, DateTime now, CancellationToken cancellationToken) =>
@@ -513,7 +552,9 @@ public sealed class ApplicationManagementService(
             CurrentRoomCode = x.StudentProfile.Stays.Where(stay => stay.EndedAt == null).Select(stay => stay.Room.Code).FirstOrDefault(),
             TargetRoomCode = x.TargetRoom != null ? x.TargetRoom.Code : null,
             SubmittedAt = x.SubmittedAt,
-            ActionRequiredAt = x.ActionRequiredAt
+            ActionRequiredAt = x.ActionRequiredAt,
+            ReturnedWithSupplement = x.Status == HousingRequestStatus.Submitted &&
+                x.Events.Any(e => e.Status == HousingRequestStatus.NeedsInformation)
         });
 
     private static IQueryable<ApplicationProjection> ApplyFilters(IQueryable<ApplicationProjection> source, ApplicationQueueQuery query, DateTime overdueAt)
@@ -599,5 +640,6 @@ public sealed class ApplicationManagementService(
         public string? TargetRoomCode { get; init; }
         public DateTime SubmittedAt { get; init; }
         public DateTime? ActionRequiredAt { get; init; }
+        public bool ReturnedWithSupplement { get; init; }
     }
 }

@@ -3,6 +3,7 @@
     string Money(decimal value) => value.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("vi-VN"));
     string Css(decimal value) => value.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
     var trendMax = Math.Max(1m, Model.Trends.Select(x => x.Invoiced).DefaultIfEmpty(0).Max());
+    var hasPeriod = Model.Query.PeriodId.HasValue;
 }
 
 <div class="reports-page">
@@ -12,11 +13,16 @@
     </header>
 
     <form class="report-filter" method="get" asp-action="Index" data-filter-form>
-        <label><span>Kỳ báo cáo</span><select name="PeriodId" data-auto-submit>@foreach (var period in Model.Periods) { <option value="@period.Value" selected="@(Model.Query.PeriodId?.ToString() == period.Value)">@period.Label</option> }</select></label>
+        <label><span>Kỳ báo cáo</span><select name="PeriodId" data-auto-submit disabled="@(!hasPeriod)">
+            @if (!hasPeriod) { <option>Chưa có kỳ thu</option> }
+            @foreach (var period in Model.Periods) { <option value="@period.Value" selected="@(Model.Query.PeriodId?.ToString() == period.Value)">@period.Label</option> }
+        </select></label>
         <label><span>Phạm vi</span><select name="Building" data-auto-submit><option value="">Toàn KTX</option>@foreach (var building in Model.BuildingOptions) { <option value="@building.Value" selected="@(Model.Query.Building == building.Value)">@building.Label</option> }</select></label>
-        <span><svg><use href="#i-check" /></svg>@Model.PeriodStart.ToString("dd/MM")–@Model.PeriodEnd.ToString("dd/MM/yyyy") · tạo @Model.GeneratedAt.ToLocalTime().ToString("HH:mm")</span>
+        @if (hasPeriod) { <span><svg><use href="#i-check" /></svg>@Model.PeriodStart.ToString("dd/MM")–@Model.PeriodEnd.ToString("dd/MM/yyyy") · tạo @Model.GeneratedAt.ToLocalTime().ToString("HH:mm")</span> }
     </form>
 
+    @if (hasPeriod)
+    {
     <section class="report-finance" aria-label="Tổng hợp tài chính">
         <div class="finance-lead"><small>Tỷ lệ thu kỳ</small><strong>@Model.Finance.CollectionRate.ToString("0.0")%</strong><div><i style="--value:@Css(Model.Finance.CollectionRate)%"></i></div><p>@Model.Finance.InvoiceCount hóa đơn trong @Model.PeriodName.ToLowerInvariant()</p></div>
         <dl><div><dt>Đã phát hành</dt><dd>@Money(Model.Finance.Invoiced) đ</dd></div><div><dt>Đã thu ròng</dt><dd class="positive">@Money(Model.Finance.Collected) đ</dd></div><div><dt>Còn phải thu</dt><dd>@Money(Model.Finance.Outstanding) đ</dd></div><div class="danger"><dt>Quá hạn</dt><dd>@Money(Model.Finance.Overdue) đ<small>@Model.Finance.OverdueCount hóa đơn</small></dd></div></dl>
@@ -58,6 +64,11 @@
             <dl><div><dt>Đã giải quyết</dt><dd>@Model.Maintenance.Resolved</dd></div><div><dt>Đang mở</dt><dd>@Model.Maintenance.Open</dd></div><div class="danger"><dt>Khẩn cấp</dt><dd>@Model.Maintenance.Urgent</dd></div><div><dt>Chỗ tạm khóa</dt><dd>@Model.Maintenance.BlockedBeds</dd></div></dl>
         </section>
     </div>
+    }
+    else
+    {
+        <section class="report-panel report-empty"><strong>Chưa có kỳ thu để đối soát</strong><p>Bạn vẫn xem được sức chứa hiện tại. Tạo kỳ thu từ trang Thu phí để xem báo cáo theo kỳ.</p><a asp-controller="Billing" asp-action="Index">Mở trang Thu phí</a></section>
+    }
 
     <section class="report-panel building-report-table">
         <header><div><p>Đối chiếu tòa</p><h2>Sức chứa và công nợ</h2></div><span>Số liệu sức chứa là ảnh chụp hiện tại</span></header>
@@ -70,7 +81,7 @@
             <div class="report-table-scroll"><table><thead><tr><th>Tòa</th><th>Lấp đầy</th><th>Đang ở / Sức chứa</th><th>Đang giữ</th><th>Tạm khóa</th><th>Có thể xếp</th><th>Công nợ kỳ</th><th>Sự cố mở</th></tr></thead><tbody>
                 @foreach (var building in Model.Buildings)
                 {
-                    <tr><td><a asp-controller="Rooms" asp-action="Map" asp-route-Building="@building.Code">@building.Name</a></td><td><strong>@building.Capacity.OccupancyRate.ToString("0.0")%</strong><i><span style="--value:@Css(building.Capacity.OccupancyRate)%"></span></i></td><td>@building.Capacity.Occupied / @building.Capacity.Capacity</td><td>@building.Capacity.Held</td><td class="@(building.Capacity.Blocked > 0 ? "danger" : "")">@building.Capacity.Blocked</td><td class="positive">@building.Capacity.Assignable</td><td>@Money(building.OutstandingBalance) đ</td><td>@building.ActiveIncidents</td></tr>
+                    <tr><td><a asp-controller="Rooms" asp-action="Map" asp-route-Building="@building.Code">@building.Name</a></td><td><strong>@building.Capacity.OccupancyRate.ToString("0.0")%</strong><i><span style="--value:@Css(building.Capacity.OccupancyRate)%"></span></i></td><td>@building.Capacity.Occupied / @building.Capacity.Capacity</td><td>@building.Capacity.Held</td><td class="@(building.Capacity.Blocked > 0 ? "danger" : "")">@building.Capacity.Blocked</td><td class="positive">@building.Capacity.Assignable</td><td>@(hasPeriod ? $"{Money(building.OutstandingBalance)} đ" : "—")</td><td>@building.ActiveIncidents</td></tr>
                 }
             </tbody></table></div>
         }

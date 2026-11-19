@@ -1,0 +1,14 @@
+[
+  {
+    "dpr": 1,
+    "maxVerticalOffset": 0.203125
+  },
+  {
+    "dpr": 1.25,
+    "maxVerticalOffset": 0.203125
+  },
+  {
+    "dpr": 1.5,
+    "maxVerticalOffset": 0.203125
+  }
+]

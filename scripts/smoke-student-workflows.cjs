@@ -46,10 +46,11 @@ async function signIn(page) {
     const firstRoom = page.locator("[data-apply-room]").first();
     const selectedCode = await firstRoom.getAttribute("data-room-code");
     await firstRoom.click();
-    await page.locator("[data-application-dialog] textarea").fill(transferReason);
+    await page.locator("[data-tour-bed-select]").selectOption({ index: 1 });
+    await page.locator("[data-room-booking] textarea").fill(transferReason);
     await Promise.all([
       page.waitForURL(/\/Student\/Applications/),
-      page.locator("[data-application-dialog] button[type=submit]").click()
+      page.locator("[data-room-booking] button[type=submit]").click()
     ]);
     const activeCard = page.locator(".application-card.current");
     if (!(await activeCard.innerText()).includes(selectedCode)) throw new Error("Submitted room did not appear in application");

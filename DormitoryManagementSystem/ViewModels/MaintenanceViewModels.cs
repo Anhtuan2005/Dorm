@@ -60,6 +60,7 @@ public sealed class MaintenanceDetailViewModel
     public required string StatusClass { get; init; }
     public string? AssignedTeam { get; init; }
     public int BlockedBeds { get; init; }
+    public IReadOnlyList<int> BlockedBedNumbers { get; init; } = [];
     public int MaxBlockedBeds { get; init; }
     public int Capacity { get; init; }
     public int Occupied { get; init; }
@@ -94,6 +95,7 @@ public sealed class UpdateMaintenanceInput
     [Required] public string Priority { get; set; } = string.Empty;
     [StringLength(100)] public string? AssignedTeam { get; set; }
     [Range(0, 100)] public int BlockedBeds { get; set; }
+    [StringLength(400)] public string? BedNumbers { get; set; }
     [Required, StringLength(600, MinimumLength = 8, ErrorMessage = "Nội dung cập nhật cần từ 8 đến 600 ký tự.")]
     public string Note { get; set; } = string.Empty;
     [Required] public string RowVersion { get; set; } = string.Empty;

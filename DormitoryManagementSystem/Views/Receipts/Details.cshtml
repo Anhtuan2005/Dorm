@@ -1,0 +1,28 @@
+@model BillingReceiptViewModel
+@{
+    Layout = "_InfoLayout";
+    var amount = Model.Amount.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("vi-VN"));
+}
+
+<article class="payment-receipt">
+    <header>
+        <h1>Biên nhận khoản thu</h1>
+        <p>@Model.Code</p>
+    </header>
+    @if (Model.ReversalCode is not null)
+    {
+        <p class="receipt-reversed"><strong>Đã hoàn tác.</strong> Giao dịch hoàn tác @Model.ReversalCode.</p>
+    }
+    <dl>
+        <div><dt>Sinh viên</dt><dd>@Model.StudentName · @Model.StudentCode</dd></div>
+        <div><dt>Hóa đơn</dt><dd>@Model.InvoiceCode · @Model.PeriodName</dd></div>
+        <div><dt>Thời điểm nhận</dt><dd>@Model.ReceivedAt.ToString("dd/MM/yyyy, HH:mm") (UTC+7)</dd></div>
+        <div><dt>Phương thức</dt><dd>@Model.MethodLabel</dd></div>
+        <div><dt>Số tiền ghi nhận</dt><dd><strong>@amount đ</strong></dd></div>
+    </dl>
+    <footer class="receipt-actions">
+        <a class="student-secondary" href="@ViewData["ReceiptBackUrl"]">Về hóa đơn</a>
+        <button class="student-primary" type="button" id="print-receipt" hidden>In hoặc lưu PDF</button>
+    </footer>
+</article>
+<script src="~/js/receipt.js" asp-append-version="true" defer></script>

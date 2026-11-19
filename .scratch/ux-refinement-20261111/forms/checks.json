@@ -1,0 +1,13 @@
+{
+  "checks": [
+    "Keyboard file picker, decoded thumbnails, removal and focus",
+    "Too many, oversized and unsupported files block submission and can be cleared",
+    "Real server rejection restores four fields, focuses error and preserves repair history",
+    "Payment instructions expand in place and fit a 360 px screen",
+    "Only active housing requests show a next step",
+    "Password mismatch validation and show/hide work on mobile",
+    "Anonymous data information and standalone access/error pages",
+    "Desktop form and records have a single main landmark and fit the viewport"
+  ],
+  "pageErrors": []
+}

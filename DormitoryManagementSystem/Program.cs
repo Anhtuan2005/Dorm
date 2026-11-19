@@ -1,10 +1,14 @@
 using System.Globalization;
+using System.Security.Claims;
+using System.Threading.RateLimiting;
 using DormitoryManagementSystem.Data;
 using DormitoryManagementSystem.Hubs;
 using DormitoryManagementSystem.Models;
+using DormitoryManagementSystem.Security;
 using DormitoryManagementSystem.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Localization;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 
@@ -52,20 +56,57 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.LoginPath = "/Account/Login";
     options.AccessDeniedPath = "/Account/AccessDenied";
     options.SlidingExpiration = true;
+    options.Events.OnValidatePrincipal = StudentAccountSession.ValidateAsync;
+    var redirectToLogin = options.Events.OnRedirectToLogin;
+    options.Events.OnRedirectToLogin = context => StudentAccountSession.WasLocked(context.HttpContext)
+        ? StudentAccountSession.RedirectLockedAsync(context)
+        : redirectToLogin(context);
 });
 
 builder.Services.AddScoped<IRoomMapService, RoomMapService>();
 builder.Services.AddScoped<IOperationsCatalogService, OperationsCatalogService>();
 builder.Services.AddScoped<IStudentPortalService, StudentPortalService>();
+builder.Services.AddScoped<IStudentRoomSearch>(services => services.GetRequiredService<IStudentPortalService>());
 builder.Services.AddScoped<IApplicationManagementService, ApplicationManagementService>();
 builder.Services.AddScoped<IStudentManagementService, StudentManagementService>();
-builder.Services.AddScoped<IBillingLedgerService, BillingLedgerService>();
+builder.Services.AddScoped<BillingLedgerService>();
+builder.Services.AddScoped<IBillingLedgerService>(services => services.GetRequiredService<BillingLedgerService>());
+builder.Services.Configure<VnpayOptions>(builder.Configuration.GetSection(VnpayOptions.SectionName));
+builder.Services.AddScoped<VnpayCheckoutService>();
 builder.Services.AddScoped<IMaintenanceManagementService, MaintenanceManagementService>();
 builder.Services.AddScoped<IMaintenanceAttachmentStorage, MaintenanceAttachmentStorage>();
 builder.Services.AddScoped<IOperationsReportingService, OperationsReportingService>();
+builder.Services.AddScoped<OperationsAttentionService>();
+builder.Services.Configure<GeminiChatbotOptions>(builder.Configuration.GetSection(GeminiChatbotOptions.SectionName));
+builder.Services.Configure<StudentSupportOptions>(builder.Configuration.GetSection(StudentSupportOptions.SectionName));
+builder.Services.AddHttpClient<GeminiChatbotService>(client =>
+    client.Timeout = TimeSpan.FromSeconds(30));
+builder.Services.AddScoped<IChatbotService, StudentHelpChatbotService>();
+builder.Services.AddSingleton(services => StudentKnowledgeCatalog.Load(
+    builder.Environment, services.GetRequiredService<ILogger<StudentKnowledgeCatalog>>()));
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy("student-chat", context => RateLimitPartition.GetFixedWindowLimiter(
+        context.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous",
+        _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 8,
+            Window = TimeSpan.FromMinutes(1),
+            QueueLimit = 0,
+            AutoReplenishment = true
+        }));
+    options.OnRejected = async (context, cancellationToken) =>
+        await context.HttpContext.Response.WriteAsJsonAsync(new
+        {
+            success = false,
+            text = "Bạn đang gửi quá nhanh. Vui lòng chờ khoảng một phút rồi thử lại."
+        }, cancellationToken);
+});
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddControllersWithViews();
 builder.Services.AddSignalR();
+builder.Services.AddSingleton<RealtimeUpdates>();
 
 var app = builder.Build();
 
@@ -87,6 +128,7 @@ app.UseRequestLocalization(new RequestLocalizationOptions
 app.UseSerilogRequestLogging();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseRateLimiter();
 
 app.MapGet("/health", async (DormitoryDbContext db, CancellationToken cancellationToken) =>
 {
@@ -99,7 +141,7 @@ app.MapGet("/health", async (DormitoryDbContext db, CancellationToken cancellati
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
-app.MapHub<OperationsHub>("/hubs/operations");
+app.MapHub<OperationsHub>("/hubs/operations", options => options.CloseOnAuthenticationExpiration = true);
 
 await using (var scope = app.Services.CreateAsyncScope())
 {
@@ -108,6 +150,8 @@ await using (var scope = app.Services.CreateAsyncScope())
         await db.Database.MigrateAsync();
     if (app.Environment.IsDevelopment() && app.Configuration.GetValue<bool>("DemoData:Seed"))
         await DataSeeder.SeedAsync(scope.ServiceProvider);
+    if (app.Environment.IsDevelopment() && app.Configuration.GetValue<bool>("DemoData:RefreshRoomAmenities"))
+        await DataSeeder.RefreshLegacyRoomAmenitiesAsync(db);
 }
 
 try

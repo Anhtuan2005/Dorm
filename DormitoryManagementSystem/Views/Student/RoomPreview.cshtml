@@ -1,0 +1,126 @@
+@model StudentRoomPreviewViewModel
+@{
+    Layout = "_StudentLayout";
+    var room = Model.Room;
+    var price = room.MonthlyPrice.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("vi-VN"));
+    var selectedBed = Model.AvailableBeds.Contains(Model.Draft.TargetBedNumber) ? Model.Draft.TargetBedNumber : 0;
+}
+
+<div class="room-preview-page" data-room-tour data-capacity="@room.Capacity"
+     data-available="@string.Join(",", Model.AvailableBeds)" data-selected="@selectedBed">
+    <header class="room-tour-header">
+        <a asp-action="Rooms" class="room-tour-back"><span aria-hidden="true">←</span> Tìm phòng</a>
+        <div class="room-tour-title">
+            <div><h1>Phòng @room.Code</h1><p>@room.BuildingName · Tầng @room.FloorNumber · @room.RoomType</p></div>
+            <p class="room-tour-price"><strong>@price đ</strong><span> / tháng</span></p>
+        </div>
+    </header>
+
+    <div class="room-tour-layout">
+        <section class="room-tour-scene" aria-labelledby="room-tour-heading">
+            <div class="room-tour-scene-header">
+                <div>
+                    <h2 id="room-tour-heading">Khám phá phòng 3D</h2>
+                    <p>Bố trí minh họa theo tiện nghi đã khai báo.</p>
+                </div>
+                <div class="room-tour-modes" role="group" aria-label="Góc nhìn mô hình phòng" data-tour-modes hidden>
+                    <button type="button" data-tour-overview aria-pressed="true">Toàn cảnh</button>
+                    <button type="button" data-tour-plan aria-pressed="false">Mặt bằng</button>
+                </div>
+            </div>
+            <div class="room-tour-stage" data-tour-stage hidden>
+                <div class="room-tour-canvas" data-tour-canvas></div>
+                <div class="room-tour-markers" data-tour-markers></div>
+                <div class="room-tour-viewport-controls">
+                    <span class="room-tour-view-label" data-tour-view aria-live="polite">Toàn cảnh</span>
+                    <button class="student-secondary room-tour-reset" type="button" data-tour-reset>
+                        <svg aria-hidden="true"><use href="#s-bed" /></svg>
+                        Về toàn cảnh
+                    </button>
+                </div>
+            </div>
+            <p class="room-tour-fallback" data-tour-fallback role="status">Chọn số giường trong danh sách bên cạnh.</p>
+            <div class="room-tour-help" data-tour-legend hidden>
+                <p data-tour-instructions>Kéo để xoay · Bấm giường còn chỗ để xem cận cảnh</p>
+                <ul aria-label="Trạng thái giường">
+                    <li class="tour-legend-free">Có thể xếp</li>
+                    <li class="tour-legend-unavailable">Không thể xếp</li>
+                </ul>
+            </div>
+        </section>
+
+        <section class="room-tour-booking" aria-labelledby="room-booking-heading">
+            <h2 id="room-booking-heading">Chọn giường</h2>
+            <p class="room-tour-availability"><strong>@room.Assignable/@room.Capacity</strong> giường có thể xếp</p>
+            <div class="room-tour-selection" data-tour-selection hidden aria-live="polite"></div>
+            @if (Model.HasActiveRequest)
+            {
+                <p>Bạn đang có đơn lưu trú cần xử lý.</p>
+                <a asp-action="Applications" class="student-secondary">Theo dõi đơn của bạn</a>
+            }
+            else if (Model.CanApply)
+            {
+                <form asp-action="SubmitHousingRequest" method="post" class="room-tour-form" data-room-booking>
+                    <input type="hidden" name="TargetRoomId" value="@room.Id" />
+                    <label>
+                        <span>Số giường</span>
+                        <select name="TargetBedNumber" required data-tour-bed-select>
+                            <option value="" selected="@(selectedBed == 0)">Chọn giường</option>
+                            @foreach (var bed in Model.AvailableBeds)
+                            {
+                                <option value="@bed" selected="@(selectedBed == bed)">Giường @bed.ToString("00")</option>
+                            }
+                        </select>
+                    </label>
+                    <label>
+                        <span>@(Model.IsTransfer ? "Lý do chuyển phòng" : "Lý do đăng ký")</span>
+                        <textarea name="Reason" rows="3" minlength="10" maxlength="600" required>@Model.Draft.Reason</textarea>
+                    </label>
+                    <p>Giường được giữ sau khi Ban quản lý duyệt đơn.</p>
+                    <button class="student-primary" type="submit">@(Model.IsTransfer ? "Gửi đơn chuyển phòng" : "Gửi đơn đăng ký ở")</button>
+                </form>
+            }
+            else
+            {
+                <p>Phòng hiện hết giường có thể xếp.</p>
+                <a asp-action="Rooms" class="student-secondary">Tìm phòng khác</a>
+            }
+        </section>
+    </div>
+
+    @if (room.Photos.Count > 0 || room.Amenities.Count > 0)
+    {
+        <section class="room-tour-facts">
+            @if (room.Photos.Count > 0)
+            {
+                <div>
+                    <h2>Ảnh thực tế</h2>
+                    <ul class="room-photo-grid">
+                        @foreach (var photo in room.Photos)
+                        {
+                            var caption = string.IsNullOrWhiteSpace(photo.Caption) ? $"Ảnh phòng {room.Code}" : photo.Caption;
+                            var url = Url.Action("RoomPhoto", "Attachments", new { id = photo.Id });
+                            <li>
+                                <a href="@url" target="_blank" rel="noopener"><img src="@url" alt="@caption" loading="lazy" /></a>
+                                @if (!string.IsNullOrWhiteSpace(photo.Caption)) { <small>@photo.Caption</small> }
+                            </li>
+                        }
+                    </ul>
+                </div>
+            }
+            @if (room.Amenities.Count > 0)
+            {
+                <div>
+                    <h2>Tiện nghi</h2>
+                    <ul class="room-choice-amenities" data-room-amenities>
+                        @foreach (var amenity in room.Amenities) { <li>@amenity</li> }
+                    </ul>
+                </div>
+            }
+        </section>
+    }
+</div>
+
+@section Scripts {
+    <script type="module" src="~/js/room-preview.bundle.js" asp-append-version="true"></script>
+}

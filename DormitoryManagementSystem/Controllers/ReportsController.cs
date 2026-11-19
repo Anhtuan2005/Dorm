@@ -27,6 +27,7 @@ public sealed class ReportsController(IOperationsReportingService reporting) : C
         CancellationToken cancellationToken)
     {
         var report = await reporting.GetReportAsync(query, cancellationToken);
+        var hasPeriod = report.Query.PeriodId.HasValue;
         var csv = new StringBuilder("\uFEFF");
         csv.AppendLine("Báo cáo vận hành NẾP KTX");
         csv.AppendLine($"Kỳ;{Csv(report.PeriodName)}");
@@ -43,17 +44,35 @@ public sealed class ReportsController(IOperationsReportingService reporting) : C
                 building.Capacity.Blocked,
                 building.Capacity.Assignable,
                 building.Capacity.OccupancyRate.ToString("0.0", CultureInfo.InvariantCulture),
-                building.OutstandingBalance.ToString("0", CultureInfo.InvariantCulture),
+                hasPeriod ? building.OutstandingBalance.ToString("0", CultureInfo.InvariantCulture) : "",
                 building.ActiveIncidents));
         }
-        csv.AppendLine();
-        csv.AppendLine("Chỉ số tài chính;Giá trị");
-        csv.AppendLine($"Đã phát hành;{report.Finance.Invoiced.ToString("0", CultureInfo.InvariantCulture)}");
-        csv.AppendLine($"Đã thu ròng;{report.Finance.Collected.ToString("0", CultureInfo.InvariantCulture)}");
-        csv.AppendLine($"Công nợ;{report.Finance.Outstanding.ToString("0", CultureInfo.InvariantCulture)}");
-        csv.AppendLine($"Quá hạn;{report.Finance.Overdue.ToString("0", CultureInfo.InvariantCulture)}");
+        if (hasPeriod)
+        {
+            csv.AppendLine();
+            csv.AppendLine("Chỉ số tài chính;Giá trị");
+            csv.AppendLine($"Đã phát hành;{report.Finance.Invoiced.ToString("0", CultureInfo.InvariantCulture)}");
+            csv.AppendLine($"Đã thu ròng;{report.Finance.Collected.ToString("0", CultureInfo.InvariantCulture)}");
+            csv.AppendLine($"Công nợ;{report.Finance.Outstanding.ToString("0", CultureInfo.InvariantCulture)}");
+            csv.AppendLine($"Quá hạn;{report.Finance.Overdue.ToString("0", CultureInfo.InvariantCulture)}");
+            csv.AppendLine();
+            csv.AppendLine("Đơn lưu trú trong kỳ;Số lượng");
+            csv.AppendLine($"Đã gửi;{report.Workflow.Submitted}");
+            csv.AppendLine($"Đã duyệt;{report.Workflow.Approved}");
+            csv.AppendLine($"Từ chối;{report.Workflow.Rejected}");
+            csv.AppendLine($"Đã hủy;{report.Workflow.Cancelled}");
+            csv.AppendLine($"Chờ bổ sung;{report.Workflow.NeedsInformation}");
+            csv.AppendLine();
+            csv.AppendLine("Sự cố trong kỳ;Số lượng");
+            csv.AppendLine($"Đã gửi;{report.Maintenance.Created}");
+            csv.AppendLine($"Đã giải quyết;{report.Maintenance.Resolved}");
+            csv.AppendLine($"Đang mở;{report.Maintenance.Open}");
+            csv.AppendLine($"Khẩn cấp;{report.Maintenance.Urgent}");
+            csv.AppendLine($"Chỗ tạm khóa;{report.Maintenance.BlockedBeds}");
+        }
 
-        var fileName = $"bao-cao-van-hanh-{report.PeriodStart:yyyy-MM}-{report.Query.Building ?? "toan-ktx"}.csv";
+        var period = hasPeriod ? report.PeriodStart.ToString("yyyy-MM", CultureInfo.InvariantCulture) : "suc-chua";
+        var fileName = $"bao-cao-van-hanh-{period}-{report.Query.Building ?? "toan-ktx"}.csv";
         return File(Encoding.UTF8.GetBytes(csv.ToString()), "text/csv; charset=utf-8", fileName);
     }
 

@@ -1,0 +1,44 @@
+@model OperationsNotificationsViewModel
+
+<div class="notifications-page" data-operations-worklist="notifications">
+    <header class="operations-heading">
+        <div><h1>Thông báo</h1><p>Đơn lưu trú, thông tin bổ sung và sự cố do sinh viên gửi.</p></div>
+        <form asp-action="MarkAllRead" method="post" data-operations-mark-read hidden="@(Model.UnreadCount == 0)">
+            <button class="heading-room-link" type="submit">Đánh dấu tất cả đã đọc</button>
+        </form>
+    </header>
+    <section class="notification-inbox" aria-label="Danh sách thông báo" data-operations-region="inbox">
+        <nav class="notification-tabs" aria-label="Lọc thông báo">
+            <a asp-action="Index" aria-current="@(!Model.UnreadOnly ? "page" : null)">Tất cả</a>
+            <a asp-action="Index" asp-route-unreadOnly="true" aria-current="@(Model.UnreadOnly ? "page" : null)">Chưa đọc (@Model.UnreadCount)</a>
+        </nav>
+        @if (Model.Items.Count == 0)
+        {
+            <div class="queue-empty"><strong>@(Model.UnreadOnly ? "Bạn đã đọc hết thông báo" : "Chưa có thông báo")</strong></div>
+        }
+        @foreach (var item in Model.Items)
+        {
+            var local = new DateTimeOffset(DateTime.SpecifyKind(item.CreatedAt, DateTimeKind.Utc)).ToOffset(TimeSpan.FromHours(7));
+            <article class="notification-entry @(item.ReadAt is null ? "unread" : "")">
+                <div>
+                    <small>@(item.ReadAt is null ? "Chưa đọc" : "Đã đọc")</small>
+                    <h2>@item.Title</h2>
+                    <p>@item.Body</p>
+                    <time datetime="@local.ToString("O")">@local.ToString("dd/MM/yyyy, HH:mm")</time>
+                </div>
+                <form asp-action="Open" method="post">
+                    <input type="hidden" name="id" value="@item.Id" />
+                    <button class="heading-room-link" type="submit">Xem hồ sơ</button>
+                </form>
+            </article>
+        }
+        @if (Model.TotalPages > 1)
+        {
+            <nav class="billing-pagination" aria-label="Phân trang thông báo">
+                @if (Model.Page > 1) { <a asp-route-unreadOnly="@Model.UnreadOnly" asp-route-page="@(Model.Page - 1)">Trước</a> }
+                <span>@Model.Page / @Model.TotalPages</span>
+                @if (Model.Page < Model.TotalPages) { <a asp-route-unreadOnly="@Model.UnreadOnly" asp-route-page="@(Model.Page + 1)">Sau</a> }
+            </nav>
+        }
+    </section>
+</div>

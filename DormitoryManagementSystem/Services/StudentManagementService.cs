@@ -10,7 +10,8 @@ namespace DormitoryManagementSystem.Services;
 public sealed class StudentManagementService(
     DormitoryDbContext db,
     UserManager<ApplicationUser> userManager,
-    IBillingLedgerService billingLedger) : IStudentManagementService
+    IBillingLedgerService billingLedger,
+    RealtimeUpdates realtime) : IStudentManagementService
 {
     private const int PageSize = 24;
 
@@ -199,10 +200,15 @@ public sealed class StudentManagementService(
             .SingleOrDefaultAsync(x => x.Id == studentId, cancellationToken);
         if (profile?.User is null) return new(false, "Sinh viên chưa có tài khoản để thay đổi trạng thái.", studentId);
 
-        await userManager.SetLockoutEnabledAsync(profile.User, true);
-        var result = await userManager.SetLockoutEndDateAsync(
-            profile.User,
-            locked ? DateTimeOffset.UtcNow.AddYears(100) : null);
+        var user = profile.User;
+        user.LockoutEnabled = true;
+        user.LockoutEnd = locked ? DateTimeOffset.MaxValue : null;
+        user.AccessFailedCount = 0;
+        // Identity persists the new stamp and lock together, so old cookies stay invalid after unlocking.
+        var result = locked ? await userManager.UpdateSecurityStampAsync(user) : await userManager.UpdateAsync(user);
+        if (result.Succeeded && locked)
+            await realtime.RevokeStudentSessionAsync(user.Id);
+
         return result.Succeeded
             ? new(true, locked ? $"Đã khóa tài khoản {profile.User.Email}." : $"Đã mở khóa tài khoản {profile.User.Email}.", profile.Id)
             : new(false, "Không thể cập nhật trạng thái tài khoản.", profile.Id);

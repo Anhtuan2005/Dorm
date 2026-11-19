@@ -24,6 +24,15 @@ Một cấp vật lý trong **Tòa** chứa nhiều **Phòng**.
 Tổng số giường vật lý của một **Phòng**.
 _Avoid_: Chỗ trống
 
+**Số giường**:
+Vị trí đánh số từ 01 đến **Sức chứa** trong một **Phòng**. Sinh viên chọn số giường khi gửi đơn. Ban quản lý duyệt để giữ giường đó và xác nhận bàn giao để ghi số giường vào **Lượt lưu trú**.
+
+**Ảnh phòng**:
+Ảnh do Ban quản lý tải lên trong danh mục phòng để sinh viên xem khi tìm phòng.
+
+**Tiện nghi phòng**:
+Mọi **Phòng** có WC khép kín. Các tiện nghi bổ sung do Ban quản lý khai báo theo từng phòng.
+
 **Chỗ đang ở**:
 Số **Lượt lưu trú** chưa kết thúc trong một **Phòng**.
 
@@ -50,6 +59,9 @@ _Avoid_: Hồ sơ sinh viên
 **Lượt lưu trú**:
 Khoảng thời gian một **Hồ sơ sinh viên** được xếp vào một **Phòng**.
 _Avoid_: Đăng ký phòng
+
+**Bạn cùng phòng**:
+Sinh viên khác có **Lượt lưu trú** đang hoạt động trong cùng **Phòng**. Cổng sinh viên chỉ hiển thị họ tên trong mục **Phòng hiện tại**.
 
 **Đơn lưu trú**:
 Yêu cầu đăng ký ở, chuyển phòng hoặc trả phòng có trạng thái, quyết định và lịch sử xử lý.
@@ -79,9 +91,15 @@ Khoảng thời gian và hạn thanh toán dùng để phát hành **Hóa đơn*
 Khoản phải thu của một **Hồ sơ sinh viên** trong một **Kỳ thu**, gồm nhiều dòng phí. Sau khi phát hành, các dòng phí không được sửa trực tiếp.
 _Avoid_: Thanh toán
 
+**Chênh lệch hóa đơn**:
+So sánh tổng phí và từng nhóm phí của hóa đơn còn hiệu lực với hóa đơn còn hiệu lực gần nhất trước kỳ hiện tại của cùng sinh viên.
+
 **Giao dịch thu**:
-Bản ghi bất biến ghi nhận một khoản tiền đã nhận cho đúng một **Hóa đơn**, gồm số tiền, phương thức, thời điểm, người ghi nhận và mã tham chiếu chống trùng. Sai sót được xử lý bằng giao dịch hoàn tác liên kết, không sửa hoặc xóa bản ghi gốc.
+Bản ghi bất biến ghi nhận một khoản tiền đã nhận cho đúng một **Hóa đơn**, gồm số tiền, phương thức, thời điểm, người ghi nhận hoặc cổng đã xác nhận và mã tham chiếu chống trùng. Sai sót của khoản thu thủ công được xử lý bằng giao dịch hoàn tác liên kết, không sửa hoặc xóa bản ghi gốc.
 _Avoid_: Cập nhật số tiền đã trả
+
+**Phiên thanh toán VNPAY**:
+Yêu cầu thử nghiệm có mã và thời hạn riêng, gắn đúng một **Hóa đơn** và số **Công nợ** lúc mở cổng. Phiên đang chờ hoặc thất bại chưa phải là **Giao dịch thu**. Khi cần đối soát, phiên giữ mã giao dịch VNPAY và chưa đổi **Công nợ**.
 
 **Công nợ**:
 Số tiền còn phải thu của một **Hóa đơn**, được tính từ tổng các dòng phí trừ tổng **Giao dịch thu** còn hiệu lực.
@@ -91,11 +109,14 @@ _Avoid_: Số tiền đã thanh toán
 Yêu cầu sửa chữa gắn với một **Phòng**, có mức ưu tiên, tiến độ và số giường bị khóa.
 _Avoid_: Phản ánh chung
 
+**Theo dõi sự cố chung**:
+Sinh viên cùng phòng có thể theo dõi sự cố được người báo chia sẻ. Lượt lưu trú đang hoạt động cấp quyền xem tiêu đề, nhóm sự cố và tiến độ, đồng thời nhận thông báo cập nhật.
+
 **Ảnh hiện trường**:
 Tệp ảnh minh chứng gắn với một **Sự cố**, được lưu ngoài vùng public và chỉ người báo hoặc người có vai trò quản lý được truy cập.
 
 **Thông báo**:
-Thông tin hướng người dùng đến kết quả hoặc tác vụ liên quan trong hệ thống.
+Thông tin lưu theo tài khoản, hướng người dùng đến kết quả hoặc tác vụ liên quan trong hệ thống. Tab của người nhận có thể cập nhật trực tiếp sau khi thay đổi đã được lưu.
 
 **Ảnh chụp vận hành**:
 Tổng hợp tại một thời điểm của **Sức chứa**, **Công nợ** và công việc cần can thiệp. Số sức chứa là hiện tại; kết quả tài chính và quy trình phải ghi rõ **Kỳ thu**.
@@ -120,8 +141,10 @@ _Avoid_: Tỷ lệ thanh toán
 - Một **Hồ sơ sinh viên** có thể tồn tại trước khi được liên kết với **Tài khoản người dùng**.
 - Một **Kỳ thu** phát hành nhiều **Hóa đơn**; mỗi **Hóa đơn** thuộc đúng một **Hồ sơ sinh viên**.
 - Một **Hóa đơn** có nhiều **Giao dịch thu**; **Công nợ** và trạng thái thanh toán được suy ra từ các bản ghi này cùng hạn của **Kỳ thu**.
+- Một **Phiên thanh toán VNPAY** chỉ tạo một **Giao dịch thu** khi nhận IPN đúng chữ ký, mã phiên, số tiền và **Công nợ** còn khớp. Trang quay về chỉ đọc trạng thái; hoàn tác thủ công không hoàn tiền qua VNPAY.
 - **Sự cố** và **Giữ chỗ** làm giảm **Chỗ có thể xếp** của **Phòng**.
 - Mọi thao tác làm thay đổi **Chỗ đang ở**, **Chỗ đang giữ** hoặc **Chỗ tạm khóa** phải kiểm tra cùng một quy tắc sức chứa trong transaction; một **Sự cố** không được khóa phần giường đã được giữ cho đơn khác.
+- Dữ liệu cũ chưa có **Số giường** tiếp tục chiếm số chỗ như trước. Khi liệt kê giường có thể xếp, hệ thống loại các số giường đã xác định và trừ tiếp số chỗ chưa có số giường.
 - Một **Sự cố** có thể có nhiều **Ảnh hiện trường**; quyền đọc ảnh tuân theo quyền đọc sự cố thay vì URL tĩnh công khai.
 - **Ảnh chụp vận hành** liên kết số sức chứa hiện tại với **Kỳ thu** được chọn; giao diện phải ghi rõ hai mốc này để tránh hiểu chúng là cùng một khoảng thời gian.
 

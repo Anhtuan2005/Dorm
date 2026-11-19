@@ -1,6 +1,8 @@
+using System.Data;
 using DormitoryManagementSystem.Data;
 using DormitoryManagementSystem.Models;
 using DormitoryManagementSystem.ViewModels;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 
 namespace DormitoryManagementSystem.Services;
@@ -84,6 +86,23 @@ public sealed class OperationsCatalogService(DormitoryDbContext db, TimeProvider
         return new(true, $"Đã thêm tầng {floor.Number} vào tòa {building.Code}.", building.Id, floor.Id);
     }
 
+    public async Task<CatalogOperationResult> UpdateFloorAsync(UpdateFloorInput input, CancellationToken cancellationToken = default)
+    {
+        var floor = db.Floors.Where(x => x.Id == input.Id && x.BuildingId == input.BuildingId);
+        try
+        {
+            var updated = await floor.Where(x => x.Number == input.OriginalNumber)
+                .ExecuteUpdateAsync(setters => setters.SetProperty(x => x.Number, input.Number), cancellationToken);
+            if (updated == 0 && !await floor.AnyAsync(x => x.Number == input.Number, cancellationToken))
+                return new(false, "Tầng đã thay đổi hoặc không còn tồn tại. Hãy tải lại danh mục.", input.BuildingId, input.Id);
+        }
+        catch (SqlException exception) when (exception.Number is 2601 or 2627)
+        {
+            return new(false, $"Tầng {input.Number} đã tồn tại trong tòa này.", input.BuildingId, input.Id);
+        }
+        return new(true, $"Đã lưu tầng {input.Number}.", input.BuildingId, input.Id);
+    }
+
     public async Task<CatalogOperationResult> CreateRoomAsync(CreateRoomInput input, CancellationToken cancellationToken = default)
     {
         var floor = await db.Floors.Include(x => x.Building).SingleOrDefaultAsync(x => x.Id == input.FloorId, cancellationToken);
@@ -92,14 +111,21 @@ public sealed class OperationsCatalogService(DormitoryDbContext db, TimeProvider
         if (!code.StartsWith($"{floor.Building.Code}-", StringComparison.OrdinalIgnoreCase))
             return new(false, $"Mã phòng phải bắt đầu bằng {floor.Building.Code}-.", floor.BuildingId, floor.Id);
         if (await db.Rooms.AnyAsync(x => x.Code == code, cancellationToken)) return new(false, $"Mã phòng {code} đã tồn tại.", floor.BuildingId, floor.Id);
-        var room = new Room { FloorId = floor.Id, Code = code, RoomType = input.RoomType.Trim(), Amenities = input.Amenities.Trim(), Capacity = input.Capacity, MonthlyPrice = input.MonthlyPrice };
+        var amenities = RoomAmenities.Serialize(input.Amenities);
+        if (amenities.Length > RoomAmenities.MaximumStoredLength)
+            return new(false, "Danh sách tiện nghi quá dài khi tính cả WC khép kín. Hãy rút ngắn tiện nghi bổ sung.", floor.BuildingId, floor.Id);
+        var room = new Room { FloorId = floor.Id, Code = code, RoomType = input.RoomType.Trim(), Amenities = amenities, Capacity = input.Capacity, MonthlyPrice = input.MonthlyPrice };
         db.Rooms.Add(room);
         await db.SaveChangesAsync(cancellationToken);
         return new(true, $"Đã tạo phòng {room.Code}.", floor.BuildingId, floor.Id);
     }
 
-    public async Task<CatalogOperationResult> UpdateRoomAsync(UpdateRoomInput input, CancellationToken cancellationToken = default)
+    public Task<CatalogOperationResult> UpdateRoomAsync(UpdateRoomInput input, CancellationToken cancellationToken = default) =>
+        db.Database.CreateExecutionStrategy().ExecuteAsync(() => UpdateRoomWithinTransactionAsync(input, cancellationToken));
+
+    private async Task<CatalogOperationResult> UpdateRoomWithinTransactionAsync(UpdateRoomInput input, CancellationToken cancellationToken)
     {
+        await using var transaction = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
         var room = await db.Rooms.Include(x => x.Floor).ThenInclude(x => x.Building)
             .Include(x => x.Stays).Include(x => x.Holds).Include(x => x.MaintenanceRequests)
             .SingleOrDefaultAsync(x => x.Id == input.Id, cancellationToken);
@@ -111,18 +137,25 @@ public sealed class OperationsCatalogService(DormitoryDbContext db, TimeProvider
             + room.Holds.Where(x => x.ReleasedAt == null && x.ExpiresAt > now).Sum(x => x.HeldBeds)
             + room.MaintenanceRequests.Where(x => x.Status != MaintenanceStatus.Resolved && x.Status != MaintenanceStatus.Closed).Sum(x => x.BlockedBeds);
         if (input.Capacity < committed) return new(false, $"Sức chứa mới thấp hơn {committed} chỗ đang dùng/giữ/khóa.", room.Floor.BuildingId, room.FloorId);
+        var highestBed = RoomBedPolicy.HighestCommittedNumber(room, now);
+        if (input.Capacity < highestBed)
+            return new(false, $"Giường {highestBed:00} đang ở, đang giữ hoặc tạm khóa. Hãy giải phóng trước khi giảm sức chứa.", room.Floor.BuildingId, room.FloorId);
         var code = input.Code.Trim().ToUpperInvariant();
         if (!code.StartsWith($"{room.Floor.Building.Code}-", StringComparison.OrdinalIgnoreCase)) return new(false, $"Mã phòng phải bắt đầu bằng {room.Floor.Building.Code}-.", room.Floor.BuildingId, room.FloorId);
         if (await db.Rooms.AnyAsync(x => x.Id != room.Id && x.Code == code, cancellationToken)) return new(false, $"Mã phòng {code} đã tồn tại.", room.Floor.BuildingId, room.FloorId);
+        var amenities = RoomAmenities.Serialize(input.Amenities);
+        if (amenities.Length > RoomAmenities.MaximumStoredLength)
+            return new(false, "Danh sách tiện nghi quá dài khi tính cả WC khép kín. Hãy rút ngắn tiện nghi bổ sung.", room.Floor.BuildingId, room.FloorId);
         room.Code = code;
         room.RoomType = input.RoomType.Trim();
-        room.Amenities = input.Amenities.Trim();
+        room.Amenities = amenities;
         room.Capacity = input.Capacity;
         room.MonthlyPrice = input.MonthlyPrice;
         db.Entry(room).Property(x => x.RowVersion).OriginalValue = Convert.FromBase64String(input.RowVersion);
         try
         {
             await db.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
             return new(true, $"Đã cập nhật phòng {room.Code}.", room.Floor.BuildingId, room.FloorId);
         }
         catch (DbUpdateConcurrencyException)

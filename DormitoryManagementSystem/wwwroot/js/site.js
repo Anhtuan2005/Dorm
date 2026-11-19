@@ -6,6 +6,7 @@
   const scrim = document.querySelector("[data-sidebar-scrim]");
   const desktopToggle = document.querySelector("[data-sidebar-toggle]");
   const mobileToggle = document.querySelector("[data-mobile-menu]");
+  const drawerLayout = window.matchMedia("(max-width: 1140px)");
   const toast = document.querySelector("[data-toast]");
   let toastTimer;
 
@@ -26,16 +27,23 @@
     scrim?.classList.remove("open");
   }
 
-  desktopToggle?.addEventListener("click", () => {
-    const collapsed = body.classList.toggle("collapsed");
-    desktopToggle.setAttribute("aria-expanded", String(!collapsed));
-    window.localStorage.setItem("nep-sidebar", collapsed ? "collapsed" : "expanded");
-  });
+  let prefersCollapsed = false;
+  try { prefersCollapsed = window.localStorage.getItem("nep-sidebar") === "collapsed"; } catch { /* Keep the default navigation. */ }
 
-  if (window.innerWidth > 1140 && window.localStorage.getItem("nep-sidebar") === "collapsed") {
-    body.classList.add("collapsed");
-    desktopToggle?.setAttribute("aria-expanded", "false");
+  function updateSidebar() {
+    const collapsed = !drawerLayout.matches && prefersCollapsed;
+    body.classList.toggle("collapsed", collapsed);
+    desktopToggle?.setAttribute("aria-expanded", String(!collapsed));
+    desktopToggle?.setAttribute("aria-label", collapsed ? "Mở rộng thanh điều hướng" : "Thu gọn thanh điều hướng");
   }
+
+  desktopToggle?.addEventListener("click", () => {
+    prefersCollapsed = !prefersCollapsed;
+    updateSidebar();
+    try { window.localStorage.setItem("nep-sidebar", prefersCollapsed ? "collapsed" : "expanded"); } catch { /* Storage may be disabled by the browser. */ }
+  });
+  drawerLayout.addEventListener("change", updateSidebar);
+  updateSidebar();
 
   mobileToggle?.addEventListener("click", () => {
     sidebar?.classList.add("open");
@@ -77,8 +85,10 @@
   document.querySelectorAll("[data-auto-submit]").forEach((control) => {
     control.addEventListener("change", () => filterForm?.requestSubmit());
   });
-  document.querySelector("[data-filter-toggle]")?.addEventListener("click", () => {
-    document.querySelector("[data-filter-fields]")?.classList.toggle("open");
+  const filterToggle = document.querySelector("[data-filter-toggle]");
+  filterToggle?.addEventListener("click", () => {
+    const expanded = document.querySelector("[data-filter-fields]")?.classList.toggle("open");
+    filterToggle.setAttribute("aria-expanded", String(Boolean(expanded)));
   });
 
   const page = document.querySelector(".room-map-page");
@@ -109,16 +119,22 @@
   });
 
   const globalSearch = document.querySelector("[data-global-search]");
-  globalSearch?.addEventListener("keydown", (event) => {
-    if (event.key !== "Enter") return;
-    event.preventDefault();
+  globalSearch?.form?.addEventListener("submit", (event) => {
     const value = globalSearch.value.trim();
-    if (!value) {
-      window.location.assign("/Rooms/Map");
-      return;
+    globalSearch.value = value;
+    const compactCode = value.replace(/\s/g, "").replace(/^([a-z])(\d{3})$/i, "$1-$2");
+    const roomCode = /^([a-z][a-z\d]{0,3})-(\d{1,7})$/i.exec(compactCode);
+    if (value && !roomCode) return;
+
+    event.preventDefault();
+    const destination = new URL(globalSearch.form.dataset.roomSearchUrl, document.baseURI);
+    if (roomCode) {
+      const building = roomCode[1].toUpperCase();
+      const room = `${building}-${roomCode[2]}`;
+      destination.searchParams.set("Building", building);
+      destination.searchParams.set("Room", room);
+      destination.searchParams.set("Search", room);
     }
-    const isRoomCode = /^[a-z]-?\d{3}$/i.test(value.replace(/\s/g, ""));
-    const destination = isRoomCode ? "/Rooms/Map" : "/Students";
-    window.location.assign(`${destination}?Search=${encodeURIComponent(value)}`);
+    window.location.assign(destination);
   });
 })();

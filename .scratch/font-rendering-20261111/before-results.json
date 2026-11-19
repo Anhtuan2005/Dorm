@@ -1,0 +1,566 @@
+[
+  {
+    "browser": "edge",
+    "dpr": 1,
+    "edgePixels": 4734,
+    "chromaticEdges": 4723,
+    "text": [
+      "Nguyễn Văn Hùng",
+      "SV001890 · Chuyển phòng",
+      "Đang xét duyệt",
+      "Quá hạn BQL · 65 ngày 0 giờ",
+      "Trần Minh An",
+      "SV001234 · Chuyển phòng",
+      "Đã gửi",
+      "Quá hạn BQL · 66 ngày 1 giờ",
+      "Phạm Gia Hân",
+      "SV002011 · Chuyển phòng",
+      "Đã gửi",
+      "Quá hạn BQL · 66 ngày 2 giờ"
+    ],
+    "rects": [
+      {
+        "x": 58,
+        "y": 83.5,
+        "width": 146.8125,
+        "height": 18.1875
+      },
+      {
+        "x": 58,
+        "y": 103.6875,
+        "width": 146.8125,
+        "height": 14
+      },
+      {
+        "x": 213.8125,
+        "y": 83.5,
+        "width": 86.09375,
+        "height": 36
+      },
+      {
+        "x": 213.8125,
+        "y": 129.5,
+        "width": 133.1875,
+        "height": 22
+      },
+      {
+        "x": 58,
+        "y": 201.5,
+        "width": 146.8125,
+        "height": 18.1875
+      },
+      {
+        "x": 58,
+        "y": 221.6875,
+        "width": 146.8125,
+        "height": 14
+      },
+      {
+        "x": 213.8125,
+        "y": 201.5,
+        "width": 45.234375,
+        "height": 36
+      },
+      {
+        "x": 213.8125,
+        "y": 247.5,
+        "width": 133.1875,
+        "height": 22
+      },
+      {
+        "x": 58,
+        "y": 320,
+        "width": 146.8125,
+        "height": 18.1875
+      },
+      {
+        "x": 58,
+        "y": 340.1875,
+        "width": 146.8125,
+        "height": 14
+      },
+      {
+        "x": 213.8125,
+        "y": 320,
+        "width": 45.234375,
+        "height": 36
+      },
+      {
+        "x": 213.8125,
+        "y": 366,
+        "width": 133.1875,
+        "height": 22
+      }
+    ]
+  },
+  {
+    "browser": "edge",
+    "dpr": 1.25,
+    "edgePixels": 6271,
+    "chromaticEdges": 6264,
+    "text": [
+      "Nguyễn Văn Hùng",
+      "SV001890 · Chuyển phòng",
+      "Đang xét duyệt",
+      "Quá hạn BQL · 65 ngày 0 giờ",
+      "Trần Minh An",
+      "SV001234 · Chuyển phòng",
+      "Đã gửi",
+      "Quá hạn BQL · 66 ngày 1 giờ",
+      "Phạm Gia Hân",
+      "SV002011 · Chuyển phòng",
+      "Đã gửi",
+      "Quá hạn BQL · 66 ngày 2 giờ"
+    ],
+    "rects": [
+      {
+        "x": 58,
+        "y": 83.5,
+        "width": 146.8125,
+        "height": 18.1875
+      },
+      {
+        "x": 58,
+        "y": 103.6875,
+        "width": 146.8125,
+        "height": 14
+      },
+      {
+        "x": 213.8125,
+        "y": 83.5,
+        "width": 86.09375,
+        "height": 36
+      },
+      {
+        "x": 213.8125,
+        "y": 129.5,
+        "width": 133.1875,
+        "height": 22
+      },
+      {
+        "x": 58,
+        "y": 201.5,
+        "width": 146.8125,
+        "height": 18.1875
+      },
+      {
+        "x": 58,
+        "y": 221.6875,
+        "width": 146.8125,
+        "height": 14
+      },
+      {
+        "x": 213.8125,
+        "y": 201.5,
+        "width": 45.234375,
+        "height": 36
+      },
+      {
+        "x": 213.8125,
+        "y": 247.5,
+        "width": 133.1875,
+        "height": 22
+      },
+      {
+        "x": 58,
+        "y": 320,
+        "width": 146.8125,
+        "height": 18.1875
+      },
+      {
+        "x": 58,
+        "y": 340.1875,
+        "width": 146.8125,
+        "height": 14
+      },
+      {
+        "x": 213.8125,
+        "y": 320,
+        "width": 45.234375,
+        "height": 36
+      },
+      {
+        "x": 213.8125,
+        "y": 366,
+        "width": 133.1875,
+        "height": 22
+      }
+    ]
+  },
+  {
+    "browser": "edge",
+    "dpr": 1.5,
+    "edgePixels": 7706,
+    "chromaticEdges": 7705,
+    "text": [
+      "Nguyễn Văn Hùng",
+      "SV001890 · Chuyển phòng",
+      "Đang xét duyệt",
+      "Quá hạn BQL · 65 ngày 0 giờ",
+      "Trần Minh An",
+      "SV001234 · Chuyển phòng",
+      "Đã gửi",
+      "Quá hạn BQL · 66 ngày 1 giờ",
+      "Phạm Gia Hân",
+      "SV002011 · Chuyển phòng",
+      "Đã gửi",
+      "Quá hạn BQL · 66 ngày 2 giờ"
+    ],
+    "rects": [
+      {
+        "x": 58,
+        "y": 83.5,
+        "width": 146.8125,
+        "height": 18.1875
+      },
+      {
+        "x": 58,
+        "y": 103.6875,
+        "width": 146.8125,
+        "height": 14
+      },
+      {
+        "x": 213.8125,
+        "y": 83.5,
+        "width": 86.09375,
+        "height": 36
+      },
+      {
+        "x": 213.8125,
+        "y": 129.5,
+        "width": 133.1875,
+        "height": 22
+      },
+      {
+        "x": 58,
+        "y": 201.5,
+        "width": 146.8125,
+        "height": 18.1875
+      },
+      {
+        "x": 58,
+        "y": 221.6875,
+        "width": 146.8125,
+        "height": 14
+      },
+      {
+        "x": 213.8125,
+        "y": 201.5,
+        "width": 45.234375,
+        "height": 36
+      },
+      {
+        "x": 213.8125,
+        "y": 247.5,
+        "width": 133.1875,
+        "height": 22
+      },
+      {
+        "x": 58,
+        "y": 320,
+        "width": 146.8125,
+        "height": 18.1875
+      },
+      {
+        "x": 58,
+        "y": 340.1875,
+        "width": 146.8125,
+        "height": 14
+      },
+      {
+        "x": 213.8125,
+        "y": 320,
+        "width": 45.234375,
+        "height": 36
+      },
+      {
+        "x": 213.8125,
+        "y": 366,
+        "width": 133.1875,
+        "height": 22
+      }
+    ]
+  },
+  {
+    "browser": "chrome",
+    "dpr": 1,
+    "edgePixels": 4734,
+    "chromaticEdges": 4723,
+    "text": [
+      "Nguyễn Văn Hùng",
+      "SV001890 · Chuyển phòng",
+      "Đang xét duyệt",
+      "Quá hạn BQL · 65 ngày 0 giờ",
+      "Trần Minh An",
+      "SV001234 · Chuyển phòng",
+      "Đã gửi",
+      "Quá hạn BQL · 66 ngày 1 giờ",
+      "Phạm Gia Hân",
+      "SV002011 · Chuyển phòng",
+      "Đã gửi",
+      "Quá hạn BQL · 66 ngày 2 giờ"
+    ],
+    "rects": [
+      {
+        "x": 58,
+        "y": 83.5,
+        "width": 146.8125,
+        "height": 18.1875
+      },
+      {
+        "x": 58,
+        "y": 103.6875,
+        "width": 146.8125,
+        "height": 14
+      },
+      {
+        "x": 213.8125,
+        "y": 83.5,
+        "width": 86.09375,
+        "height": 36
+      },
+      {
+        "x": 213.8125,
+        "y": 129.5,
+        "width": 133.1875,
+        "height": 22
+      },
+      {
+        "x": 58,
+        "y": 201.5,
+        "width": 146.8125,
+        "height": 18.1875
+      },
+      {
+        "x": 58,
+        "y": 221.6875,
+        "width": 146.8125,
+        "height": 14
+      },
+      {
+        "x": 213.8125,
+        "y": 201.5,
+        "width": 45.234375,
+        "height": 36
+      },
+      {
+        "x": 213.8125,
+        "y": 247.5,
+        "width": 133.1875,
+        "height": 22
+      },
+      {
+        "x": 58,
+        "y": 320,
+        "width": 146.8125,
+        "height": 18.1875
+      },
+      {
+        "x": 58,
+        "y": 340.1875,
+        "width": 146.8125,
+        "height": 14
+      },
+      {
+        "x": 213.8125,
+        "y": 320,
+        "width": 45.234375,
+        "height": 36
+      },
+      {
+        "x": 213.8125,
+        "y": 366,
+        "width": 133.1875,
+        "height": 22
+      }
+    ]
+  },
+  {
+    "browser": "chrome",
+    "dpr": 1.25,
+    "edgePixels": 6271,
+    "chromaticEdges": 6264,
+    "text": [
+      "Nguyễn Văn Hùng",
+      "SV001890 · Chuyển phòng",
+      "Đang xét duyệt",
+      "Quá hạn BQL · 65 ngày 0 giờ",
+      "Trần Minh An",
+      "SV001234 · Chuyển phòng",
+      "Đã gửi",
+      "Quá hạn BQL · 66 ngày 1 giờ",
+      "Phạm Gia Hân",
+      "SV002011 · Chuyển phòng",
+      "Đã gửi",
+      "Quá hạn BQL · 66 ngày 2 giờ"
+    ],
+    "rects": [
+      {
+        "x": 58,
+        "y": 83.5,
+        "width": 146.8125,
+        "height": 18.1875
+      },
+      {
+        "x": 58,
+        "y": 103.6875,
+        "width": 146.8125,
+        "height": 14
+      },
+      {
+        "x": 213.8125,
+        "y": 83.5,
+        "width": 86.09375,
+        "height": 36
+      },
+      {
+        "x": 213.8125,
+        "y": 129.5,
+        "width": 133.1875,
+        "height": 22
+      },
+      {
+        "x": 58,
+        "y": 201.5,
+        "width": 146.8125,
+        "height": 18.1875
+      },
+      {
+        "x": 58,
+        "y": 221.6875,
+        "width": 146.8125,
+        "height": 14
+      },
+      {
+        "x": 213.8125,
+        "y": 201.5,
+        "width": 45.234375,
+        "height": 36
+      },
+      {
+        "x": 213.8125,
+        "y": 247.5,
+        "width": 133.1875,
+        "height": 22
+      },
+      {
+        "x": 58,
+        "y": 320,
+        "width": 146.8125,
+        "height": 18.1875
+      },
+      {
+        "x": 58,
+        "y": 340.1875,
+        "width": 146.8125,
+        "height": 14
+      },
+      {
+        "x": 213.8125,
+        "y": 320,
+        "width": 45.234375,
+        "height": 36
+      },
+      {
+        "x": 213.8125,
+        "y": 366,
+        "width": 133.1875,
+        "height": 22
+      }
+    ]
+  },
+  {
+    "browser": "chrome",
+    "dpr": 1.5,
+    "edgePixels": 7706,
+    "chromaticEdges": 7705,
+    "text": [
+      "Nguyễn Văn Hùng",
+      "SV001890 · Chuyển phòng",
+      "Đang xét duyệt",
+      "Quá hạn BQL · 65 ngày 0 giờ",
+      "Trần Minh An",
+      "SV001234 · Chuyển phòng",
+      "Đã gửi",
+      "Quá hạn BQL · 66 ngày 1 giờ",
+      "Phạm Gia Hân",
+      "SV002011 · Chuyển phòng",
+      "Đã gửi",
+      "Quá hạn BQL · 66 ngày 2 giờ"
+    ],
+    "rects": [
+      {
+        "x": 58,
+        "y": 83.5,
+        "width": 146.8125,
+        "height": 18.1875
+      },
+      {
+        "x": 58,
+        "y": 103.6875,
+        "width": 146.8125,
+        "height": 14
+      },
+      {
+        "x": 213.8125,
+        "y": 83.5,
+        "width": 86.09375,
+        "height": 36
+      },
+      {
+        "x": 213.8125,
+        "y": 129.5,
+        "width": 133.1875,
+        "height": 22
+      },
+      {
+        "x": 58,
+        "y": 201.5,
+        "width": 146.8125,
+        "height": 18.1875
+      },
+      {
+        "x": 58,
+        "y": 221.6875,
+        "width": 146.8125,
+        "height": 14
+      },
+      {
+        "x": 213.8125,
+        "y": 201.5,
+        "width": 45.234375,
+        "height": 36
+      },
+      {
+        "x": 213.8125,
+        "y": 247.5,
+        "width": 133.1875,
+        "height": 22
+      },
+      {
+        "x": 58,
+        "y": 320,
+        "width": 146.8125,
+        "height": 18.1875
+      },
+      {
+        "x": 58,
+        "y": 340.1875,
+        "width": 146.8125,
+        "height": 14
+      },
+      {
+        "x": 213.8125,
+        "y": 320,
+        "width": 45.234375,
+        "height": 36
+      },
+      {
+        "x": 213.8125,
+        "y": 366,
+        "width": 133.1875,
+        "height": 22
+      }
+    ]
+  }
+]

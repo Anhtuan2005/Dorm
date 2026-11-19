@@ -81,16 +81,32 @@ public sealed class OperationsReportingService(
             .ToListAsync(cancellationToken);
         var selectedPeriod = periods.FirstOrDefault(x => x.Id == query.PeriodId)
             ?? periods.FirstOrDefault(x => x.StartDate <= businessDate && x.EndDate >= businessDate)
-            ?? periods.FirstOrDefault()
-            ?? throw new InvalidOperationException("Chưa có kỳ thu để lập báo cáo.");
+            ?? periods.FirstOrDefault();
 
         var buildingOptions = await db.Buildings.AsNoTracking()
             .OrderBy(x => x.SortOrder)
             .Select(x => new ReportFilterOption(x.Code, x.Name))
             .ToListAsync(cancellationToken);
         var buildingCode = buildingOptions.Any(x => x.Value == query.Building) ? query.Building : null;
-        query.PeriodId = selectedPeriod.Id;
+        query.PeriodId = selectedPeriod?.Id;
         query.Building = buildingCode;
+
+        var buildings = await LoadBuildingMetricsAsync(buildingCode, selectedPeriod?.Id, cancellationToken);
+        if (selectedPeriod is null)
+            return new OperationsReportViewModel
+            {
+                Query = query,
+                GeneratedAt = now,
+                PeriodName = "Chưa có kỳ thu",
+                Capacity = SumCapacity(buildings),
+                Finance = new(0, 0, 0, 0, 0, 0, 0),
+                Workflow = new(0, 0, 0, 0, 0, 0, 0, 0, 0),
+                Maintenance = new(0, 0, 0, 0, 0, 0),
+                Buildings = buildings,
+                Trends = [],
+                Periods = [],
+                BuildingOptions = buildingOptions
+            };
 
         var startUtc = ToUtc(selectedPeriod.StartDate);
         var endUtc = ToUtc(selectedPeriod.EndDate.AddDays(1));
@@ -119,7 +135,6 @@ public sealed class OperationsReportingService(
         var openMaintenance = maintenanceRows.Where(x => OpenMaintenanceStatuses.Contains(x.Status)).ToList();
         var resolvedMaintenance = createdMaintenance.Count(x => x.Status is MaintenanceStatus.Resolved or MaintenanceStatus.Closed);
 
-        var buildings = await LoadBuildingMetricsAsync(buildingCode, selectedPeriod.Id, cancellationToken);
         var trends = await LoadTrendsAsync(periods.Take(6).OrderBy(x => x.StartDate).ToList(), buildingCode, cancellationToken);
         return new OperationsReportViewModel
         {

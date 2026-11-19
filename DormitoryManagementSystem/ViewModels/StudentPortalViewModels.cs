@@ -15,10 +15,13 @@ public sealed record StudentStayViewModel(
     string BuildingName,
     int FloorNumber,
     DateTime StartedAt,
-    int Roommates,
+    IReadOnlyList<string> RoommateNames,
     int Capacity,
     decimal MonthlyPrice,
-    IReadOnlyList<string> Amenities);
+    IReadOnlyList<string> Amenities)
+{
+    public int? BedNumber { get; init; }
+}
 
 public sealed record StudentHousingRequestViewModel(
     long Id,
@@ -37,7 +40,10 @@ public sealed record StudentHousingRequestViewModel(
     int WaitingHours,
     bool CanCancel,
     bool CanSupplement,
-    IReadOnlyList<StudentHousingRequestEventViewModel> Events);
+    IReadOnlyList<StudentHousingRequestEventViewModel> Events)
+{
+    public int? TargetBedNumber { get; init; }
+}
 
 public sealed record StudentHousingRequestEventViewModel(
     string StatusLabel,
@@ -48,13 +54,28 @@ public sealed record StudentHousingRequestEventViewModel(
 
 public sealed record StudentInvoiceLineViewModel(string Description, decimal Amount);
 
+public sealed record StudentChargeChange(string Label, decimal PreviousAmount, decimal CurrentAmount)
+{
+    public decimal Difference => CurrentAmount - PreviousAmount;
+}
+
+public sealed record StudentInvoiceComparison(
+    long PreviousInvoiceId,
+    string PreviousPeriod,
+    decimal Difference,
+    IReadOnlyList<StudentChargeChange> Changes);
+
 public sealed record StudentInvoiceTransactionViewModel(
     string Code,
     decimal Amount,
     string MethodLabel,
     DateTime ReceivedAt,
     bool IsReversal,
-    string? Note);
+    string? Note)
+{
+    public long Id { get; init; }
+    public bool HasBeenReversed { get; init; }
+}
 
 public sealed record StudentInvoiceViewModel(
     long Id,
@@ -68,7 +89,10 @@ public sealed record StudentInvoiceViewModel(
     string StatusClass,
     bool NeedsPayment,
     IReadOnlyList<StudentInvoiceLineViewModel> Lines,
-    IReadOnlyList<StudentInvoiceTransactionViewModel> Transactions);
+    IReadOnlyList<StudentInvoiceTransactionViewModel> Transactions)
+{
+    public StudentInvoiceComparison? Comparison { get; init; }
+}
 
 public sealed record StudentRepairUpdateViewModel(
     string StatusLabel,
@@ -90,7 +114,14 @@ public sealed record StudentRepairViewModel(
     DateTime CreatedAt,
     DateTime UpdatedAt,
     IReadOnlyList<StudentRepairUpdateViewModel> Updates,
-    IReadOnlyList<MaintenanceAttachmentViewModel> Attachments);
+    IReadOnlyList<MaintenanceAttachmentViewModel> Attachments)
+{
+    public bool ShareWithRoom { get; init; }
+}
+
+public sealed record SharedStudentRepair(
+    int Id, string Code, string Title, string Category, string Status, string StatusClass,
+    DateTime UpdatedAt, bool IsFollowing);
 
 public sealed record StudentNotificationViewModel(
     long Id,
@@ -103,9 +134,11 @@ public sealed record StudentNotificationViewModel(
 
 public sealed class StudentNotificationsViewModel
 {
-    public required StudentIdentityViewModel Student { get; init; }
     public required IReadOnlyList<StudentNotificationViewModel> Notifications { get; init; }
-    public int UnreadCount => Notifications.Count(x => x.IsUnread);
+    public int UnreadCount { get; init; }
+    public int TotalCount { get; init; }
+    public int Page { get; init; }
+    public int TotalPages { get; init; }
 }
 
 public sealed class StudentDashboardViewModel
@@ -125,6 +158,7 @@ public sealed class StudentRoomSearchQuery
     public decimal? MaxPrice { get; set; }
     public string? Amenity { get; set; }
     public string Sort { get; set; } = "availability";
+    public int Page { get; set; } = 1;
 }
 
 public sealed record StudentRoomOptionViewModel(
@@ -139,7 +173,20 @@ public sealed record StudentRoomOptionViewModel(
     int Assignable,
     IReadOnlyList<string> Amenities,
     bool IsCurrentRoom,
-    string MatchReason);
+    string MatchReason)
+{
+    public IReadOnlyList<RoomPhotoViewModel> Photos { get; init; } = [];
+}
+
+public sealed record StudentRoomPreviewViewModel(
+    StudentRoomOptionViewModel Room,
+    IReadOnlyList<int> AvailableBeds,
+    bool HasActiveRequest,
+    bool IsTransfer)
+{
+    public bool CanApply => !HasActiveRequest && AvailableBeds.Count > 0;
+    public SubmitHousingRequestInput Draft { get; init; } = new();
+}
 
 public sealed class StudentRoomSearchViewModel
 {
@@ -148,6 +195,8 @@ public sealed class StudentRoomSearchViewModel
     public required IReadOnlyList<StudentRoomOptionViewModel> Rooms { get; init; }
     public required IReadOnlyList<string> Buildings { get; init; }
     public required IReadOnlyList<string> Amenities { get; init; }
+    public int TotalMatches { get; init; }
+    public int TotalPages { get; init; } = 1;
     public StudentHousingRequestViewModel? ActiveRequest { get; init; }
     public string? CurrentRoomCode { get; init; }
 }
@@ -156,6 +205,9 @@ public sealed class SubmitHousingRequestInput
 {
     [Range(1, int.MaxValue, ErrorMessage = "Vui lòng chọn phòng.")]
     public int TargetRoomId { get; set; }
+
+    [Range(1, int.MaxValue, ErrorMessage = "Vui lòng chọn số giường.")]
+    public int TargetBedNumber { get; set; }
 
     [Required(ErrorMessage = "Vui lòng cho biết lý do chuyển phòng.")]
     [StringLength(600, MinimumLength = 10, ErrorMessage = "Lý do cần từ 10 đến 600 ký tự.")]
@@ -218,13 +270,16 @@ public sealed class CreateRepairRequestInput
     public string Priority { get; set; } = "Medium";
 
     public List<IFormFile> Attachments { get; set; } = [];
+    public bool ShareWithRoom { get; set; }
 }
 
 public sealed class StudentRepairsViewModel
 {
     public required StudentIdentityViewModel Student { get; init; }
     public required string CurrentRoomCode { get; init; }
+    public bool CanCreateRepair { get; init; }
     public required IReadOnlyList<StudentRepairViewModel> Repairs { get; init; }
+    public IReadOnlyList<SharedStudentRepair> SharedRepairs { get; init; } = [];
     public CreateRepairRequestInput NewRequest { get; init; } = new();
 }
 

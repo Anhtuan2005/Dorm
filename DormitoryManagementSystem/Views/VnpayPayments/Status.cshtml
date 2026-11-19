@@ -1,0 +1,35 @@
+@model VnpayPaymentStatus
+@{
+    Layout = "_StudentLayout";
+    var invoiceAnchor = $"invoice-{Model.InvoiceId}";
+    var amount = Model.Amount.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("vi-VN"));
+    var (label, tone, message) = Model.State switch
+    {
+        VnpayCheckoutState.Settled => ("Đã ghi nhận", "paid", "Khoản thu thử nghiệm đã được ghi vào lịch sử hóa đơn."),
+        VnpayCheckoutState.Failed => ("Chưa thanh toán", "cancelled", "Giao dịch không thành công. Bạn có thể quay lại hóa đơn để thử lại."),
+        VnpayCheckoutState.NeedsReview => ("Cần đối soát", "overdue", "Chưa cập nhật công nợ. Hãy cung cấp mã giao dịch cho Ban quản lý trước khi thanh toán lại."),
+        _ when Model.IsExpired => ("Liên kết đã hết hạn", "overdue", "Nếu đã thao tác trên VNPAY, hãy kiểm tra lại trạng thái trước khi tạo giao dịch mới."),
+        _ => ("Chờ xác nhận", "issued", "Khoản thu sẽ xuất hiện sau khi hệ thống nhận được xác nhận từ VNPAY.")
+    };
+}
+
+<section class="student-page-head">
+    <div><h1>Trạng thái thanh toán</h1><p>VNPAY Sandbox · Giao dịch thử nghiệm</p></div>
+</section>
+
+<article class="student-invoice-card vnpay-status-card">
+    <header>
+        <div><span class="invoice-status @tone">@label</span><h2>@Model.InvoiceCode</h2></div>
+        <div class="invoice-total"><small>Số tiền giao dịch</small><strong>@amount đ</strong></div>
+    </header>
+    <div class="invoice-pay-row">
+        <p class="invoice-pay-copy">@message<small>Mã giao dịch: @Model.Reference</small></p>
+        <div class="invoice-pay-actions">
+            @if (Model.State == VnpayCheckoutState.Pending)
+            {
+                <a class="student-primary" asp-action="Status" asp-route-reference="@Model.Reference">Kiểm tra lại</a>
+            }
+            <a class="student-secondary" asp-controller="Student" asp-action="Invoices" asp-fragment="@invoiceAnchor">Về hóa đơn</a>
+        </div>
+    </div>
+</article>

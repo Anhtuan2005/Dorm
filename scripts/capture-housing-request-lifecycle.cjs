@@ -65,8 +65,9 @@ function watch(page, prefix, issues) {
 
     await student.goto(`${baseUrl}/Student/Rooms?Building=C`, { waitUntil: "networkidle" });
     const room = student.locator(".student-room-card").filter({ hasText: "C-503" }).first();
-    await room.getByRole("button", { name: "Chọn phòng" }).click();
-    await student.locator("[data-application-dialog] textarea[name=Reason]").fill(marker);
+    await room.getByRole("link", { name: "Chọn phòng" }).click();
+    await student.locator("[data-tour-bed-select]").selectOption({ index: 1 });
+    await student.locator("[data-room-booking] textarea[name=Reason]").fill(marker);
     await Promise.all([student.waitForURL(/\/Student\/Applications/), student.getByRole("button", { name: "Gửi đơn chuyển phòng" }).click()]);
     const code = (await student.locator(".application-card.current").first().innerText()).match(/DK-\d{4}-\d{4,}/)?.[0];
     if (!code) throw new Error("Không đọc được mã đơn chụp ảnh.");

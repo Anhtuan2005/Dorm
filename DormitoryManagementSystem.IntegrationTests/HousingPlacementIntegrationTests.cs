@@ -89,12 +89,18 @@ public sealed class HousingPlacementIntegrationTests
     }
 
     [SqlServerFact]
-    public async Task Two_approvals_for_the_last_bed_create_exactly_one_hold()
+    public Task Two_approvals_for_the_last_bed_create_exactly_one_hold() => AssertApprovalRaceAsync(1, null);
+
+    [SqlServerFact]
+    public Task Two_approvals_for_the_same_number_create_one_hold_even_when_other_beds_are_free() =>
+        AssertApprovalRaceAsync(4, 3);
+
+    private static async Task AssertApprovalRaceAsync(int capacity, int? requestedBed)
     {
         await using var database = await SqlServerTestDatabase.CreateAsync();
         ApprovalRaceScenario scenario;
         await using (var setup = database.CreateContext())
-            scenario = await CreateApprovalRaceAsync(setup);
+            scenario = await CreateApprovalRaceAsync(setup, capacity, requestedBed);
 
         async Task<ApplicationManagementResult> ApproveAsync(long id, string rowVersion)
         {
@@ -115,6 +121,8 @@ public sealed class HousingPlacementIntegrationTests
         Assert.Equal(1, await verify.RoomHolds.Where(x => x.RoomId == scenario.RoomId && x.ReleasedAt == null).SumAsync(x => x.HeldBeds));
         Assert.Equal(1, await verify.HousingRequests.CountAsync(x => x.Status == HousingRequestStatus.AwaitingMoveIn));
         Assert.Equal(1, await verify.HousingRequests.CountAsync(x => x.Status == HousingRequestStatus.UnderReview));
+        var hold = await verify.RoomHolds.SingleAsync(x => x.RoomId == scenario.RoomId && x.ReleasedAt == null);
+        Assert.Equal(requestedBed ?? 1, hold.BedNumber);
     }
 
     private static ApplicationManagementService CreateService(DormitoryManagementSystem.Data.DormitoryDbContext context)
@@ -159,12 +167,14 @@ public sealed class HousingPlacementIntegrationTests
     }
 
     private static async Task<ApprovalRaceScenario> CreateApprovalRaceAsync(
-        DormitoryManagementSystem.Data.DormitoryDbContext db)
+        DormitoryManagementSystem.Data.DormitoryDbContext db,
+        int capacity,
+        int? requestedBed)
     {
         var manager = NewManager();
         var building = new Building { Code = "QC", Name = "Tòa QC", SiteName = "Cơ sở kiểm thử", SortOrder = 1 };
         var floor = new Floor { Number = 1, Building = building };
-        var room = new Room { Code = "QC-101", Floor = floor, RoomType = "Nam", Capacity = 1, MonthlyPrice = 1_000_000m };
+        var room = new Room { Code = "QC-101", Floor = floor, RoomType = "Nam", Capacity = capacity, MonthlyPrice = 1_000_000m };
         HousingRequest NewRequest(string suffix) => new()
         {
             Code = $"DK-2026-QC{suffix}",
@@ -177,6 +187,7 @@ public sealed class HousingPlacementIntegrationTests
                 PhoneNumber = $"09000000{suffix}"
             },
             TargetRoom = room,
+            TargetBedNumber = requestedBed,
             Type = HousingRequestType.Registration,
             Status = HousingRequestStatus.UnderReview,
             StudentReason = "Đăng ký giường cuối",

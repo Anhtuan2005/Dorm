@@ -40,8 +40,11 @@ public static class HousingRequestWorkflow
 {
     public const int ManagerSlaHours = 24;
 
+    internal static readonly HousingRequestStatus[] ManagementStatuses =
+        [HousingRequestStatus.Submitted, HousingRequestStatus.UnderReview, HousingRequestStatus.AwaitingMoveIn];
+
     public static readonly HousingRequestStatus[] ActiveStatuses =
-        [HousingRequestStatus.Submitted, HousingRequestStatus.UnderReview, HousingRequestStatus.NeedsInformation, HousingRequestStatus.AwaitingMoveIn];
+        [..ManagementStatuses, HousingRequestStatus.NeedsInformation];
 
     public static bool IsActive(HousingRequestStatus status) => ActiveStatuses.Contains(status);
 
@@ -79,9 +82,8 @@ public static class HousingRequestWorkflow
         var (label, css) = Presentation(status);
         var responsibility = status switch
         {
-            HousingRequestStatus.Submitted or HousingRequestStatus.UnderReview => HousingRequestResponsibility.Management,
             HousingRequestStatus.NeedsInformation => HousingRequestResponsibility.Student,
-            HousingRequestStatus.AwaitingMoveIn => HousingRequestResponsibility.Management,
+            _ when ManagementStatuses.Contains(status) => HousingRequestResponsibility.Management,
             _ => HousingRequestResponsibility.None
         };
         var waitingHours = actionRequiredAt.HasValue

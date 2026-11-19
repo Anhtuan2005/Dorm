@@ -10,7 +10,7 @@
 
 <div class="billing-page">
     <header class="operations-heading billing-heading">
-        <div><p class="operations-kicker">Vận hành tài chính</p><h1>Thu phí và công nợ</h1><p>Ưu tiên hóa đơn quá hạn, ghi nhận từng khoản thu và giữ đầy đủ dấu vết đối soát.</p></div>
+        <div><h1>Thu phí và công nợ</h1><p>Tra cứu hóa đơn, ghi nhận khoản thu và kiểm tra lịch sử.</p></div>
         <div class="billing-heading-actions"><button type="button" class="heading-room-link" data-open-dialog="issue-invoices-dialog"><svg><use href="#i-plus" /></svg>Phát hành kỳ thu</button><a class="heading-room-link quiet" asp-controller="Students" asp-action="Index"><svg><use href="#i-users" /></svg>Danh bạ sinh viên</a></div>
     </header>
 
@@ -34,43 +34,44 @@
     </dialog>
 
     <nav class="billing-summary" aria-label="Tóm tắt công nợ">
-        <a asp-action="Index"><span>Đang còn công nợ</span><strong>@Money(Model.Summary.OutstandingAmount) đ</strong><small>@Model.Summary.OutstandingCount hóa đơn cần thu</small></a>
+        <a class="@(Model.Query.Status == "outstanding" ? "active" : "")" asp-action="Index" asp-route-Status="outstanding"><span>Còn công nợ</span><strong>@Money(Model.Summary.OutstandingAmount) đ</strong></a>
         <a class="urgent @(Model.Query.Status == "overdue" ? "active" : "")" asp-action="Index" asp-route-Status="overdue"><span>Quá hạn</span><strong>@Money(Model.Summary.OverdueAmount) đ</strong><small>@Model.Summary.OverdueCount hóa đơn ưu tiên</small></a>
-        <a asp-action="Index" asp-route-Status="awaiting"><span>Đến hạn trong 7 ngày</span><strong>@Model.Summary.DueSoonCount</strong><small>Chủ động nhắc sinh viên</small></a>
-        <a asp-action="Index" asp-route-Status="paid"><span>Thu ròng tháng này</span><strong>@Money(Model.Summary.CollectedThisMonth) đ</strong><small>Từ các giao dịch đã ghi</small></a>
+        <a class="@(Model.Query.Status == "due-soon" ? "active" : "")" asp-action="Index" asp-route-Status="due-soon"><span>Đến hạn trong 7 ngày</span><strong>@Model.Summary.DueSoonCount</strong></a>
+        <div class="summary-readout"><span>Thu ròng tháng này</span><strong>@Money(Model.Summary.CollectedThisMonth) đ</strong></div>
     </nav>
 
     <form class="billing-toolbar" method="get" asp-action="Index" data-filter-form>
         <label class="queue-search"><svg><use href="#i-search" /></svg><input name="Search" value="@Model.Query.Search" placeholder="Mã hóa đơn, sinh viên, phòng..." aria-label="Tìm hóa đơn" /></label>
         <label><span>Kỳ thu</span><select name="PeriodId" data-auto-submit><option value="">Tất cả kỳ thu</option>@foreach (var period in Model.Periods) { <option value="@period.Value" selected="@(Model.Query.PeriodId?.ToString() == period.Value)">@period.Label</option> }</select></label>
-        <label><span>Trạng thái</span><select name="Status" data-auto-submit><option value="">Tất cả trạng thái</option><option value="overdue" selected="@(Model.Query.Status == "overdue")">Quá hạn</option><option value="awaiting" selected="@(Model.Query.Status == "awaiting")">Chờ thu</option><option value="partial" selected="@(Model.Query.Status == "partial")">Thu một phần</option><option value="paid" selected="@(Model.Query.Status == "paid")">Đã thu đủ</option><option value="cancelled" selected="@(Model.Query.Status == "cancelled")">Đã hủy</option></select></label>
+        <label><span>Trạng thái</span><select name="Status" data-auto-submit><option value="">Tất cả trạng thái</option><option value="outstanding" selected="@(Model.Query.Status == "outstanding")">Còn công nợ</option><option value="overdue" selected="@(Model.Query.Status == "overdue")">Quá hạn</option><option value="due-soon" selected="@(Model.Query.Status == "due-soon")">Đến hạn trong 7 ngày</option><option value="awaiting" selected="@(Model.Query.Status == "awaiting")">Chờ thu</option><option value="partial" selected="@(Model.Query.Status == "partial")">Thu một phần</option><option value="paid" selected="@(Model.Query.Status == "paid")">Đã thu đủ</option><option value="cancelled" selected="@(Model.Query.Status == "cancelled")">Đã hủy</option></select></label>
         <label><span>Tòa</span><select name="Building" data-auto-submit><option value="">Tất cả tòa</option>@foreach (var building in Model.Buildings) { <option value="@building.Value" selected="@(Model.Query.Building == building.Value)">@building.Label</option> }</select></label>
         <details class="billing-balance-filter" open="@(Model.Query.MinBalance.HasValue || Model.Query.MaxBalance.HasValue)">
             <summary><span>Công nợ</span><strong>@(Model.Query.MinBalance.HasValue || Model.Query.MaxBalance.HasValue ? "Đang lọc" : "Mọi mức")</strong></summary>
             <div><label><span>Từ</span><input type="number" name="MinBalance" min="0" step="1" value="@RawMoney(Model.Query.MinBalance)" placeholder="0" /></label><label><span>Đến</span><input type="number" name="MaxBalance" min="0" step="1" value="@RawMoney(Model.Query.MaxBalance)" placeholder="Không giới hạn" /></label></div>
         </details>
         <button type="submit"><svg><use href="#i-search" /></svg>Tìm</button>
-        @if (!string.IsNullOrWhiteSpace(Model.Query.Search) || Model.Query.PeriodId.HasValue || !string.IsNullOrWhiteSpace(Model.Query.Status) || !string.IsNullOrWhiteSpace(Model.Query.Building) || Model.Query.MinBalance.HasValue || Model.Query.MaxBalance.HasValue) { <a asp-action="Index">Xóa lọc</a> }
+        @if (!string.IsNullOrWhiteSpace(Model.Query.Search) || Model.Query.PeriodId.HasValue || !string.IsNullOrWhiteSpace(Model.Query.Status) || !string.IsNullOrWhiteSpace(Model.Query.Building) || Model.Query.MinBalance.HasValue || Model.Query.MaxBalance.HasValue) { <a class="filter-reset" asp-action="Index">Xóa bộ lọc</a> }
     </form>
 
-    <div class="billing-workbench @(selected is null ? "empty" : "")">
-        <aside class="billing-queue" aria-label="Danh sách hóa đơn">
-            <header><span><strong>@Model.TotalItems hóa đơn</strong><small>Quá hạn và gần hạn trước</small></span><i><svg><use href="#i-coin" /></svg></i></header>
+    <partial name="_RecordView" />
+    <div class="billing-workbench @(selected is null ? "empty" : "")" data-record-workbench="billing">
+        <aside class="billing-queue" aria-label="Danh sách hóa đơn" data-record-queue>
+            <header><span><strong>@Money(Model.TotalItems) hóa đơn</strong><small>Quá hạn và gần hạn trước</small></span></header>
             @if (Model.Items.Count == 0)
             {
                 <div class="queue-empty"><span><svg><use href="#i-check" /></svg></span><strong>Không có hóa đơn phù hợp</strong><p>Thử đổi trạng thái, kỳ thu hoặc xóa bộ lọc.</p><a asp-action="Index">Về toàn bộ công nợ</a></div>
             }
             else
             {
-                <div class="billing-queue-list">
+                <div class="record-list-columns" aria-hidden="true"><span>Sinh viên / phòng</span><span>Kỳ thu / hạn nộp</span><span>Còn phải thu</span><span>Trạng thái</span></div>
+                <div class="billing-queue-list" data-record-list>
                     @foreach (var invoice in Model.Items)
                     {
-                        <a class="billing-queue-item @(invoice.IsSelected ? "selected" : "")" asp-action="Index" asp-route-Search="@Model.Query.Search" asp-route-PeriodId="@Model.Query.PeriodId" asp-route-Status="@Model.Query.Status" asp-route-Building="@Model.Query.Building" asp-route-MinBalance="@Model.Query.MinBalance" asp-route-MaxBalance="@Model.Query.MaxBalance" asp-route-Page="@Model.Query.Page" asp-route-SelectedId="@invoice.Id">
-                            <span class="queue-avatar">@invoice.Initials</span>
-                            <span class="billing-person"><strong>@invoice.StudentName</strong><small>@invoice.StudentCode · @invoice.RoomCode</small></span>
-                            <span class="invoice-state @invoice.StatusClass">@invoice.StatusLabel</span>
+                        <a class="billing-queue-item @(invoice.IsSelected ? "selected" : "")" aria-current="@(invoice.IsSelected ? "true" : null)" asp-action="Index" asp-route-Search="@Model.Query.Search" asp-route-PeriodId="@Model.Query.PeriodId" asp-route-Status="@Model.Query.Status" asp-route-Building="@Model.Query.Building" asp-route-MinBalance="@Model.Query.MinBalance" asp-route-MaxBalance="@Model.Query.MaxBalance" asp-route-Page="@Model.Query.Page" asp-route-SelectedId="@invoice.Id" asp-fragment="selected-case">
+                            <span class="billing-person"><strong>@invoice.StudentName</strong><small>@invoice.StudentCode · @invoice.Code · @invoice.RoomCode</small></span>
                             <span class="billing-period">@invoice.PeriodName<small>Hạn @invoice.DueDate.ToString("dd/MM/yyyy")</small></span>
                             <span class="billing-balance"><small>Còn phải thu</small><strong>@Money(invoice.Balance) đ</strong></span>
+                            <span class="invoice-state @invoice.StatusClass">@invoice.StatusLabel</span>
                         </a>
                     }
                 </div>
@@ -78,7 +79,7 @@
                 {
                     <nav class="billing-pagination" aria-label="Phân trang hóa đơn">
                         <a class="@(Model.Query.Page <= 1 ? "disabled" : "")" asp-action="Index" asp-route-Search="@Model.Query.Search" asp-route-PeriodId="@Model.Query.PeriodId" asp-route-Status="@Model.Query.Status" asp-route-Building="@Model.Query.Building" asp-route-MinBalance="@Model.Query.MinBalance" asp-route-MaxBalance="@Model.Query.MaxBalance" asp-route-Page="@(Model.Query.Page - 1)">Trước</a>
-                        <span>@Model.Query.Page / @Model.TotalPages</span>
+                        <span>Trang @Model.Query.Page / @Model.TotalPages</span>
                         <a class="@(Model.Query.Page >= Model.TotalPages ? "disabled" : "")" asp-action="Index" asp-route-Search="@Model.Query.Search" asp-route-PeriodId="@Model.Query.PeriodId" asp-route-Status="@Model.Query.Status" asp-route-Building="@Model.Query.Building" asp-route-MinBalance="@Model.Query.MinBalance" asp-route-MaxBalance="@Model.Query.MaxBalance" asp-route-Page="@(Model.Query.Page + 1)">Sau</a>
                     </nav>
                 }
@@ -87,10 +88,10 @@
 
         @if (selected is not null)
         {
-            <main class="billing-detail">
+            <article class="billing-detail" id="selected-case" tabindex="-1" data-record-detail>
                 <header class="billing-detail-head">
                     <div><span class="invoice-state @selected.StatusClass">@selected.StatusLabel</span><h2>@selected.Code</h2><p>@selected.PeriodName · Phát hành @selected.IssuedAt.ToString("dd/MM/yyyy")</p></div>
-                    <a asp-controller="Students" asp-action="Index" asp-route-SelectedId="@selected.StudentId" class="case-more" aria-label="Mở hồ sơ sinh viên"><svg><use href="#i-more" /></svg></a>
+                    <div class="record-header-actions">@if (selected.CanCollect) { <a class="record-action-link" href="#collection-panel">Ghi nhận thu</a> }<a asp-controller="Students" asp-action="Index" asp-route-SelectedId="@selected.StudentId" class="case-profile-link">Hồ sơ sinh viên</a></div>
                 </header>
 
                 <section class="billing-student">
@@ -105,15 +106,62 @@
                     <div class="balance"><small>Còn phải thu</small><strong>@Money(selected.Balance) đ</strong><span>Hạn @selected.DueDate.ToString("dd/MM/yyyy")</span></div>
                 </section>
 
+                @if (selected.VnpayReviews.Count > 0)
+                {
+                    <section class="billing-vnpay-review" aria-label="Giao dịch VNPAY cần đối soát">
+                        <strong>VNPAY Sandbox · Cần đối soát</strong>
+                        <p>Các giao dịch dưới đây chưa được ghi vào sổ thu. Đối chiếu với VNPAY trước khi xác nhận khoản thu.</p>
+                        <ul>
+                            @foreach (var review in selected.VnpayReviews)
+                            {
+                                <li><strong>@Money(review.Amount) đ</strong> · @review.Reference@if (review.ProviderReference is { } provider) { <text> · Mã VNPAY @provider</text> } · Phản hồi @review.ResponseCode/@review.ProviderState</li>
+                            }
+                        </ul>
+                    </section>
+                }
+
                 @if (selected.CanCollect)
                 {
                     <a class="mobile-collect-link" href="#collection-panel"><svg><use href="#i-coin" /></svg>Ghi nhận khoản thu</a>
                 }
 
+<aside class="collection-rail" id="collection-panel" tabindex="-1">
+                <header><p>Thao tác chính</p><h2>@(selected.VnpayPending ? "Chờ VNPAY xác nhận" : selected.CanCollect ? "Ghi nhận khoản thu" : "Hóa đơn đã cân đối")</h2><small>Nhập khoản tiền đã nhận từ sinh viên.</small></header>
+                @if (selected.CanCollect)
+                {
+                    <form asp-action="RecordPayment" method="post" class="collection-form">
+                        <input type="hidden" name="InvoiceId" value="@selected.Id" />
+                        <input type="hidden" name="RowVersion" value="@selected.RowVersion" />
+                        <input type="hidden" name="IdempotencyKey" value="@Guid.NewGuid().ToString("N")" />
+                        <input type="hidden" name="Search" value="@Model.Query.Search" /><input type="hidden" name="PeriodId" value="@Model.Query.PeriodId" /><input type="hidden" name="Status" value="@Model.Query.Status" /><input type="hidden" name="Building" value="@Model.Query.Building" /><input type="hidden" name="MinBalance" value="@RawMoney(Model.Query.MinBalance)" /><input type="hidden" name="MaxBalance" value="@RawMoney(Model.Query.MaxBalance)" /><input type="hidden" name="Page" value="@Model.Query.Page" />
+                        <div class="collection-balance"><small>Công nợ hiện tại</small><strong>@Money(selected.Balance) đ</strong></div>
+                        <label><span>Số tiền nhận</span><div class="money-input"><input type="number" name="Amount" min="1" max="@selected.Balance.ToString(System.Globalization.CultureInfo.InvariantCulture)" step="1" value="@((activeDraft?.Amount ?? selected.Balance).ToString(System.Globalization.CultureInfo.InvariantCulture))" required /><b>đ</b></div></label>
+                        <label><span>Phương thức</span><select name="Method" data-payment-method><option value="BankTransfer" selected="@(activeDraft?.Method != "Cash")">Chuyển khoản</option><option value="Cash" selected="@(activeDraft?.Method == "Cash")">Tiền mặt</option></select></label>
+                        <label data-bank-reference><span>Mã tham chiếu</span><input name="ExternalReference" maxlength="100" value="@activeDraft?.ExternalReference" placeholder="VD: VCB-10293847" required /></label>
+                        <label><span>Thời điểm nhận</span><input type="datetime-local" name="ReceivedAt" value="@receivedDefault" required /></label>
+                        <details class="optional-note" open="@(!string.IsNullOrWhiteSpace(activeDraft?.Note))"><summary>Thêm ghi chú</summary><label><span>Ghi chú <small>Không bắt buộc</small></span><textarea name="Note" maxlength="600" rows="3" placeholder="Thông tin hỗ trợ đối soát...">@activeDraft?.Note</textarea></label></details>
+                        <button type="submit" class="collect-button"><svg><use href="#i-check" /></svg>Ghi nhận thu</button>
+                        <small class="collection-assurance"><svg><use href="#i-check" /></svg>Số tiền nhận không được vượt công nợ hiện tại.</small>
+                    </form>
+                }
+                else if (selected.VnpayPending)
+                {
+                    <div class="collection-complete"><strong>Phiên thanh toán thử nghiệm đang mở</strong><p>Kiểm tra lại sau khi phiên kết thúc để tránh ghi nhận trùng.</p></div>
+                }
+                else
+                {
+                    <div class="collection-complete"><span><svg><use href="#i-check" /></svg></span><strong>@selected.StatusLabel</strong><p>@(selected.StatusClass == "cancelled" ? "Hóa đơn đã hủy và không thể ghi thêm khoản thu." : "Không còn công nợ cần xử lý cho hóa đơn này.")</p></div>
+                }
+                <footer><svg><use href="#i-coin" /></svg><p>Không sửa trực tiếp số đã thu. Nếu nhập sai, dùng hoàn tác trên giao dịch gốc.</p></footer>
+            </aside>
+
+                <details class="record-history"><summary>Chi tiết các khoản phí <span>@selected.Lines.Count khoản</span></summary>
                 <section class="billing-lines">
                     <header><div><p>Cấu phần hóa đơn</p><h3>@selected.Lines.Count khoản phí</h3></div><strong>@Money(selected.TotalAmount) đ</strong></header>
                     <div>@foreach (var line in selected.Lines) { <article><span><i>@line.ChargeType</i>@line.Description</span><strong>@Money(line.Amount) đ</strong></article> }</div>
                 </section>
+
+                </details>
 
                 <section class="billing-history">
                     <header><div><p>Sổ giao dịch</p><h3>Lịch sử thu và điều chỉnh</h3></div><span>@selected.Transactions.Count bản ghi</span></header>
@@ -128,42 +176,26 @@
                             {
                                 <article class="@(entry.IsReversal ? "reversal" : "")">
                                     <i><svg><use href="#@(entry.IsReversal ? "i-arrow" : "i-check")" /></svg></i>
-                                    <span><strong>@entry.Code</strong><p>@entry.MethodLabel · Nhận @entry.ReceivedAt.ToString("dd/MM/yyyy, HH:mm")</p><small>@entry.RecordedBy@if (!string.IsNullOrWhiteSpace(entry.ExternalReference)) { <text> · @entry.ExternalReference</text> }</small>@if (!string.IsNullOrWhiteSpace(entry.Note)) { <em>@entry.Note</em> }</span>
-                                    <span class="history-amount"><strong>@(entry.Amount > 0 ? "+" : "")@Money(entry.Amount) đ</strong>@if (entry.HasBeenReversed) { <small>Đã hoàn tác · @entry.ReversedCode</small> } else if (!entry.IsReversal) { <button type="button" data-open-dialog="reverse-@entry.Id">Hoàn tác</button> }</span>
+                                    <span>
+                                        <strong>@entry.Code</strong><p>@entry.MethodLabel · Nhận @entry.ReceivedAt.ToString("dd/MM/yyyy, HH:mm")</p>
+                                        <small>@entry.RecordedBy@if (!string.IsNullOrWhiteSpace(entry.ExternalReference)) { <text> · @entry.ExternalReference</text> }</small>
+                                        @if (!string.IsNullOrWhiteSpace(entry.Note)) { <em>@entry.Note</em> }
+                                        @if (!entry.IsReversal && entry.Amount > 0)
+                                        {
+                                            <a class="receipt-link" asp-controller="Receipts" asp-action="Details" asp-route-id="@entry.Id" aria-label="Biên nhận @entry.Code">Xem biên nhận</a>
+                                        }
+                                    </span>
+                                    <span class="history-amount"><strong>@(entry.Amount > 0 ? "+" : "")@Money(entry.Amount) đ</strong>@if (entry.HasBeenReversed) { <small>Đã hoàn tác · @entry.ReversedCode</small> } else if (entry.CanReverse) { <button type="button" data-open-dialog="reverse-@entry.Id">Hoàn tác</button> }</span>
                                 </article>
                             }
                         </div>
                     }
                 </section>
-            </main>
+            </article>
 
-            <aside class="collection-rail" id="collection-panel">
-                <header><p>Thao tác chính</p><h2>@(selected.CanCollect ? "Ghi nhận khoản thu" : "Hóa đơn đã cân đối")</h2><small>Mọi khoản thu được lưu bất biến trong sổ giao dịch.</small></header>
-                @if (selected.CanCollect)
-                {
-                    <form asp-action="RecordPayment" method="post" class="collection-form">
-                        <input type="hidden" name="InvoiceId" value="@selected.Id" />
-                        <input type="hidden" name="RowVersion" value="@selected.RowVersion" />
-                        <input type="hidden" name="IdempotencyKey" value="@Guid.NewGuid().ToString("N")" />
-                        <input type="hidden" name="Search" value="@Model.Query.Search" /><input type="hidden" name="PeriodId" value="@Model.Query.PeriodId" /><input type="hidden" name="Status" value="@Model.Query.Status" /><input type="hidden" name="Building" value="@Model.Query.Building" /><input type="hidden" name="MinBalance" value="@RawMoney(Model.Query.MinBalance)" /><input type="hidden" name="MaxBalance" value="@RawMoney(Model.Query.MaxBalance)" /><input type="hidden" name="Page" value="@Model.Query.Page" />
-                        <div class="collection-balance"><small>Công nợ hiện tại</small><strong>@Money(selected.Balance) đ</strong></div>
-                        <label><span>Số tiền nhận</span><div class="money-input"><input type="number" name="Amount" min="1" max="@selected.Balance.ToString(System.Globalization.CultureInfo.InvariantCulture)" step="1" value="@((activeDraft?.Amount ?? selected.Balance).ToString(System.Globalization.CultureInfo.InvariantCulture))" required /><b>đ</b></div></label>
-                        <label><span>Phương thức</span><select name="Method" data-payment-method><option value="BankTransfer" selected="@(activeDraft?.Method != "Cash")">Chuyển khoản</option><option value="Cash" selected="@(activeDraft?.Method == "Cash")">Tiền mặt</option></select></label>
-                        <label data-bank-reference><span>Mã tham chiếu</span><input name="ExternalReference" maxlength="100" value="@activeDraft?.ExternalReference" placeholder="VD: VCB-10293847" required /></label>
-                        <label><span>Thời điểm nhận</span><input type="datetime-local" name="ReceivedAt" value="@receivedDefault" required /></label>
-                        <label><span>Ghi chú <small>Không bắt buộc</small></span><textarea name="Note" maxlength="600" rows="3" placeholder="Thông tin hỗ trợ đối soát...">@activeDraft?.Note</textarea></label>
-                        <button type="submit" class="collect-button"><svg><use href="#i-check" /></svg>Ghi nhận thu</button>
-                        <small class="collection-assurance"><svg><use href="#i-check" /></svg>Hệ thống kiểm tra lại công nợ trong transaction trước khi ghi.</small>
-                    </form>
-                }
-                else
-                {
-                    <div class="collection-complete"><span><svg><use href="#i-check" /></svg></span><strong>@selected.StatusLabel</strong><p>@(selected.StatusClass == "cancelled" ? "Hóa đơn đã hủy và không thể ghi thêm khoản thu." : "Không còn công nợ cần xử lý cho hóa đơn này.")</p></div>
-                }
-                <footer><svg><use href="#i-coin" /></svg><p>Không sửa trực tiếp số đã thu. Nếu nhập sai, dùng hoàn tác trên giao dịch gốc.</p></footer>
-            </aside>
 
-            @foreach (var entry in selected.Transactions.Where(x => !x.IsReversal && !x.HasBeenReversed))
+
+            @foreach (var entry in selected.Transactions.Where(x => x.CanReverse))
             {
                 <dialog class="manager-dialog danger" id="reverse-@entry.Id" aria-labelledby="reverse-title-@entry.Id">
                     <form asp-action="ReversePayment" method="post">

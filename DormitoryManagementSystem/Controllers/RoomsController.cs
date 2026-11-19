@@ -23,7 +23,7 @@ public sealed class RoomsController(IRoomMapService roomMapService, IOperationsC
     public async Task<IActionResult> Catalog([FromQuery] RoomCatalogQuery query, CancellationToken cancellationToken)
     {
         ViewData["Title"] = "Danh mục phòng";
-        ViewData["ActiveNav"] = "rooms";
+        ViewData["ActiveNav"] = "catalog";
         return View(await catalogService.GetAsync(query, cancellationToken));
     }
 
@@ -38,6 +38,10 @@ public sealed class RoomsController(IRoomMapService roomMapService, IOperationsC
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> CreateFloor(CreateFloorInput input, CancellationToken cancellationToken) =>
         RedirectWith(ModelState.IsValid ? await catalogService.CreateFloorAsync(input, cancellationToken) : InvalidCatalog(input.BuildingId));
+
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> UpdateFloor(UpdateFloorInput input, CancellationToken cancellationToken) =>
+        RedirectWith(ModelState.IsValid ? await catalogService.UpdateFloorAsync(input, cancellationToken) : InvalidCatalog(input.BuildingId, input.Id));
 
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> CreateRoom(CreateRoomInput input, CancellationToken cancellationToken) =>

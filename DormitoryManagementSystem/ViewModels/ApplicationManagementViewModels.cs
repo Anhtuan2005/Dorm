@@ -57,7 +57,8 @@ public sealed record ApplicationAuditEventViewModel(
     string StatusClass,
     string Note,
     string ActorName,
-    DateTime CreatedAt);
+    DateTime CreatedAt,
+    bool IsSupplement = false);
 
 public sealed class ApplicationCaseViewModel
 {
@@ -85,6 +86,7 @@ public sealed class ApplicationCaseViewModel
     public string NextActionLabel { get; init; } = string.Empty;
     public PlacementRoomViewModel? CurrentRoom { get; init; }
     public PlacementRoomViewModel? TargetRoom { get; init; }
+    public int? TargetBedNumber { get; init; }
     public decimal OutstandingBalance { get; init; }
     public int OpenRepairCount { get; init; }
     public bool CanStartReview { get; init; }
@@ -97,6 +99,7 @@ public sealed class ApplicationCaseViewModel
     public bool IsCheckout => RequestType == "Checkout";
     public string PrimaryActionLabel => IsCheckout ? "Duyệt trả phòng" : "Duyệt và giữ chỗ";
     public string? ApprovalBlockReason { get; init; }
+    public ApplicationAuditEventViewModel? LatestSupplement { get; init; }
     public IReadOnlyList<ApplicationAuditEventViewModel> Events { get; init; } = [];
 }
 

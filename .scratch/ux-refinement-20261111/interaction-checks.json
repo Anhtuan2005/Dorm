@@ -1,0 +1,22 @@
+{
+  "checks": [
+    "keyboard search shortcut",
+    "application search preserves overdue scope",
+    "single main landmark",
+    "review heading matches unfinished state",
+    "payment method retains reference validation",
+    "optional notes remain accessible",
+    "validation error persists until dismissed",
+    "mobile case selection opens the correct record",
+    "mobile navigation traps and restores focus",
+    "mobile filters disclose on demand",
+    "mobile student directory opens the chosen profile",
+    "35 extra viewport checks and protected forms",
+    "student date is current",
+    "student drawer keyboard access",
+    "pending request has one clear next step",
+    "chat remains usable in the refined shell",
+    "login password visibility"
+  ],
+  "errors": []
+}

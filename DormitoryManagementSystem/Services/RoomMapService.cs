@@ -26,45 +26,18 @@ public sealed class RoomMapService(DormitoryDbContext db, TimeProvider timeProvi
             .AsSplitQuery()
             .ToListAsync(cancellationToken);
 
-        if (rooms.Count == 0)
-            throw new InvalidOperationException("Chưa có dữ liệu phòng.");
-
         var facts = rooms.Select(room => ToFact(room, now)).ToList();
-        var buildingCodes = facts
-            .OrderBy(x => x.Room.Floor.Building.SortOrder)
-            .Select(x => x.Room.Floor.Building.Code)
-            .Distinct()
-            .ToList();
-        var selectedBuildingCode = buildingCodes.Contains(query.Building.ToUpperInvariant())
-            ? query.Building.ToUpperInvariant()
-            : buildingCodes[0];
-        query.Building = selectedBuildingCode;
-
-        var buildings = facts
-            .GroupBy(x => new
-            {
-                x.Room.Floor.Building.Code,
-                x.Room.Floor.Building.Name,
-                x.Room.Floor.Building.SortOrder
-            })
-            .OrderBy(x => x.Key.SortOrder)
-            .Select(group => new BuildingSummaryViewModel(
-                group.Key.Code,
-                group.Key.Name,
-                Sum(group)))
-            .ToList();
-
-        var buildingFacts = facts
-            .Where(x => x.Room.Floor.Building.Code == selectedBuildingCode)
-            .ToList();
-        var selectedBuilding = buildingFacts[0].Room.Floor.Building;
-
-        var selectedCode = string.IsNullOrWhiteSpace(query.Room)
-            ? $"{selectedBuildingCode}-302"
-            : query.Room.ToUpperInvariant();
-        var selectedFact = buildingFacts.FirstOrDefault(x => x.Room.Code == selectedCode)
-            ?? buildingFacts.First();
-        query.Room = selectedFact.Room.Code;
+        var factsByBuilding = facts.ToLookup(x => x.Room.Floor.BuildingId);
+        var buildingRows = await db.Buildings.AsNoTracking().OrderBy(x => x.SortOrder).ThenBy(x => x.Code)
+            .Select(x => new { x.Id, x.Code, x.Name, Floors = x.Floors.OrderBy(f => f.Number).Select(f => f.Number).ToList() })
+            .ToListAsync(cancellationToken);
+        var selectedBuilding = buildingRows.FirstOrDefault(x => x.Code.Equals(query.Building, StringComparison.OrdinalIgnoreCase))
+            ?? buildingRows.FirstOrDefault();
+        query.Building = selectedBuilding?.Code ?? "";
+        var floorNumbers = selectedBuilding?.Floors ?? [];
+        if (query.Floor.HasValue && !floorNumbers.Contains(query.Floor.Value)) query.Floor = null;
+        var buildings = buildingRows.Select(x => new BuildingSummaryViewModel(x.Code, x.Name, Sum(factsByBuilding[x.Id]))).ToList();
+        var buildingFacts = factsByBuilding[selectedBuilding?.Id ?? 0];
 
         IEnumerable<RoomFact> filtered = buildingFacts;
         if (query.Floor.HasValue)
@@ -87,13 +60,18 @@ public sealed class RoomMapService(DormitoryDbContext db, TimeProvider timeProvi
             _ => filtered
         };
 
-        var floorMaps = filtered
+        var visibleFacts = filtered.OrderBy(x => x.Room.Floor.Number).ThenBy(x => x.Room.Code).ToList();
+        var selectedFact = visibleFacts.FirstOrDefault(x => x.Room.Code.Equals(query.Room, StringComparison.OrdinalIgnoreCase))
+            ?? visibleFacts.FirstOrDefault(x => x.Room.Code == $"{query.Building}-302")
+            ?? visibleFacts.FirstOrDefault();
+        query.Room = selectedFact?.Room.Code;
+        var floorMaps = visibleFacts
             .GroupBy(x => x.Room.Floor.Number)
             .OrderByDescending(x => x.Key)
             .Select(group => new FloorMapViewModel(
                 group.Key,
                 group.OrderBy(x => x.Room.Code)
-                    .Select(x => ToCard(x, x.Room.Id == selectedFact.Room.Id))
+                    .Select(x => ToCard(x, x.Room.Id == selectedFact?.Room.Id))
                     .ToList()))
             .ToList();
 
@@ -113,11 +91,12 @@ public sealed class RoomMapService(DormitoryDbContext db, TimeProvider timeProvi
             Query = query,
             GlobalCapacity = Sum(facts),
             SelectedBuildingCapacity = Sum(buildingFacts),
-            SelectedBuildingName = selectedBuilding.Name,
+            SelectedBuildingName = selectedBuilding?.Name ?? "Chưa có tòa",
             Buildings = buildings,
             Floors = floorMaps,
+            FloorNumbers = floorNumbers,
             RoomTypes = buildingFacts.Select(x => x.Room.RoomType).Distinct().Order().ToList(),
-            SelectedRoom = ToDetail(selectedFact),
+            SelectedRoom = selectedFact is null ? null : ToDetail(selectedFact),
             OverdueApplicationCount = await db.HousingRequests.CountAsync(
                 x => (x.Status == HousingRequestStatus.Submitted ||
                       x.Status == HousingRequestStatus.UnderReview) &&
@@ -182,8 +161,8 @@ public sealed class RoomMapService(DormitoryDbContext db, TimeProvider timeProvi
             .Select(x => new IncidentSummaryViewModel(
                 x.Code,
                 x.Title,
-                x.Priority == MaintenancePriority.Urgent ? "Khẩn cấp" : "Ưu tiên cao",
-                x.Status == MaintenanceStatus.New ? "Chưa phân công" : "Đang xử lý"))
+                MaintenanceManagementService.PriorityPresentation(x.Priority).Label,
+                MaintenanceManagementService.StatusPresentation(x.Status).Label))
             .ToList();
 
         return new RoomDetailViewModel(
@@ -194,13 +173,14 @@ public sealed class RoomMapService(DormitoryDbContext db, TimeProvider timeProvi
             label,
             css,
             students,
-            fact.Room.Amenities.Split('|', StringSplitOptions.RemoveEmptyEntries),
+            RoomAmenities.List(fact.Room.Amenities),
             incidents);
     }
 
     private static (string Label, string Css) Status(RoomFact fact)
     {
-        if (fact.Blocked > 0) return ("Bảo trì · không thể xếp", "maintenance");
+        if (fact.Blocked > 0) return (fact.Assignable > 0
+            ? $"Bảo trì · còn {fact.Assignable} chỗ" : "Bảo trì · không thể xếp", "maintenance");
         if (fact.Assignable > 0) return ($"Còn {fact.Assignable} chỗ", "available");
         if (fact.Held > 0) return ($"Đang giữ {fact.Held} chỗ", "held");
         return ("Đã đầy", "full");

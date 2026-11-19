@@ -2,7 +2,7 @@
 
 ASP.NET Core MVC dormitory-management project using Razor Views, handwritten CSS/JavaScript, SQL Server, ASP.NET Core Identity, EF Core, Serilog and SignalR infrastructure.
 
-The current implementation contains the approved Option 2 manager room map, operations dashboard, editable building/floor/room catalog, period/building reports with CSV export, student portal, application review/account management, billing ledger with period issuance, and the maintenance response desk with protected image evidence. Student room search, housing requests, move-in confirmation, invoice lookup, payment recording/reversal, repair requests, maintenance dispatch, notifications and account links use SQL Server data. The AI assistant is a clearly labelled UI/demo response layer only; model/API integration remains a later extension.
+The current implementation contains the approved Option 2 manager room map, operations dashboard, editable building/floor/room catalog, period/building reports with CSV export, student portal, application review/account management, billing ledger with period issuance, and the maintenance response desk with protected image evidence. Student room search, housing requests, move-in confirmation, invoice lookup, payment recording/reversal, repair requests, maintenance dispatch, notifications and account links use SQL Server data. The student AI assistant calls Google Gemini through an authenticated backend endpoint and guides users through implemented workflows.
 
 ## Run locally
 
@@ -17,7 +17,7 @@ dotnet test DormitoryManagementSystem.sln -c Release
 dotnet run --project DormitoryManagementSystem
 ```
 
-The default test command runs policy tests and skips SQL integration cases when no test administrator connection is configured. To run the five real SQL Server integration tests against disposable databases:
+The default test command runs policy tests and skips SQL integration cases when no test administrator connection is configured. To run the real SQL Server integration tests against disposable databases:
 
 ```powershell
 $env:DORM_TEST_SQL_ADMIN_CONNECTION = "Server=DESKTOP-OSSBOT1\TUANANH;Database=master;Trusted_Connection=True;TrustServerCertificate=True;MultipleActiveResultSets=true"
@@ -44,6 +44,79 @@ npm run audit
 ```
 
 Browser tools use project-local Playwright and Sharp packages. Checks default to `http://127.0.0.1:5001`; set `DORM_E2E_BASE_URL` to check a different running instance.
+
+The student room preview uses a shared Three.js room model that adapts to the room's numbered beds and supported catalogue amenities. New amenity names can be mapped in `frontend/dorm-room-model.js`. The form works without WebGL. The generated browser bundle is checked in so the .NET app can run without Node.js. After editing the model or viewer under `frontend/`, run `npm ci` and `npm run build:room-preview`.
+
+Every room includes an en-suite WC. Demo seeding assigns different optional amenities across rooms. An existing demo database can refresh rooms that still match the original fixture with `--DemoData:RefreshRoomAmenities=true` in Development.
+
+## VNPAY Sandbox
+
+The student invoice page can open VNPAY Sandbox for the current outstanding balance. Use a demo database or a test deployment. The feature is disabled by default and cannot redirect to a live payment gateway.
+
+From this workspace, configure a valid merchant in .NET User Secrets before starting the app in Development:
+
+```powershell
+dotnet user-secrets set "Vnpay:MerchantCode" "<sandbox website code>" --project DormitoryManagementSystem
+$sandboxSecret = Read-Host "Active VNPAY Sandbox signing secret" -MaskInput
+dotnet user-secrets set "Vnpay:HashSecret" $sandboxSecret --project DormitoryManagementSystem
+Remove-Variable sandboxSecret
+dotnet user-secrets set "Vnpay:PublicBaseUrl" "https://<sandbox-app-host>" --project DormitoryManagementSystem
+dotnet user-secrets set "Vnpay:Enabled" "true" --project DormitoryManagementSystem
+```
+
+The app generates the browser return URL `/payments/vnpay/return`. Register `https://<sandbox-app-host>/payments/vnpay/ipn` as the IPN endpoint with VNPAY for the selected merchant. It must be reachable by VNPAY over HTTPS. An HTTP loopback base URL can be used for local callback simulation only. See the [VNPAY integration guide](https://sandbox.vnpayment.vn/apis/docs/thanh-toan-pay/pay.html).
+
+Only a verified IPN can add a receipt. Browser returns show the stored status and can be refreshed. Pending sessions expire after 15 minutes; a verified late or ambiguous result that cannot be applied safely is shown under **Thu phí → VNPAY Sandbox · Cần đối soát**. The app does not send refunds to VNPAY.
+
+The automated browser check skips the real gateway and runs with a disposable database. After a Release build and `npm ci`, run `pwsh -NoProfile -File .scratch/vnpay-sandbox/verify.ps1` on the configured SQL Server machine.
+
+## Realtime notifications
+
+SignalR keeps signed-in browser tabs synchronized without external credentials. Students see their unread count, inbox, and recent notifications update. Managers see the attention bell and sidebar counts update from the same rules used for the initial render.
+
+The authenticated hub sends a change signal after the SQL write, not the notification content. Each browser fetches its own latest state. On reconnect or return to the tab it catches up from SQL Server. The browser client is bundled locally under `wwwroot/vendor/signalr` (Microsoft SignalR 8.0.29, MIT); no CDN or Node build is required to run the app.
+
+Run `pwsh -NoProfile -File .scratch/vnpay-sandbox/verify.ps1 -Scenario Realtime` after the Release build and `npm ci` to verify role/recipient isolation, open tabs, and network recovery against a disposable SQL Server database.
+
+## Student help and Gemini
+
+The student help dialog posts to `/Chatbot/Ask`. Its server-side HTTP client uses the [Gemini generateContent API](https://ai.google.dev/api/generate-content), with `gemini-3.5-flash-lite` configured under `Chatbot:Model`. Configure the key outside source control:
+
+```powershell
+dotnet user-secrets set "Chatbot:ApiKey" "<your-gemini-api-key>" --project DormitoryManagementSystem
+```
+
+For deployment, set the environment variable `Chatbot__ApiKey`. The browser receives no API key. Restart the application after initial configuration.
+
+Chat is restricted to the Student role, requires an antiforgery token and allows eight requests per account per minute. Questions are limited to 1,000 characters. Supported workflow questions are mapped to predefined prompts before reaching Gemini, with a 30-second provider timeout. The model receives neither the conversation nor account records. Questions about personal balances open the signed-in student's invoice page.
+
+The document lookup needs no API key. It matches a question or configured alias, ignoring Vietnamese accents, capitalization and punctuation. The workflow router also recognizes phrases within naturally worded questions and keeps the source when a matching excerpt exists. Room-availability answers show up to three rooms with assignable beds from the authenticated student's Tìm phòng results. A short follow-up can name a building. Unclear questions prompt for clarification. If the assistant lacks a source for policy or fee information, it links to the Ban quản lý contact section. The Development environment also shows labeled examples from `Knowledge/student-help-demo.json`. Production citations use the approved catalog.
+
+Publish confirmed contact details with `StudentSupport:Office`, `StudentSupport:Phone`, and `StudentSupport:Email` in server configuration (or `StudentSupport__Office`, `StudentSupport__Phone`, and `StudentSupport__Email` in the environment). The assistant and `/Home/Privacy#contact` use those same public details. When no phone or email is configured, they direct students to the KTX office.
+
+After Ban quản lý verifies an excerpt, add it to `App_Data/chatbot-knowledge.json` in the application's content root and restart. The catalog lives outside `wwwroot` and is excluded from Git and publish artifacts. Include the current dorm rules, housing eligibility, published fees and deadlines, procedures for registration, transfer and checkout, repair guidance, and the management contact page. Each excerpt has its own question aliases and source reference:
+
+```json
+[
+  {
+    "questions": ["Nội quy KTX", "Xem nội quy ở đâu?"],
+    "answer": "<Trích đoạn đã được Ban quản lý xác nhận>",
+    "document": "<Tên văn bản và phiên bản>",
+    "section": "<Mục được trích>",
+    "approvalReference": "<Số văn bản hoặc mã xác nhận nội bộ>",
+    "url": "https://example.invalid/noi-quy#mu-c",
+    "action": "rooms"
+  }
+]
+```
+
+Use distinct aliases for each excerpt. `url` and `action` are optional. Use a public HTTPS URL if available. The supported actions are `rooms`, `applications`, `invoices`, `repairs`, `notifications` and `password`.
+
+## Workspace UX
+
+The manager and student interfaces share `wwwroot/css/workspace.css` and small browser-native enhancements in `wwwroot/js/workspace.js`. The overview prioritizes actionable work; application, billing and maintenance screens keep actions inside the selected record. Mobile worklists and advanced filters disclose on demand. Keyboard navigation, persistent validation feedback, optional notes and antiforgery-protected forms remain available across both portals.
+
+Visual direction and component rules are recorded in `.interface-design/system.md`. No UI framework or database migration is required for this refinement.
 
 ## Current verified data
 
@@ -87,8 +160,8 @@ Browser tools use project-local Playwright and Sharp packages. Checks default to
 - Separate role-protected student layout, responsive dashboard and mobile bottom navigation.
 - Search only returns assignable rooms compatible with the student's profile.
 - Housing-request and repair forms use antiforgery validation and derive the student/room identity from the signed-in account.
-- Invoice totals and line items are database-backed; online payment remains explicitly out of scope.
-- AI help includes grounded demo answers, source labels, known-function links and a no-information fallback. No API key or external model call is present.
+- Invoice totals and line items are database-backed. VNPAY Sandbox is an optional test-only checkout for outstanding invoices.
+- AI help calls Gemini from the backend, follows implemented workflow guidance and clearly identifies AI responses. The key stays in User Secrets or deployment environment variables; unknown regulations and personal-data queries defer to management or the relevant portal page.
 
 ## Manager application and account checkpoint
 
@@ -142,7 +215,7 @@ Browser tools use project-local Playwright and Sharp packages. Checks default to
 - Students can upload up to three server-validated JPG/PNG/WebP evidence files per repair request. Files live outside `wwwroot` and are returned only through role/owner-authorized endpoints.
 - Student notifications have unread counts, mark-one and mark-all-read flows. Every authenticated user can change their own password without exposing credentials in source.
 
-This completes the agreed core management scope. Real AI/document retrieval, online payment and realtime push clients remain deliberate extensions; the current chatbot uses clearly marked demo knowledge and SignalR remains infrastructure-only.
+This completes the agreed core management scope. The student chatbot calls Gemini for workflow guidance, SignalR updates notifications in open tabs, and VNPAY checkout is available for Sandbox testing. Document retrieval, personal-data tools, live payments, refunds and background device notifications remain separate work.
 
 Generated design previews, screenshots, logs, build outputs and working documents are intentionally ignored by Git. README files and the interface-system contract remain versioned. Keep production secrets in environment variables or .NET User Secrets, never in tracked settings.
 

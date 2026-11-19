@@ -1,0 +1,16 @@
+{
+  "base": "http://localhost:5001",
+  "checks": [
+    "anonymous blocked",
+    "antiforgery required",
+    "roles and input lengths validated",
+    "real Gemini answer follows move-in handover",
+    "follow-up history reaches backend",
+    "desktop and mobile layout",
+    "per-account rate limit",
+    "error recovery and safe text rendering",
+    "no browser runtime errors"
+  ],
+  "answer": "Chào bạn, khi đơn\n chuyển phòng được duyệt, hệ thống sẽ giữ một chỗ trong 7 ngày và chuyển sang trạng thái Chờ nhận phòng. Bạn vẫn ở phòng cũ cho đến khi Ban quản lý thực hiện Xác nhận nhận phòng. Khi đó, lượt lưu trú cũ mới kết thúc và lượt lưu trú mới bắt đầu. Nếu cần kiểm tra trạng thái đơn hiện tại, vui lòng mở giao diện Đăng ký của tôi.",
+  "followup": "Bước xác nhận nhận phòng do Ban quản lý thực hiện. Khi Ban quản lý xác nhận, lượt lưu trú mới sẽ chính thức bắt đầu và lượt lưu trú cũ kết thúc. Nếu bạn cần biết thêm chi tiết về đơn của mình, vui lòng mở giao diện Đăng ký của tôi."
+}

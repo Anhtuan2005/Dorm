@@ -5,7 +5,7 @@
 }
 
 <section class="student-page-head application-student-head">
-    <div><p class="student-kicker">Hồ sơ lưu trú</p><h1>Đăng ký của tôi</h1><p>Theo dõi lượt xử lý, bổ sung hồ sơ và xem đầy đủ dấu vết quyết định.</p></div>
+    <div><h1>Đăng ký của tôi</h1><p>Xem tiến độ đơn lưu trú và bổ sung thông tin khi được yêu cầu.</p></div>
     <div class="student-page-actions">
         @if (!Model.HasActiveRequest)
         {
@@ -29,18 +29,25 @@ else
         {
             <article class="application-card @(request.CanCancel ? "current" : "") @(request.CanSupplement ? "needs-student-action" : "")">
                 <header>
-                    <div><span class="request-status @request.StatusClass">@request.StatusLabel</span><h2>@request.TypeLabel@(request.TargetRoomCode is null ? "" : $" · Phòng {request.TargetRoomCode}")</h2><p>@request.Code · Gửi lúc @request.SubmittedAt.ToLocalTime().ToString("dd/MM/yyyy, HH:mm")</p></div>
+                    <div><span class="request-status @request.StatusClass">@request.StatusLabel</span><h2>@request.TypeLabel@(request.TargetRoomCode is null ? "" : $" · Phòng {request.TargetRoomCode}")</h2><p>@request.Code · Gửi lúc @request.SubmittedAt.ToLocalTime().ToString("dd/MM/yyyy, HH:mm")</p>@if (request.TargetBedNumber is int bed) { <p>Giường @bed.ToString("00")</p> }</div>
                     @if (request.CanCancel)
                     {
                         <form asp-action="CancelHousingRequest" method="post" data-confirm="Bạn chắc chắn muốn hủy đơn @request.Code?"><input type="hidden" name="Id" value="@request.Id" /><input type="hidden" name="RowVersion" value="@request.RowVersion" /><button type="submit" class="student-danger-text">Hủy đơn</button></form>
                     }
                 </header>
 
-                <section class="student-request-handoff @request.StatusClass">
-                    <span><small>Lượt xử lý hiện tại</small><strong>@request.ResponsibilityLabel</strong></span>
-                    <i><svg><use href="@(request.CanSupplement ? "#s-file" : "#s-clock")" /></svg></i>
-                    <span><small>Việc tiếp theo</small><strong>@request.NextActionLabel</strong><em>Đã chờ @WaitLabel(request.WaitingHours)</em></span>
-                </section>
+                @if (request.CanCancel)
+                {
+                    <section class="student-request-handoff @request.StatusClass">
+                        <span><small>Lượt xử lý hiện tại</small><strong>@request.ResponsibilityLabel</strong></span>
+                        <i aria-hidden="true"><svg><use href="@(request.CanSupplement ? "#s-file" : "#s-clock")" /></svg></i>
+                        <span><small>Việc tiếp theo</small><strong>@request.NextActionLabel</strong>@if (request.WaitingHours > 0) { <em>Đã chờ @WaitLabel(request.WaitingHours)</em> }</span>
+                    </section>
+                }
+                else if (!string.IsNullOrWhiteSpace(request.DecisionReason))
+                {
+                    <p class="student-request-decision">@request.DecisionReason</p>
+                }
 
                 @if (request.CanSupplement)
                 {

@@ -8,6 +8,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="Knowledge/student-help-demo.json" LogicalName="StudentHelpDemo" />
+    <Content Update="App_Data/chatbot-knowledge.json" CopyToOutputDirectory="Never" CopyToPublishDirectory="Never" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.28" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.28">
       <PrivateAssets>all</PrivateAssets>

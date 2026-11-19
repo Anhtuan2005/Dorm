@@ -1,0 +1,167 @@
+[
+  {
+    "width": 292,
+    "dpr": 1,
+    "sizes": [
+      {
+        "selector": ".request-queue > header strong",
+        "px": 16
+      },
+      {
+        "selector": ".queue-person strong",
+        "px": 15
+      },
+      {
+        "selector": ".queue-person small",
+        "px": 12
+      },
+      {
+        "selector": ".request-queue-item > .request-state",
+        "px": 12
+      },
+      {
+        "selector": ".queue-route",
+        "px": 13
+      },
+      {
+        "selector": ".request-queue-item time",
+        "px": 12
+      }
+    ],
+    "overflow": false,
+    "clipped": [],
+    "overlaps": 0
+  },
+  {
+    "width": 305,
+    "dpr": 1.25,
+    "sizes": [
+      {
+        "selector": ".request-queue > header strong",
+        "px": 16
+      },
+      {
+        "selector": ".queue-person strong",
+        "px": 15
+      },
+      {
+        "selector": ".queue-person small",
+        "px": 12
+      },
+      {
+        "selector": ".request-queue-item > .request-state",
+        "px": 12
+      },
+      {
+        "selector": ".queue-route",
+        "px": 13
+      },
+      {
+        "selector": ".request-queue-item time",
+        "px": 12
+      }
+    ],
+    "overflow": false,
+    "clipped": [],
+    "overlaps": 0
+  },
+  {
+    "width": 360,
+    "dpr": 1.25,
+    "sizes": [
+      {
+        "selector": ".request-queue > header strong",
+        "px": 16
+      },
+      {
+        "selector": ".queue-person strong",
+        "px": 15
+      },
+      {
+        "selector": ".queue-person small",
+        "px": 12
+      },
+      {
+        "selector": ".request-queue-item > .request-state",
+        "px": 12
+      },
+      {
+        "selector": ".queue-route",
+        "px": 13
+      },
+      {
+        "selector": ".request-queue-item time",
+        "px": 12
+      }
+    ],
+    "overflow": false,
+    "clipped": [],
+    "overlaps": 0
+  },
+  {
+    "width": 420,
+    "dpr": 1,
+    "sizes": [
+      {
+        "selector": ".request-queue > header strong",
+        "px": 16
+      },
+      {
+        "selector": ".queue-person strong",
+        "px": 15
+      },
+      {
+        "selector": ".queue-person small",
+        "px": 12
+      },
+      {
+        "selector": ".request-queue-item > .request-state",
+        "px": 12
+      },
+      {
+        "selector": ".queue-route",
+        "px": 13
+      },
+      {
+        "selector": ".request-queue-item time",
+        "px": 12
+      }
+    ],
+    "overflow": false,
+    "clipped": [],
+    "overlaps": 0
+  },
+  {
+    "width": 740,
+    "dpr": 1.25,
+    "sizes": [
+      {
+        "selector": ".request-queue > header strong",
+        "px": 16
+      },
+      {
+        "selector": ".queue-person strong",
+        "px": 15
+      },
+      {
+        "selector": ".queue-person small",
+        "px": 12
+      },
+      {
+        "selector": ".request-queue-item > .request-state",
+        "px": 12
+      },
+      {
+        "selector": ".queue-route",
+        "px": 13
+      },
+      {
+        "selector": ".request-queue-item time",
+        "px": 12
+      }
+    ],
+    "overflow": false,
+    "clipped": [],
+    "overlaps": 0
+  }
+]

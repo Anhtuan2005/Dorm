@@ -18,9 +18,10 @@ public sealed class ApplicationsController(
         [FromQuery] ApplicationQueueQuery query,
         CancellationToken cancellationToken)
     {
-        ViewData["Title"] = "Đơn đăng ký";
+        ViewData["Title"] = "Đơn lưu trú";
         ViewData["ActiveNav"] = "applications";
-        return View(await applicationService.GetQueueAsync(query, cancellationToken));
+        var model = await applicationService.GetQueueAsync(query, cancellationToken);
+        return Request.Headers["X-Operations-Refresh"] == "true" ? PartialView(nameof(Index), model) : View(model);
     }
 
     [HttpPost, ValidateAntiForgeryToken]

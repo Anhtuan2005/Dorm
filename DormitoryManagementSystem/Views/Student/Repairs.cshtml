@@ -1,15 +1,53 @@
 @model StudentRepairsViewModel
 @{
     Layout = "_StudentLayout";
+    var draft = Model.NewRequest;
+    var reopen = ViewData["OpenRepairDialog"] is true;
 }
 
-<section class="student-page-head"><div><p class="student-kicker">Phòng @Model.CurrentRoomCode</p><h1>Yêu cầu hỗ trợ</h1><p>Báo sự cố trong phòng và theo dõi từng cập nhật từ ban quản lý.</p></div><button class="student-primary page-action" type="button" data-repair-open id="new-request"><svg><use href="#s-plus" /></svg>Gửi yêu cầu</button></section>
+<section class="student-page-head"><div><h1>Yêu cầu hỗ trợ</h1><p>@(Model.CanCreateRepair ? $"Báo sự cố phòng {Model.CurrentRoomCode} và theo dõi tiến độ xử lý." : "Xem lại các yêu cầu đã gửi. Bạn cần có phòng hiện tại để báo sự cố mới.")</p></div>@if (Model.CanCreateRepair) { <button class="student-primary page-action" type="button" data-repair-open id="new-request"><svg><use href="#s-plus" /></svg>Gửi yêu cầu</button> }</section>
 
 <section class="repair-guidance"><span><svg><use href="#s-help" /></svg></span><div><strong>Nếu có nguy hiểm tức thời</strong><p>Ngắt nguồn điện/nước nếu an toàn và gọi trực ban <a href="tel:02838965501">028 3896 5501</a>. Không chờ phản hồi trên hệ thống.</p></div></section>
 
+@if (Model.SharedRepairs.Count > 0)
+{
+    <section class="shared-repairs" aria-labelledby="shared-repairs-title">
+        <h2 id="shared-repairs-title">Sự cố phòng @Model.CurrentRoomCode</h2>
+        <p>Theo dõi yêu cầu đã có để nhận thông báo tiến độ.</p>
+        <div class="shared-repair-list">
+            @foreach (var repair in Model.SharedRepairs)
+            {
+                <article class="shared-repair" id="repair-@repair.Id">
+                    <div>
+                        <h3>@repair.Title</h3>
+                        <p>@repair.Code · @repair.Category · Cập nhật @repair.UpdatedAt.ToLocalTime().ToString("dd/MM, HH:mm")</p>
+                    </div>
+                    <span class="repair-status @repair.StatusClass">@repair.Status</span>
+                    <form asp-action="FollowRepair" method="post">
+                        <input type="hidden" name="requestId" value="@repair.Id" />
+                        <input type="hidden" name="following" value="@(!repair.IsFollowing ? "true" : "false")" />
+                        <button class="student-secondary" type="submit">
+                            @if (!repair.IsFollowing) { <svg aria-hidden="true"><use href="#s-bell" /></svg> }
+                            @(repair.IsFollowing ? "Ngừng theo dõi" : "Theo dõi sự cố")
+                        </button>
+                    </form>
+                </article>
+            }
+        </div>
+    </section>
+}
+
+@if (Model.SharedRepairs.Count > 0 && Model.Repairs.Count > 0)
+{
+    <h2 class="own-repairs-heading">Yêu cầu của tôi</h2>
+}
+
 @if (Model.Repairs.Count == 0)
 {
-    <section class="student-empty"><span><svg><use href="#s-tool" /></svg></span><h2>Chưa có yêu cầu sửa chữa</h2><p>Khi phát hiện hư hỏng, hãy mô tả rõ vị trí và mức độ ảnh hưởng.</p><button type="button" data-repair-open>Gửi yêu cầu đầu tiên</button></section>
+    @if (Model.SharedRepairs.Count == 0)
+    {
+        <section class="student-empty"><span aria-hidden="true"><svg><use href="#s-tool" /></svg></span><h2>@(Model.CanCreateRepair ? "Chưa có yêu cầu sửa chữa" : "Bạn chưa có phòng hiện tại")</h2><p>@(Model.CanCreateRepair ? "Sau khi bạn gửi yêu cầu, tiến độ sẽ xuất hiện tại đây." : "Bạn có thể tìm phòng và gửi đơn đăng ký ở KTX.")</p>@if (!Model.CanCreateRepair) { <a asp-action="Rooms">Tìm phòng</a> }</section>
+    }
 }
 else
 {
@@ -18,6 +56,7 @@ else
         {
             <article class="repair-card">
                 <header><div><span class="repair-status @repair.StatusClass">@repair.StatusLabel</span><h2>@repair.Title</h2><p>@repair.Code · Phòng @repair.RoomCode · @repair.Category</p></div><div class="repair-meta"><small>Mức độ</small><strong>@repair.PriorityLabel</strong><small>Cập nhật @repair.UpdatedAt.ToLocalTime().ToString("dd/MM, HH:mm")</small></div></header>
+                @if (repair.ShareWithRoom) { <p class="repair-sharing-note">Đã chia sẻ tiêu đề và tiến độ với phòng.</p> }
                 <p class="repair-description">@repair.Description</p>
                 @if (repair.Attachments.Count > 0) { <div class="repair-attachments">@foreach (var attachment in repair.Attachments) { <a asp-controller="Attachments" asp-action="Maintenance" asp-route-id="@attachment.Id" target="_blank"><img src="@Url.Action("Maintenance", "Attachments", new { id = attachment.Id })" alt="Ảnh hiện trường @repair.Code" loading="lazy" /><span>@attachment.FileName</span></a> }</div> }
                 <div class="repair-timeline">
@@ -31,16 +70,36 @@ else
     </div>
 }
 
-<dialog class="student-dialog repair-dialog" data-repair-dialog aria-labelledby="repair-title">
-    <form method="post" asp-action="CreateRepair" enctype="multipart/form-data">
-        <header><div><p>Phòng @Model.CurrentRoomCode</p><h2 id="repair-title">Mô tả sự cố cần hỗ trợ</h2></div><button type="button" data-dialog-close aria-label="Đóng"><svg><use href="#s-close" /></svg></button></header>
-        <div class="form-grid">
-            <label class="student-form-field"><span>Nhóm sự cố</span><select name="Category" required><option value="">Chọn nhóm</option><option>Điện nước</option><option>Thiết bị phòng</option><option>Internet</option><option>Vệ sinh</option><option>An ninh</option><option>Khác</option></select></label>
-            <label class="student-form-field"><span>Mức độ ảnh hưởng</span><select name="Priority" required><option value="Low">Ảnh hưởng nhẹ</option><option value="Medium" selected>Ảnh hưởng vừa</option><option value="High">Ảnh hưởng lớn</option><option value="Urgent">Khẩn cấp</option></select></label>
-        </div>
-        <label class="student-form-field"><span>Tiêu đề</span><input name="Title" minlength="5" maxlength="180" required placeholder="Ví dụ: Đèn trần không hoạt động" /></label>
-        <label class="student-form-field"><span>Mô tả chi tiết</span><textarea name="Description" rows="5" minlength="15" maxlength="1000" required placeholder="Vị trí, thời điểm phát hiện và mức độ ảnh hưởng..."></textarea><small>Không gửi thông tin nhạy cảm hoặc ảnh giấy tờ cá nhân.</small></label>
-        <label class="student-form-field attachment-picker"><span>Ảnh hiện trường <small>Không bắt buộc</small></span><input name="Attachments" type="file" accept="image/jpeg,image/png,image/webp" multiple /><small>Tối đa 3 ảnh JPG, PNG hoặc WebP; mỗi ảnh không quá 5 MB.</small></label>
-        <footer><button type="button" class="student-secondary" data-dialog-close>Hủy</button><button type="submit" class="student-primary">Gửi yêu cầu</button></footer>
-    </form>
-</dialog>
+@if (Model.CanCreateRepair)
+{
+    <dialog class="student-dialog repair-dialog" data-repair-dialog data-reopen="@reopen.ToString().ToLowerInvariant()" aria-labelledby="repair-title">
+        <form method="post" asp-action="CreateRepair" enctype="multipart/form-data">
+            <header><div><h2 id="repair-title">Báo sự cố phòng @Model.CurrentRoomCode</h2></div><button type="button" data-dialog-close aria-label="Đóng"><svg><use href="#s-close" /></svg></button></header>
+            @Html.ValidationSummary(false, "", new { @class = "form-error-summary", role = "alert", tabindex = "-1" })
+            <div class="form-grid">
+                <label class="student-form-field"><span>Nhóm sự cố</span><select name="Category" required><option value="">Chọn nhóm</option>@foreach (var category in new[] { "Điện nước", "Thiết bị phòng", "Internet", "Vệ sinh", "An ninh", "Khác" }) { <option selected="@(draft.Category == category)">@category</option> }</select></label>
+                <label class="student-form-field"><span>Mức độ ảnh hưởng</span><select name="Priority" required>@foreach (var option in new[] { (Value: "Low", Label: "Ảnh hưởng nhẹ"), (Value: "Medium", Label: "Ảnh hưởng vừa"), (Value: "High", Label: "Ảnh hưởng lớn"), (Value: "Urgent", Label: "Khẩn cấp") }) { <option value="@option.Value" selected="@(draft.Priority == option.Value)">@option.Label</option> }</select></label>
+            </div>
+            <label class="student-form-field"><span>Tiêu đề</span><input name="Title" value="@draft.Title" minlength="5" maxlength="180" required placeholder="Ví dụ: Đèn trần không hoạt động" /></label>
+            <label class="student-form-field"><span>Mô tả chi tiết</span><textarea name="Description" rows="4" minlength="15" maxlength="1000" required aria-describedby="repair-description-help" placeholder="Vị trí, thời điểm phát hiện và mức độ ảnh hưởng...">@draft.Description</textarea><small id="repair-description-help">Từ 15 đến 1.000 ký tự.</small></label>
+            <label class="repair-sharing-choice">
+                <input type="checkbox" name="ShareWithRoom" value="true" checked="@draft.ShareWithRoom" aria-describedby="repair-sharing-help" />
+                <span><strong>Chia sẻ sự cố với bạn cùng phòng</strong><small id="repair-sharing-help">Bạn cùng phòng có thể xem tiêu đề, nhóm sự cố và tiến độ. Mô tả và ảnh được giữ riêng.</small></span>
+            </label>
+            <div class="student-form-field attachment-picker">
+                <span>Ảnh hiện trường <small>Không bắt buộc</small></span>
+                <div class="attachment-control">
+                    <label for="repair-attachments">Chọn ảnh</label>
+                    <input id="repair-attachments" name="Attachments" type="file" accept="image/jpeg,image/png,image/webp" multiple aria-label="Chọn ảnh hiện trường" aria-describedby="attachment-help attachment-error" data-attachment-input data-maximum-files="3" data-maximum-size="5242880" />
+                </div>
+                <small id="attachment-help">Tối đa 3 ảnh JPG, PNG hoặc WebP, mỗi ảnh không quá 5 MB.</small>
+            </div>
+            <p class="field-error" id="attachment-error" role="alert" data-attachment-error hidden></p>
+            <button class="attachment-clear" type="button" data-attachment-clear hidden>Bỏ ảnh đã chọn</button>
+            <p class="attachment-selection-count" data-attachment-count role="status" aria-live="polite"></p>
+            <ul class="attachment-previews" data-attachment-previews hidden></ul>
+            @if (ViewData["RepairAttachmentsCleared"] is true) { <p class="form-hint">Nội dung đã được giữ lại. Vui lòng chọn lại ảnh đính kèm trước khi gửi.</p> }
+            <footer><button type="button" class="student-secondary" data-dialog-close>Hủy</button><button type="submit" class="student-primary">Gửi yêu cầu</button></footer>
+        </form>
+    </dialog>
+}

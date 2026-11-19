@@ -6,5 +6,5 @@ namespace DormitoryManagementSystem.ViewComponents;
 public sealed class ApplicationQueueBadgeViewComponent(IApplicationManagementService service) : ViewComponent
 {
     public async Task<IViewComponentResult> InvokeAsync() =>
-        Content((await service.GetActiveCountAsync(HttpContext.RequestAborted)).ToString());
+        Content((await service.GetManagementWorkCountAsync(HttpContext.RequestAborted)).ToString());
 }

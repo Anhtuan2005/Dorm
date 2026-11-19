@@ -11,33 +11,65 @@ public sealed class StudentPortalService(
     DormitoryDbContext db,
     IBillingLedgerService billingLedger,
     IMaintenanceAttachmentStorage attachmentStorage,
-    TimeProvider timeProvider) : IStudentPortalService
+    TimeProvider timeProvider,
+    RealtimeUpdates? live = null) : IStudentPortalService
 {
     private static readonly MaintenanceStatus[] OpenRepairStatuses =
         [MaintenanceStatus.New, MaintenanceStatus.Assigned, MaintenanceStatus.InProgress, MaintenanceStatus.WaitingParts];
 
-    public async Task<StudentNotificationsViewModel> GetNotificationsAsync(string userId, CancellationToken cancellationToken = default)
+    public async Task<StudentNotificationsViewModel> GetNotificationsAsync(string userId, int page, CancellationToken cancellationToken = default)
     {
-        var profile = await LoadProfileAsync(userId, cancellationToken);
+        const int pageSize = 25;
+        var counts = await db.Notifications.Where(x => x.UserId == userId).GroupBy(x => x.UserId)
+            .Select(group => new { Total = group.Count(), Unread = group.Count(x => x.ReadAt == null) })
+            .SingleOrDefaultAsync(cancellationToken);
+        var total = counts?.Total ?? 0;
+        var totalPages = Math.Max(1, (int)Math.Ceiling(total / (double)pageSize));
+        page = Math.Clamp(page, 1, totalPages);
+        return new()
+        {
+            Notifications = await LoadNotificationFeedAsync(userId, pageSize, cancellationToken, (page - 1) * pageSize),
+            UnreadCount = counts?.Unread ?? 0,
+            TotalCount = total,
+            Page = page,
+            TotalPages = totalPages
+        };
+    }
+
+    public Task<int> GetUnreadNotificationCountAsync(string userId, CancellationToken cancellationToken = default) =>
+        db.Notifications.AsNoTracking().CountAsync(x => x.UserId == userId && x.ReadAt == null, cancellationToken);
+
+    public Task<IReadOnlyList<StudentNotificationViewModel>> GetRecentNotificationsAsync(string userId, CancellationToken cancellationToken = default) =>
+        LoadNotificationFeedAsync(userId, 3, cancellationToken);
+
+    private async Task<IReadOnlyList<StudentNotificationViewModel>> LoadNotificationFeedAsync(
+        string userId, int limit, CancellationToken cancellationToken, int skip = 0)
+    {
         var notifications = await db.Notifications.AsNoTracking().Where(x => x.UserId == userId)
-            .OrderByDescending(x => x.CreatedAt).Take(80).ToListAsync(cancellationToken);
-        return new StudentNotificationsViewModel { Student = ToIdentity(profile), Notifications = notifications.Select(ToNotification).ToList() };
+            .OrderByDescending(x => x.CreatedAt).ThenByDescending(x => x.Id).Skip(skip).Take(limit).ToListAsync(cancellationToken);
+        return notifications.Select(ToNotification).ToList();
     }
 
     public async Task<string?> ReadNotificationAsync(string userId, long id, CancellationToken cancellationToken = default)
     {
         var notification = await db.Notifications.SingleOrDefaultAsync(x => x.Id == id && x.UserId == userId, cancellationToken);
         if (notification is null) return null;
-        notification.ReadAt ??= timeProvider.GetUtcNow().UtcDateTime;
-        await db.SaveChangesAsync(cancellationToken);
+        if (notification.ReadAt is null)
+        {
+            notification.ReadAt = timeProvider.GetUtcNow().UtcDateTime;
+            await db.SaveChangesAsync(cancellationToken);
+            if (live is not null) await live.NotifyStudentsAsync(userId);
+        }
         return SafeLocalUrl(notification.TargetUrl);
     }
 
     public async Task<int> MarkAllNotificationsReadAsync(string userId, CancellationToken cancellationToken = default)
     {
         var now = timeProvider.GetUtcNow().UtcDateTime;
-        return await db.Notifications.Where(x => x.UserId == userId && x.ReadAt == null)
+        var changed = await db.Notifications.Where(x => x.UserId == userId && x.ReadAt == null)
             .ExecuteUpdateAsync(setters => setters.SetProperty(x => x.ReadAt, now), cancellationToken);
+        if (changed != 0 && live is not null) await live.NotifyStudentsAsync(userId);
+        return changed;
     }
 
     public async Task<StudentDashboardViewModel> GetDashboardAsync(
@@ -46,9 +78,15 @@ public sealed class StudentPortalService(
     {
         var profile = await LoadProfileWithStayAsync(userId, cancellationToken);
         var currentStay = profile.Stays.SingleOrDefault(x => x.EndedAt == null);
-        var currentRoomOccupants = currentStay is null ? 0 : await db.Stays.CountAsync(
-            x => x.RoomId == currentStay.RoomId && x.EndedAt == null,
-            cancellationToken);
+        var roommateNames = currentStay is null ? [] : await db.Stays.AsNoTracking()
+            .Where(other => other.RoomId == currentStay.RoomId && other.EndedAt == null &&
+                other.StudentProfileId != profile.Id &&
+                db.Stays.Any(mine => mine.Id == currentStay.Id && mine.RoomId == other.RoomId &&
+                    mine.EndedAt == null && mine.StudentProfile.UserId == userId))
+            .OrderBy(other => other.StudentProfile.FullName)
+            .ThenBy(other => other.StudentProfileId)
+            .Select(other => other.StudentProfile.FullName)
+            .ToListAsync(cancellationToken);
         var request = await db.HousingRequests.AsNoTracking()
             .Include(x => x.TargetRoom)
             .Where(x => x.StudentProfileId == profile.Id && HousingRequestWorkflow.ActiveStatuses.Contains(x.Status))
@@ -65,20 +103,16 @@ public sealed class StudentPortalService(
             .Where(x => x.ReporterStudentId == profile.Id && OpenRepairStatuses.Contains(x.Status))
             .OrderByDescending(x => x.UpdatedAt)
             .FirstOrDefaultAsync(cancellationToken);
-        var notifications = await db.Notifications.AsNoTracking()
-            .Where(x => x.UserId == userId)
-            .OrderByDescending(x => x.CreatedAt)
-            .Take(4)
-            .ToListAsync(cancellationToken);
+        var notifications = await GetRecentNotificationsAsync(userId, cancellationToken);
 
         return new StudentDashboardViewModel
         {
             Student = ToIdentity(profile),
-            CurrentStay = currentStay is null ? null : ToStay(currentStay, currentRoomOccupants),
+            CurrentStay = currentStay is null ? null : ToStay(currentStay, roommateNames),
             ActiveRequest = request is null ? null : ToHousingRequest(request, timeProvider.GetUtcNow().UtcDateTime),
             NextInvoice = invoice is null ? null : ToInvoice(invoice),
             ActiveRepair = repair is null ? null : ToRepair(repair),
-            Notifications = notifications.Select(ToNotification).ToList()
+            Notifications = notifications
         };
     }
 
@@ -91,14 +125,7 @@ public sealed class StudentPortalService(
         var currentStay = profile.Stays.SingleOrDefault(x => x.EndedAt == null);
         var currentRoomId = currentStay?.RoomId;
         var now = timeProvider.GetUtcNow().UtcDateTime;
-        var rooms = await db.Rooms.AsNoTracking()
-            .Include(x => x.Floor).ThenInclude(x => x.Building)
-            .Include(x => x.Stays.Where(stay => stay.EndedAt == null))
-            .Include(x => x.Holds.Where(hold => hold.ReleasedAt == null && hold.ExpiresAt > now))
-            .Include(x => x.MaintenanceRequests.Where(repair => OpenRepairStatuses.Contains(repair.Status)))
-            .AsSplitQuery()
-            .Where(x => x.RoomType == profile.Gender)
-            .ToListAsync(cancellationToken);
+        var rooms = await SearchableRooms(profile.Gender, now).ToListAsync(cancellationToken);
 
         var facts = rooms.Select(room =>
         {
@@ -107,21 +134,24 @@ public sealed class StudentPortalService(
         }).Where(x => x.Assignable > 0 && x.Room.Id != currentRoomId).ToList();
 
         var buildings = facts.Select(x => x.Room.Floor.Building.Code).Distinct().Order().ToList();
-        var amenities = facts.SelectMany(x => SplitAmenities(x.Room.Amenities)).Distinct().Order().ToList();
+        var amenities = facts.SelectMany(x => RoomAmenities.Optional(x.Room.Amenities)).Distinct().Order().ToList();
 
         IEnumerable<StudentRoomFact> filtered = facts;
         if (!string.IsNullOrWhiteSpace(query.Building))
-            filtered = filtered.Where(x => x.Room.Floor.Building.Code == query.Building.ToUpperInvariant());
+        {
+            query.Building = query.Building.Trim().ToUpperInvariant();
+            filtered = filtered.Where(x => x.Room.Floor.Building.Code == query.Building);
+        }
         if (query.MaxPrice.HasValue)
             filtered = filtered.Where(x => x.Room.MonthlyPrice <= query.MaxPrice.Value);
         if (!string.IsNullOrWhiteSpace(query.Amenity))
-            filtered = filtered.Where(x => SplitAmenities(x.Room.Amenities).Contains(query.Amenity));
+            filtered = filtered.Where(x => RoomAmenities.List(x.Room.Amenities).Contains(query.Amenity));
 
-        filtered = query.Sort switch
+        var ordered = query.Sort switch
         {
             "price" => filtered.OrderBy(x => x.Room.MonthlyPrice).ThenBy(x => x.Room.Code),
             "building" => filtered.OrderBy(x => x.Room.Floor.Building.SortOrder).ThenBy(x => x.Room.Code),
-            _ => filtered.OrderByDescending(x => x.Assignable).ThenBy(x => x.Room.MonthlyPrice)
+            _ => filtered.OrderByDescending(x => x.Assignable).ThenBy(x => x.Room.MonthlyPrice).ThenBy(x => x.Room.Code)
         };
 
         var activeRequest = await db.HousingRequests.AsNoTracking()
@@ -130,31 +160,65 @@ public sealed class StudentPortalService(
             .OrderByDescending(x => x.SubmittedAt)
             .FirstOrDefaultAsync(cancellationToken);
 
+        const int pageSize = 24;
+        var matches = ordered.ToList();
+        var totalPages = Math.Max(1, (matches.Count + pageSize - 1) / pageSize);
+        query.Page = Math.Clamp(query.Page, 1, totalPages);
+        var shownRooms = matches.Skip((query.Page - 1) * pageSize).Take(pageSize).ToList();
+        var roomIds = shownRooms.Select(x => x.Room.Id).ToList();
+        var roomPhotos = await db.RoomPhotos.AsNoTracking().Where(x => roomIds.Contains(x.RoomId))
+            .OrderBy(x => x.Id)
+            .Select(x => new { x.RoomId, x.Id, x.Caption }).ToListAsync(cancellationToken);
+        var photosByRoom = roomPhotos.ToLookup(x => x.RoomId, x => new RoomPhotoViewModel(x.Id, x.Caption));
+
         return new StudentRoomSearchViewModel
         {
             Student = ToIdentity(profile),
             Query = query,
             CurrentRoomCode = currentStay?.Room.Code,
-            Rooms = filtered.Select(x => new StudentRoomOptionViewModel(
-                x.Room.Id,
-                x.Room.Code,
-                x.Room.Floor.Building.Name,
-                x.Room.Floor.Number,
-                x.Room.RoomType,
-                x.Room.MonthlyPrice,
-                x.Room.Capacity,
-                x.Occupied,
-                x.Assignable,
-                SplitAmenities(x.Room.Amenities),
-                false,
-                x.Assignable >= 3 ? "Nhiều chỗ trống" : "Phù hợp hồ sơ"))
-                .Take(24)
-                .ToList(),
+            Rooms = shownRooms.Select(x => ToRoomOption(x.Room, x.Occupied, x.Assignable, photosByRoom[x.Room.Id].ToArray())).ToList(),
             Buildings = buildings,
             Amenities = amenities,
+            TotalMatches = matches.Count,
+            TotalPages = totalPages,
             ActiveRequest = activeRequest is null ? null : ToHousingRequest(activeRequest, now)
         };
     }
+
+    public async Task<StudentRoomPreviewViewModel?> GetRoomPreviewAsync(
+        string userId, int roomId, CancellationToken cancellationToken = default)
+    {
+        var profile = await LoadProfileWithStayAsync(userId, cancellationToken);
+        var currentStay = profile.Stays.SingleOrDefault(x => x.EndedAt == null);
+        if (currentStay?.RoomId == roomId) return null;
+        var now = timeProvider.GetUtcNow().UtcDateTime;
+        var room = await SearchableRooms(profile.Gender, now).SingleOrDefaultAsync(x => x.Id == roomId, cancellationToken);
+        if (room is null) return null;
+
+        var photos = await db.RoomPhotos.AsNoTracking().Where(x => x.RoomId == roomId).OrderBy(x => x.Id)
+            .Select(x => new RoomPhotoViewModel(x.Id, x.Caption)).ToListAsync(cancellationToken);
+        var hasActiveRequest = await db.HousingRequests.AnyAsync(
+            x => x.StudentProfileId == profile.Id && HousingRequestWorkflow.ActiveStatuses.Contains(x.Status), cancellationToken);
+        var capacity = RoomCapacityPolicy.FromRoom(room, now);
+        var available = RoomBedPolicy.Available(room, now);
+        return new(ToRoomOption(room, capacity.Occupied, available.Count, photos), available, hasActiveRequest, currentStay is not null);
+    }
+
+    private IQueryable<Room> SearchableRooms(string gender, DateTime now) => db.Rooms.AsNoTracking()
+        .Include(x => x.Floor).ThenInclude(x => x.Building)
+        .Include(x => x.Stays.Where(stay => stay.EndedAt == null))
+        .Include(x => x.Holds.Where(hold => hold.ReleasedAt == null && hold.ExpiresAt > now))
+        .Include(x => x.MaintenanceRequests.Where(repair => OpenRepairStatuses.Contains(repair.Status)))
+        .AsSplitQuery()
+        .Where(x => x.RoomType == gender);
+
+    private static StudentRoomOptionViewModel ToRoomOption(Room room, int occupied, int assignable, IReadOnlyList<RoomPhotoViewModel> photos) =>
+        new(room.Id, room.Code, room.Floor.Building.Name, room.Floor.Number, room.RoomType, room.MonthlyPrice,
+            room.Capacity, occupied, assignable, RoomAmenities.List(room.Amenities), false,
+            assignable >= 3 ? "Nhiều chỗ trống" : "Phù hợp hồ sơ")
+        {
+            Photos = photos
+        };
 
     public async Task<StudentApplicationsViewModel> GetApplicationsAsync(
         string userId,
@@ -201,11 +265,14 @@ public sealed class StudentPortalService(
             .AsSplitQuery()
             .SingleOrDefaultAsync(x => x.Id == input.TargetRoomId, cancellationToken);
         if (room is null) return new(false, "Phòng đã chọn không tồn tại.");
-        if (room.RoomType != profile.Gender) return new(false, "Phòng này không phù hợp chính sách lưu trú trong hồ sơ của bạn.");
+        if (!string.Equals(room.RoomType, profile.Gender, StringComparison.OrdinalIgnoreCase))
+            return new(false, "Phòng này không phù hợp chính sách lưu trú trong hồ sơ của bạn.");
         if (profile.Stays.Any(x => x.RoomId == room.Id)) return new(false, "Đây đang là phòng hiện tại của bạn.");
 
         var capacity = RoomCapacityPolicy.FromRoom(room, now);
         if (!capacity.CanAssign) return new(false, $"{capacity.AvailabilityReason}. Danh sách đã được cập nhật.");
+        if (!RoomBedPolicy.Available(room, now).Contains(input.TargetBedNumber))
+            return new(false, "Giường đã chọn hiện không còn có thể xếp. Vui lòng chọn giường khác.");
 
         var code = await NextHousingRequestCodeAsync(now, cancellationToken);
         var currentStay = profile.Stays.SingleOrDefault();
@@ -214,6 +281,7 @@ public sealed class StudentPortalService(
             Code = code,
             StudentProfileId = profile.Id,
             TargetRoomId = room.Id,
+            TargetBedNumber = input.TargetBedNumber,
             SourceStayId = currentStay?.Id,
             Type = currentStay is null ? HousingRequestType.Registration : HousingRequestType.Transfer,
             Status = HousingRequestStatus.Submitted,
@@ -235,7 +303,9 @@ public sealed class StudentPortalService(
 
         try
         {
+            await OperationsNotifications.StageApplicationAsync(db, request, "Sinh viên gửi đơn lưu trú mới", now, cancellationToken);
             await db.SaveChangesAsync(cancellationToken);
+            if (live is not null) await live.NotifyOperationsAsync();
             return new(true, $"Đã gửi đơn {request.Code} cho phòng {room.Code}. Ban quản lý sẽ phản hồi trên trang Đăng ký của tôi.");
         }
         catch (DbUpdateException)
@@ -273,7 +343,9 @@ public sealed class StudentPortalService(
         });
         try
         {
+            await OperationsNotifications.StageApplicationAsync(db, request, "Sinh viên đã hủy đơn lưu trú", now, cancellationToken);
             await db.SaveChangesAsync(cancellationToken);
+            if (live is not null) await live.NotifyOperationsAsync();
             return new(true, $"Đã hủy đơn {request.Code}.");
         }
         catch (DbUpdateConcurrencyException)
@@ -301,13 +373,15 @@ public sealed class StudentPortalService(
         request.Events.Add(new HousingRequestEvent
         {
             Status = transition.NextStatus,
-            Note = $"Sinh viên bổ sung: {input.Information.Trim()}",
+            Note = input.Information.Trim(),
             ActorUserId = userId,
             CreatedAt = now
         });
         try
         {
+            await OperationsNotifications.StageApplicationAsync(db, request, "Sinh viên đã bổ sung đơn lưu trú", now, cancellationToken);
             await db.SaveChangesAsync(cancellationToken);
+            if (live is not null) await live.NotifyHousingSupplementAsync(request.Id, request.Code);
             return new(true, $"Đã gửi bổ sung cho đơn {request.Code}. Đơn đã trở lại hàng đợi của Ban quản lý.");
         }
         catch (DbUpdateConcurrencyException)
@@ -357,7 +431,9 @@ public sealed class StudentPortalService(
         db.HousingRequests.Add(request);
         try
         {
+            await OperationsNotifications.StageApplicationAsync(db, request, "Sinh viên gửi đơn trả phòng", now, cancellationToken);
             await db.SaveChangesAsync(cancellationToken);
+            if (live is not null) await live.NotifyOperationsAsync();
             return new(true, $"Đã gửi đơn {request.Code} yêu cầu trả phòng. Lượt lưu trú chỉ kết thúc sau khi Ban quản lý duyệt.");
         }
         catch (DbUpdateException)
@@ -372,11 +448,18 @@ public sealed class StudentPortalService(
     {
         var profile = await LoadProfileAsync(userId, cancellationToken);
         var invoices = await billingLedger.GetStudentInvoicesAsync(profile.Id, cancellationToken);
+        var activeInvoices = invoices.Where(invoice => invoice.Summary.State != BillingPaymentState.Cancelled).ToList();
 
         return new StudentInvoicesViewModel
         {
             Student = ToIdentity(profile),
-            Invoices = invoices.Select(ToInvoice).ToList()
+            Invoices = invoices.Select(invoice =>
+            {
+                var view = ToInvoice(invoice);
+                var previous = invoice.Summary.State == BillingPaymentState.Cancelled
+                    ? null : activeInvoices.FirstOrDefault(candidate => candidate.PeriodEnd < invoice.PeriodStart);
+                return previous is null ? view : view with { Comparison = StudentInvoiceComparisonBuilder.Compare(invoice, previous) };
+            }).ToList()
         };
     }
 
@@ -399,8 +482,74 @@ public sealed class StudentPortalService(
         {
             Student = ToIdentity(profile),
             CurrentRoomCode = currentStay?.Room.Code ?? "Chưa xếp phòng",
-            Repairs = repairs.Select(ToRepair).ToList()
+            CanCreateRepair = currentStay is not null,
+            Repairs = repairs.Select(ToRepair).ToList(),
+            SharedRepairs = currentStay is null ? [] : await LoadSharedRepairsAsync(currentStay, cancellationToken)
         };
+    }
+
+    private async Task<IReadOnlyList<SharedStudentRepair>> LoadSharedRepairsAsync(Stay stay, CancellationToken cancellationToken)
+    {
+        var rows = await db.MaintenanceRequests.AsNoTracking()
+            .Where(x => x.RoomId == stay.RoomId && x.ShareWithRoom && x.ReporterStudentId != stay.StudentProfileId)
+            .Select(x => new
+            {
+                x.Id, x.Code, x.Title, x.Category, x.Status, x.UpdatedAt,
+                IsFollowing = x.Followers.Any(follower => follower.StayId == stay.Id)
+            })
+            .Where(x => OpenRepairStatuses.Contains(x.Status) || x.IsFollowing)
+            .OrderByDescending(x => x.IsFollowing)
+            .ThenByDescending(x => x.UpdatedAt)
+            .ThenByDescending(x => x.Id)
+            .ToListAsync(cancellationToken);
+
+        return rows.Select(row =>
+        {
+            var (status, css) = StudentRepairStatus(row.Status);
+            return new SharedStudentRepair(row.Id, row.Code, row.Title, row.Category, status, css, row.UpdatedAt, row.IsFollowing);
+        }).ToList();
+    }
+
+    public Task<StudentOperationResult> SetRepairFollowingAsync(
+        string userId, int requestId, bool following, CancellationToken cancellationToken = default)
+    {
+        var strategy = db.Database.CreateExecutionStrategy();
+        return strategy.ExecuteAsync(async () =>
+        {
+            await using var transaction = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
+            var stayId = await (from stay in db.Stays
+                                from request in db.MaintenanceRequests
+                                where stay.StudentProfile.UserId == userId && stay.EndedAt == null
+                                    && request.Id == requestId && request.RoomId == stay.RoomId && request.ShareWithRoom
+                                    && request.ReporterStudentId != stay.StudentProfileId
+                                    && (!following || OpenRepairStatuses.Contains(request.Status))
+                                select (int?)stay.Id).SingleOrDefaultAsync(cancellationToken);
+            if (stayId is null) return new StudentOperationResult(false, "Sự cố này hiện không thể theo dõi từ phòng của bạn.");
+
+            var subscription = db.MaintenanceFollowers.Where(x => x.MaintenanceRequestId == requestId && x.StayId == stayId.Value);
+            if (!following)
+            {
+                await subscription.ExecuteDeleteAsync(cancellationToken);
+            }
+            else if (!await subscription.AnyAsync(cancellationToken))
+            {
+                var follower = new MaintenanceFollower { MaintenanceRequestId = requestId, StayId = stayId.Value };
+                db.MaintenanceFollowers.Add(follower);
+                try
+                {
+                    await db.SaveChangesAsync(cancellationToken);
+                }
+                finally
+                {
+                    db.Entry(follower).State = EntityState.Detached;
+                }
+            }
+
+            await transaction.CommitAsync(cancellationToken);
+            return following
+                ? new(true, "Bạn sẽ nhận thông báo khi sự cố được cập nhật.")
+                : new(true, "Bạn đã ngừng theo dõi sự cố này.");
+        });
     }
 
     public async Task<StudentOperationResult> CreateRepairAsync(
@@ -426,6 +575,7 @@ public sealed class StudentPortalService(
         {
             RoomId = stay.RoomId,
             ReporterStudentId = profile.Id,
+            ShareWithRoom = input.ShareWithRoom,
             Code = $"SC-SV-{sequence:0000}",
             Title = input.Title.Trim(),
             Category = input.Category.Trim(),
@@ -448,6 +598,7 @@ public sealed class StudentPortalService(
         db.MaintenanceRequests.Add(request);
         try
         {
+            await OperationsNotifications.StageMaintenanceAsync(db, request, now, cancellationToken);
             await db.SaveChangesAsync(cancellationToken);
         }
         catch
@@ -455,6 +606,7 @@ public sealed class StudentPortalService(
             await attachmentStorage.DeleteAsync(prepared.Attachments);
             throw;
         }
+        if (live is not null) await live.NotifyOperationsAsync();
         return new(true, $"Đã gửi yêu cầu {request.Code}. Bạn có thể theo dõi tiến độ ngay tại trang này.");
     }
 
@@ -494,15 +646,18 @@ public sealed class StudentPortalService(
             initials);
     }
 
-    private static StudentStayViewModel ToStay(Stay stay, int currentRoomOccupants) => new(
+    private static StudentStayViewModel ToStay(Stay stay, IReadOnlyList<string> roommateNames) => new(
         stay.Room.Code,
         stay.Room.Floor.Building.Name,
         stay.Room.Floor.Number,
         stay.StartedAt,
-        Math.Max(0, currentRoomOccupants - 1),
+        roommateNames,
         stay.Room.Capacity,
         stay.Room.MonthlyPrice,
-        SplitAmenities(stay.Room.Amenities));
+        RoomAmenities.List(stay.Room.Amenities))
+    {
+        BedNumber = stay.BedNumber
+    };
 
     private static StudentHousingRequestViewModel ToHousingRequest(HousingRequest request, DateTime now)
     {
@@ -538,7 +693,10 @@ public sealed class StudentPortalService(
             workflow.WaitingHours,
             HousingRequestWorkflow.Can(request.Status, HousingRequestAction.Cancel),
             HousingRequestWorkflow.Can(request.Status, HousingRequestAction.SubmitInformation),
-            events);
+            events)
+        {
+            TargetBedNumber = request.TargetBedNumber
+        };
     }
 
     private async Task<string> NextHousingRequestCodeAsync(DateTime now, CancellationToken cancellationToken)
@@ -583,19 +741,21 @@ public sealed class StudentPortalService(
             x.MethodLabel,
             x.ReceivedAt,
             x.IsReversal,
-            x.Note)).ToList());
+            x.Note) { Id = x.Id, HasBeenReversed = x.HasBeenReversed }).ToList());
+
+    private static (string Label, string Css) StudentRepairStatus(MaintenanceStatus status) => status switch
+    {
+        MaintenanceStatus.New => ("Đã tiếp nhận", "new"),
+        MaintenanceStatus.Assigned => ("Đã phân công", "assigned"),
+        MaintenanceStatus.InProgress => ("Đang xử lý", "progress"),
+        MaintenanceStatus.WaitingParts => ("Chờ vật tư", "waiting"),
+        MaintenanceStatus.Resolved => ("Đã hoàn thành", "resolved"),
+        _ => ("Đã đóng", "closed")
+    };
 
     private static StudentRepairViewModel ToRepair(MaintenanceRequest repair)
     {
-        var (status, css) = repair.Status switch
-        {
-            MaintenanceStatus.New => ("Đã tiếp nhận", "new"),
-            MaintenanceStatus.Assigned => ("Đã phân công", "assigned"),
-            MaintenanceStatus.InProgress => ("Đang xử lý", "progress"),
-            MaintenanceStatus.WaitingParts => ("Chờ vật tư", "waiting"),
-            MaintenanceStatus.Resolved => ("Đã hoàn thành", "resolved"),
-            _ => ("Đã đóng", "closed")
-        };
+        var (status, css) = StudentRepairStatus(repair.Status);
         var priority = repair.Priority switch
         {
             MaintenancePriority.Urgent => "Khẩn cấp",
@@ -620,7 +780,7 @@ public sealed class StudentPortalService(
                 .ToList(),
             repair.Attachments.OrderBy(x => x.CreatedAt)
                 .Select(x => new MaintenanceAttachmentViewModel(x.Id, x.OriginalName, x.ContentType))
-                .ToList());
+                .ToList()) { ShareWithRoom = repair.ShareWithRoom };
     }
 
     private static StudentNotificationViewModel ToNotification(Notification notification) => new(
@@ -646,9 +806,6 @@ public sealed class StudentPortalService(
         MaintenanceStatus.Resolved => "Hoàn thành",
         _ => "Đóng yêu cầu"
     };
-
-    private static IReadOnlyList<string> SplitAmenities(string amenities) =>
-        amenities.Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
     private sealed record StudentRoomFact(Room Room, int Occupied, int Assignable);
 }

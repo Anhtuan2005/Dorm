@@ -1,11 +1,17 @@
 @using Microsoft.AspNetCore.Identity
+@using DormitoryManagementSystem.Security
 @inject UserManager<ApplicationUser> UserManager
 @{
     var activeNav = ViewData["ActiveNav"]?.ToString() ?? string.Empty;
     var currentUser = User.Identity?.IsAuthenticated == true ? await UserManager.GetUserAsync(User) : null;
     var fullName = currentUser?.FullName ?? "Nguyễn Thị Lan";
     var initials = string.Join("", fullName.Split(' ', StringSplitOptions.RemoveEmptyEntries).TakeLast(2).Select(x => x[0]));
-    var flashMessage = TempData["Success"] as string ?? TempData["Error"] as string;
+    var successMessage = TempData["Success"] as string;
+    var errorMessage = TempData["Error"] as string;
+    var flashMessage = errorMessage ?? successMessage;
+    var isAdmin = User.IsInRole(RoleNames.Admin);
+    var canReceiveUpdates = isAdmin || User.IsInRole(RoleNames.DormManager);
+    var roleLabel = isAdmin ? "Quản trị viên" : "Ban quản lý";
 }
 <!DOCTYPE html>
 <html lang="vi">
@@ -15,8 +21,12 @@
     <meta name="theme-color" content="#0F766E" />
     <title>@ViewData["Title"] · NẾP KTX</title>
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/workspace.css" asp-append-version="true" />
 </head>
-<body class="app-body">
+<body class="app-body" data-live-portal="operations"
+      data-live-hub="@(canReceiveUpdates ? Url.Content("~/hubs/operations") : null)"
+      data-live-snapshot="@(canReceiveUpdates ? Url.Action("AttentionSnapshot", "Home") : null)">
+    <a class="skip-link" href="#main-content">Đến nội dung chính</a>
     <svg class="svg-sprite" aria-hidden="true">
         <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></symbol>
         <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
@@ -42,43 +52,78 @@
     </svg>
 
     <div class="app-shell" data-app-shell>
-        <aside class="sidebar" aria-label="Điều hướng chính">
+        <aside class="sidebar" id="operations-sidebar" aria-label="Điều hướng chính">
             <div class="brand-row">
-                <a class="brand" asp-controller="Home" asp-action="Index" aria-label="NẾP KTX - Trang chủ"><span class="brand-name">NẾP KTX</span><span class="brand-subtitle">Quản lý ký túc xá</span></a>
+                <a class="brand" asp-controller="Home" asp-action="Index" aria-label="NẾP KTX - Trang chủ"><span class="brand-name">NẾP KTX</span><span class="brand-subtitle">Cổng quản lý</span></a>
                 <button class="icon-button sidebar-toggle" type="button" data-sidebar-toggle aria-label="Thu gọn thanh điều hướng" aria-expanded="true"><svg><use href="#i-chevron" /></svg></button>
+                <button class="icon-button drawer-close" type="button" data-navigation-close aria-label="Đóng menu"><svg><use href="#i-close" /></svg></button>
             </div>
-            <nav class="main-nav">
+            <nav class="main-nav sidebar-navigation" aria-label="Chức năng quản lý">
                 <a class="@(activeNav == "dashboard" ? "active" : "")" asp-controller="Home" asp-action="Index"><svg><use href="#i-home" /></svg><span>Tổng quan</span></a>
-                <a class="@(activeNav == "rooms" ? "active" : "")" asp-controller="Rooms" asp-action="Map"><svg><use href="#i-bed" /></svg><span>Phòng ở</span></a>
-                <a class="@(activeNav == "students" ? "active" : "")" asp-controller="Students" asp-action="Index"><svg><use href="#i-users" /></svg><span>Sinh viên</span></a>
-                <a class="@(activeNav == "applications" ? "active" : "")" asp-controller="Applications" asp-action="Index"><svg><use href="#i-file" /></svg><span>Đơn lưu trú</span><b class="nav-count">@await Component.InvokeAsync("ApplicationQueueBadge")</b></a>
-                <a class="@(activeNav == "billing" ? "active" : "")" asp-controller="Billing" asp-action="Index"><svg><use href="#i-coin" /></svg><span>Thu phí</span></a>
-                <a class="@(activeNav == "maintenance" ? "active" : "")" asp-controller="Maintenance" asp-action="Index"><svg><use href="#i-tool" /></svg><span>Sự cố</span><b class="nav-count danger">@await Component.InvokeAsync("MaintenanceQueueBadge")</b></a>
-                <a class="@(activeNav == "reports" ? "active" : "")" asp-controller="Reports" asp-action="Index"><svg><use href="#i-chart" /></svg><span>Báo cáo</span></a>
+                <div class="nav-group" role="group" aria-label="Lưu trú">
+                    <p class="nav-section-label" aria-hidden="true">Lưu trú</p>
+                    <a class="@(activeNav == "applications" ? "active" : "")" asp-controller="Applications" asp-action="Index"><svg><use href="#i-file" /></svg><span>Đơn lưu trú</span><b class="nav-count" data-live-attention="applications" title="Đơn đến lượt Ban quản lý">@await Component.InvokeAsync("ApplicationQueueBadge")</b></a>
+                    <a class="@(activeNav == "rooms" ? "active" : "")" asp-controller="Rooms" asp-action="Map"><svg><use href="#i-bed" /></svg><span>Sơ đồ phòng</span></a>
+                    <a class="@(activeNav == "catalog" ? "active" : "")" asp-controller="Rooms" asp-action="Catalog"><svg><use href="#i-building" /></svg><span>Danh mục phòng</span></a>
+                    <a class="@(activeNav == "students" ? "active" : "")" asp-controller="Students" asp-action="Index"><svg><use href="#i-users" /></svg><span>Hồ sơ sinh viên</span></a>
+                </div>
+                <div class="nav-group" role="group" aria-label="Vận hành">
+                    <p class="nav-section-label" aria-hidden="true">Vận hành</p>
+                    <a class="@(activeNav == "billing" ? "active" : "")" asp-controller="Billing" asp-action="Index"><svg><use href="#i-coin" /></svg><span>Thu phí</span></a>
+                    <a class="@(activeNav == "maintenance" ? "active" : "")" asp-controller="Maintenance" asp-action="Index"><svg><use href="#i-tool" /></svg><span>Sự cố và bảo trì</span><b class="nav-count" data-live-attention="maintenance" title="Sự cố đang mở">@await Component.InvokeAsync("MaintenanceQueueBadge")</b></a>
+                    <a class="@(activeNav == "reports" ? "active" : "")" asp-controller="Reports" asp-action="Index"><svg><use href="#i-chart" /></svg><span>Báo cáo</span></a>
+                </div>
             </nav>
-            <nav class="main-nav nav-bottom"><a class="@(activeNav == "settings" ? "active" : "")" asp-controller="Settings" asp-action="Index"><svg><use href="#i-settings" /></svg><span>Cài đặt</span></a></nav>
+            <div class="sidebar-footer">
+                <nav class="main-nav nav-bottom" aria-label="Hệ thống"><a class="@(activeNav == "settings" ? "active" : "")" asp-controller="Settings" asp-action="Index"><svg><use href="#i-settings" /></svg><span>Hệ thống</span></a></nav>
+                <div class="account-menu">
+                    <a class="account-copy" asp-controller="Account" asp-action="ChangePassword" aria-label="Đổi mật khẩu" title="Đổi mật khẩu">
+                        <span class="avatar" aria-hidden="true">@initials</span><span class="account-name"><strong>@fullName</strong><small>@roleLabel</small></span>
+                    </a>
+                    <form asp-controller="Account" asp-action="Logout" method="post"><button class="icon-button" type="submit" title="Đăng xuất" aria-label="Đăng xuất"><svg><use href="#i-logout" /></svg></button></form>
+                </div>
+            </div>
         </aside>
 
         <header class="topbar">
-            <button class="icon-button mobile-menu" type="button" data-mobile-menu aria-label="Mở menu"><svg><use href="#i-menu" /></svg></button>
+            <button class="icon-button mobile-menu" type="button" data-mobile-menu aria-label="Mở menu" aria-expanded="false" aria-controls="operations-sidebar"><svg><use href="#i-menu" /></svg></button>
             <a class="mobile-brand" asp-controller="Home" asp-action="Index">NẾP KTX</a>
-            <label class="global-search"><svg><use href="#i-search" /></svg><input type="search" placeholder="Tìm phòng, sinh viên..." aria-label="Tìm kiếm toàn hệ thống" data-global-search /></label>
-            <span class="facility-select" title="Cơ sở đang vận hành"><svg><use href="#i-building" /></svg><span>Cơ sở Thủ Đức</span></span>
-            <a class="icon-button notification-button" asp-controller="Home" asp-action="Index" aria-label="Mở việc cần xử lý"><svg><use href="#i-bell" /></svg><span class="notification-badge">@await Component.InvokeAsync("OperationsAttentionBadge")</span></a>
-            <div class="account-menu"><span class="avatar">@initials</span><a class="account-copy" asp-controller="Account" asp-action="ChangePassword" title="Mở bảo mật tài khoản"><strong>@fullName</strong><small>Quản lý KTX</small></a><form asp-controller="Account" asp-action="Logout" method="post"><button class="icon-button" type="submit" title="Đăng xuất" aria-label="Đăng xuất"><svg><use href="#i-logout" /></svg></button></form></div>
+            <nav class="operations-breadcrumb" aria-label="Vị trí hiện tại">
+                <a asp-controller="Home" asp-action="Index">Cổng quản lý</a><svg aria-hidden="true"><use href="#i-chevron" /></svg><strong aria-current="page">@ViewData["Title"]</strong>
+            </nav>
+            <form class="global-search" asp-controller="Students" asp-action="Index" method="get" role="search" data-room-search-url="@Url.Action("Map", "Rooms")">
+                <button type="submit" aria-label="Tìm kiếm"><svg aria-hidden="true"><use href="#i-search" /></svg></button>
+                <input name="Search" type="search" placeholder="Tìm phòng hoặc sinh viên" aria-label="Tìm phòng hoặc sinh viên" data-global-search />
+                <span class="search-shortcut" aria-hidden="true"><kbd>Ctrl</kbd><kbd>K</kbd></span>
+            </form>
+            <a class="notification-button" asp-controller="Notifications" asp-action="Index" aria-label="Thông báo" aria-current="@(activeNav == "notifications" ? "page" : null)">
+                <svg aria-hidden="true"><use href="#i-bell" /></svg><span class="notification-button-label">Thông báo</span>
+                <span class="notification-badge" data-live-attention="unread" aria-live="polite">@await Component.InvokeAsync("OperationsNotificationBadge")</span>
+            </a>
         </header>
 
-        <main class="main-content">@RenderBody()</main>
+        <main class="main-content" id="main-content" tabindex="-1">
+            @if (flashMessage is not null)
+            {
+                <div class="workspace-flash @(errorMessage is null ? "success" : "error")" role="@(errorMessage is null ? "status" : "alert")" tabindex="-1"><span>@flashMessage</span><button type="button" data-flash-dismiss aria-label="Đóng thông báo"><svg><use href="#i-close" /></svg></button></div>
+            }
+            @RenderBody()
+        </main>
         <nav class="mobile-bottom-nav" aria-label="Điều hướng di động">
             <a class="@(activeNav == "dashboard" ? "active" : "")" asp-controller="Home" asp-action="Index"><svg><use href="#i-home" /></svg><span>Tổng quan</span></a>
-            <a class="@(activeNav == "rooms" ? "active" : "")" asp-controller="Rooms" asp-action="Map"><svg><use href="#i-bed" /></svg><span>Phòng</span></a>
+            <a class="@(activeNav is "rooms" or "catalog" ? "active" : "")" asp-controller="Rooms" asp-action="Map"><svg><use href="#i-bed" /></svg><span>Phòng</span></a>
             <a class="@(activeNav == "applications" ? "active" : "")" asp-controller="Applications" asp-action="Index"><svg><use href="#i-file" /></svg><span>Đơn</span></a>
             <a class="@(activeNav == "billing" ? "active" : "")" asp-controller="Billing" asp-action="Index"><svg><use href="#i-coin" /></svg><span>Thu phí</span></a>
         </nav>
         <div class="sidebar-scrim" data-sidebar-scrim></div>
     </div>
-    <div class="toast @(flashMessage is null ? "" : "visible")" role="status" aria-live="polite" data-toast>@flashMessage</div>
+    <div class="toast" role="status" aria-live="polite" data-toast></div>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/workspace.js" asp-append-version="true"></script>
+    @if (canReceiveUpdates)
+    {
+        <partial name="_RealtimeScripts" />
+    }
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

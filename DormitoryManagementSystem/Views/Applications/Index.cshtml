@@ -5,82 +5,120 @@
     var selected = Model.SelectedCase;
 }
 
-<div class="applications-page">
+<div class="applications-page" data-operations-worklist="applications" data-operations-selected="@selected?.Id" data-operations-version="@selected?.RowVersion">
     <header class="operations-heading">
-        <div><p class="operations-kicker">Hàng đợi lưu trú</p><h1>Xử lý đơn lưu trú</h1><p>Ưu tiên đúng bên đang giữ lượt xử lý và xác nhận dữ liệu phòng ngay trước quyết định.</p></div>
+        <div><h1>Đơn lưu trú</h1><p>Tiếp nhận, xét duyệt và theo dõi bàn giao phòng.</p></div>
         <a class="heading-room-link" asp-controller="Rooms" asp-action="Map"><svg><use href="#i-bed" /></svg>Xem sơ đồ phòng</a>
     </header>
 
-    <nav class="queue-summary" aria-label="Tóm tắt đơn đăng ký">
+    <div role="status">
+        <div class="workspace-flash" data-housing-supplement-notice hidden>
+            <span>Sinh viên vừa gửi thông tin bổ sung.</span>
+            <a asp-action="Index" asp-route-Scope="all" class="record-action-link">Xem đơn</a>
+        </div>
+        @if (selected is not null)
+        {
+            <div class="workspace-flash" data-operations-case-changed hidden>
+                <span>Đơn đang mở vừa được cập nhật.</span>
+                <a asp-action="Index" asp-route-Scope="all" asp-route-SelectedId="@selected.Id" class="record-action-link">Xem dữ liệu mới</a>
+            </div>
+        }
+    </div>
+
+    <nav class="queue-summary" aria-label="Tóm tắt đơn đăng ký" data-operations-region="summary">
+        <a class="@(Model.Query.Scope == "all" && !Model.Query.OverdueOnly ? "active" : "")" asp-action="Index" asp-route-Scope="all">Tất cả đơn</a>
         <a class="@(Model.Query.Scope == "attention" && !Model.Query.OverdueOnly ? "active" : "")" asp-action="Index" asp-route-Scope="attention"><span>Đơn đang mở</span><strong>@Model.Summary.Active</strong><small>@Model.Summary.New đơn đã gửi</small></a>
         <a class="urgent @(Model.Query.OverdueOnly ? "active" : "")" asp-action="Index" asp-route-Scope="attention" asp-route-OverdueOnly="true"><span>Quá hạn 24 giờ</span><strong>@Model.Summary.Overdue</strong><small>Cần ưu tiên trước</small></a>
         <a class="@(Model.Query.Scope == "review" ? "active" : "")" asp-action="Index" asp-route-Scope="review"><span>Đang xét duyệt</span><strong>@Model.Summary.UnderReview</strong><small>Đã có người nhận</small></a>
         <a class="@(Model.Query.Scope == "info" ? "active" : "")" asp-action="Index" asp-route-Scope="info"><span>Chờ bổ sung</span><strong>@Model.Summary.NeedsInformation</strong><small>Đã báo sinh viên</small></a>
-        <a class="@(Model.Query.Scope == "completed" ? "active" : "")" asp-action="Index" asp-route-Scope="completed"><span>Hoàn tất hôm nay</span><strong>@Model.Summary.CompletedToday</strong><small>Xem lịch sử</small></a>
+        <a class="@(Model.Query.Scope == "completed" ? "active" : "")" asp-action="Index" asp-route-Scope="completed">Đã hoàn tất</a>
     </nav>
 
     <form class="queue-toolbar" method="get" asp-action="Index" data-filter-form>
         <input type="hidden" name="Scope" value="@Model.Query.Scope" />
+        <input type="hidden" name="OverdueOnly" value="@Model.Query.OverdueOnly.ToString().ToLowerInvariant()" />
         <label class="queue-search"><svg><use href="#i-search" /></svg><input name="Search" value="@Model.Query.Search" placeholder="Mã đơn, sinh viên, phòng..." aria-label="Tìm trong hàng đợi" /></label>
         <label><span>Loại đơn</span><select name="Type" data-auto-submit><option value="">Tất cả loại đơn</option><option value="Registration" selected="@(Model.Query.Type == "Registration")">Đăng ký ở</option><option value="Transfer" selected="@(Model.Query.Type == "Transfer")">Chuyển phòng</option><option value="Checkout" selected="@(Model.Query.Type == "Checkout")">Trả phòng</option></select></label>
         <button type="submit"><svg><use href="#i-search" /></svg>Tìm</button>
-        @if (!string.IsNullOrWhiteSpace(Model.Query.Search) || !string.IsNullOrWhiteSpace(Model.Query.Type)) { <a asp-action="Index" asp-route-Scope="@Model.Query.Scope">Xóa lọc</a> }
+        @if (!string.IsNullOrWhiteSpace(Model.Query.Search) || !string.IsNullOrWhiteSpace(Model.Query.Type)) { <a class="filter-reset" asp-action="Index" asp-route-Scope="@Model.Query.Scope" asp-route-OverdueOnly="@Model.Query.OverdueOnly">Xóa bộ lọc</a> }
     </form>
 
-    <div class="application-workbench @(selected is null ? "empty" : "")">
-        <aside class="request-queue" aria-label="Danh sách đơn">
-            <header><span><strong>@Model.TotalItems đơn</strong><small>Sắp theo lượt xử lý</small></span><i><svg><use href="#i-file" /></svg></i></header>
+    <partial name="_RecordView" />
+    <div class="application-workbench @(selected is null ? "empty" : "")" data-record-workbench="applications">
+        <aside class="request-queue" aria-label="Danh sách đơn" data-operations-region="queue" data-record-queue>
+            <header><span><strong>@Money(Model.TotalItems) đơn</strong><small>Mới nhất trước</small></span></header>
             @if (Model.Items.Count == 0)
             {
                 <div class="queue-empty"><span><svg><use href="#i-check" /></svg></span><strong>Không có đơn phù hợp</strong><p>Thử xóa bộ lọc hoặc chọn nhóm đơn khác.</p><a asp-action="Index">Về đơn cần xử lý</a></div>
             }
             else
             {
-                <div class="request-queue-list">
+                <div class="record-list-columns" aria-hidden="true"><span>Sinh viên / loại đơn</span><span>Phòng</span><span>Thời gian chờ</span><span>Trạng thái</span></div>
+                <div class="request-queue-list" data-record-list>
                     @foreach (var item in Model.Items)
                     {
-                        <a class="request-queue-item @(item.IsSelected ? "selected" : "")" asp-action="Index" asp-route-Scope="@Model.Query.Scope" asp-route-Search="@Model.Query.Search" asp-route-Type="@Model.Query.Type" asp-route-OverdueOnly="@Model.Query.OverdueOnly" asp-route-SelectedId="@item.Id">
-                            <span class="queue-avatar">@item.Initials</span>
-                            <span class="queue-person"><strong>@item.StudentName</strong><small>@item.StudentCode · @item.TypeLabel</small></span>
-                            <span class="request-state @item.StatusClass">@item.StatusLabel</span>
+                        <a class="request-queue-item @(item.IsSelected ? "selected" : "")" aria-current="@(item.IsSelected ? "true" : null)" asp-action="Index" asp-route-Scope="@Model.Query.Scope" asp-route-Search="@Model.Query.Search" asp-route-Type="@Model.Query.Type" asp-route-OverdueOnly="@Model.Query.OverdueOnly" asp-route-Page="@Model.Query.Page" asp-route-SelectedId="@item.Id" asp-fragment="selected-case">
+                            <span class="queue-person"><strong>@item.StudentName</strong><small>@item.StudentCode · @item.Code · @item.TypeLabel</small></span>
                             <span class="queue-route"><b>@(item.CurrentRoomCode ?? "Chưa xếp")</b><svg><use href="#i-arrow" /></svg><b>@(item.TargetRoomCode ?? "—")</b></span>
                             <time class="@(item.IsOverdue ? "overdue" : "")">@(item.IsOverdue ? "Quá hạn BQL · " : $"Chờ {item.ResponsibilityLabel} · ")@WaitLabel(item.WaitingHours)</time>
+                            <span class="request-state @item.StatusClass">@item.StatusLabel</span>
                         </a>
                     }
                 </div>
+                @if (Model.TotalPages > 1)
+                {
+                    <nav class="billing-pagination" aria-label="Phân trang đơn lưu trú">
+                        <a class="@(Model.Query.Page <= 1 ? "disabled" : "")" aria-disabled="@(Model.Query.Page <= 1 ? "true" : null)" tabindex="@(Model.Query.Page <= 1 ? -1 : null)" asp-action="Index" asp-route-Scope="@Model.Query.Scope" asp-route-Search="@Model.Query.Search" asp-route-Type="@Model.Query.Type" asp-route-OverdueOnly="@Model.Query.OverdueOnly" asp-route-Page="@(Model.Query.Page - 1)">Trước</a>
+                        <span>Trang @Model.Query.Page / @Model.TotalPages</span>
+                        <a class="@(Model.Query.Page >= Model.TotalPages ? "disabled" : "")" aria-disabled="@(Model.Query.Page >= Model.TotalPages ? "true" : null)" tabindex="@(Model.Query.Page >= Model.TotalPages ? -1 : null)" asp-action="Index" asp-route-Scope="@Model.Query.Scope" asp-route-Search="@Model.Query.Search" asp-route-Type="@Model.Query.Type" asp-route-OverdueOnly="@Model.Query.OverdueOnly" asp-route-Page="@(Model.Query.Page + 1)">Sau</a>
+                    </nav>
+                }
             }
         </aside>
 
         @if (selected is not null)
         {
-            <main class="application-case">
+            <article class="application-case" id="selected-case" tabindex="-1" data-record-detail>
                 <header class="case-header">
                     <div><span class="request-state @selected.StatusClass">@selected.StatusLabel</span>@if (selected.IsOverdue) { <span class="overdue-stamp">Quá hạn @WaitLabel(selected.WaitingHours)</span> }<h2>@selected.Code</h2><p>@selected.TypeLabel · Gửi @selected.SubmittedAt.ToLocalTime().ToString("dd/MM/yyyy, HH:mm")</p></div>
-                    <a asp-controller="Students" asp-action="Index" asp-route-SelectedId="@selected.StudentId" class="case-more" aria-label="Mở hồ sơ sinh viên"><svg><use href="#i-more" /></svg></a>
+                    <div class="record-header-actions">@if (selected.CanDecide) { <a class="record-action-link" href="#application-action">Tới thao tác</a> }<a asp-controller="Students" asp-action="Index" asp-route-SelectedId="@selected.StudentId" class="case-profile-link">Hồ sơ sinh viên</a></div>
                 </header>
 
                 <section class="application-handoff @selected.StatusClass">
                     <span><small>Lượt xử lý hiện tại</small><strong>@selected.ResponsibilityLabel</strong></span>
                     <i><svg><use href="#i-arrow" /></svg></i>
                     <span><small>Việc tiếp theo</small><strong>@selected.NextActionLabel</strong></span>
-                    @if (selected.IsOverdue) { <em>Quá SLA @WaitLabel(selected.WaitingHours)</em> }
                 </section>
 
                 <section class="case-student">
                     <span class="case-avatar">@selected.Initials</span>
                     <div><p>Sinh viên</p><h3>@selected.StudentName</h3><small>@selected.StudentCode · @selected.Faculty</small></div>
-                    <dl><div><dt>Loại phòng</dt><dd>@selected.Gender</dd></div><div><dt>Điện thoại</dt><dd>@selected.PhoneNumber</dd></div><div><dt>Tài khoản</dt><dd>@(selected.Email ?? "Chưa cấp")</dd></div></dl>
+                    <dl><div><dt>Loại phòng</dt><dd>@selected.Gender</dd></div></dl>
                 </section>
 
                 <section class="student-reason"><p>Lý do sinh viên</p><blockquote>“@selected.StudentReason”</blockquote></section>
 
+                @if (selected.LatestSupplement is { } supplement)
+                {
+                    var sent = supplement.CreatedAt.ToLocalTime();
+                    <section class="student-reason student-supplement">
+                        <h3>Thông tin sinh viên bổ sung gần nhất</h3>
+                        <time datetime="@sent.ToString("O")">@sent.ToString("dd/MM/yyyy, HH:mm")</time>
+                        <blockquote>@supplement.Note</blockquote>
+                    </section>
+                }
+
                 <section class="placement-proof">
-                    <header><div><p>@(selected.IsCheckout ? "Kiểm tra trả phòng" : "Kiểm tra xếp phòng")</p><h3>@(selected.IsCheckout ? "Chỉ kết thúc đúng lượt lưu trú nguồn" : "Sức chứa được tính lại từ dữ liệu hiện tại")</h3></div><span><i></i>Cập nhật vừa xong</span></header>
+                    <header><div><p>@(selected.IsCheckout ? "Kiểm tra trả phòng" : "Kiểm tra xếp phòng")</p><h3>@(selected.IsCheckout ? "Thông tin bàn giao phòng" : "Phòng đề xuất và sức chứa")</h3></div><span><i></i>Cập nhật vừa xong</span></header>
                     <div class="placement-route">
                         <article class="room-proof current"><small>Phòng hiện tại</small>@if (selected.CurrentRoom is null) { <strong>Chưa xếp</strong><p>Sinh viên chưa có lượt lưu trú</p> } else { <strong>@selected.CurrentRoom.Code</strong><p>@selected.CurrentRoom.Occupied/@selected.CurrentRoom.Capacity đang ở · @selected.CurrentRoom.StateLabel</p> }</article>
                         <span class="placement-arrow"><svg><use href="#i-arrow" /></svg><small>@selected.TypeLabel</small></span>
-                        <article class="room-proof target @(selected.CanApprove || !selected.CanDecide ? "ready" : "blocked")"><small>@(selected.IsCheckout ? "Kết quả dự kiến" : "Phòng đề xuất")</small>@if (selected.IsCheckout) { <strong>Hoàn trả phòng</strong><p>Kết thúc lượt lưu trú hiện tại</p> } else if (selected.TargetRoom is null) { <strong>Chưa chọn</strong><p>Không thể xếp phòng</p> } else { <strong>@selected.TargetRoom.Code</strong><p>@selected.TargetRoom.BuildingName · Tầng @selected.TargetRoom.FloorNumber</p><span class="room-state @selected.TargetRoom.StateClass">@selected.TargetRoom.StateLabel</span> }</article>
+                        <article class="room-proof target @(selected.CanApprove || !selected.CanDecide ? "ready" : "blocked")"><small>@(selected.IsCheckout ? "Kết quả dự kiến" : "Phòng đề xuất")</small>@if (selected.IsCheckout) { <strong>Hoàn trả phòng</strong><p>Kết thúc lượt lưu trú hiện tại</p> } else if (selected.TargetRoom is null) { <strong>Chưa chọn</strong><p>Không thể xếp phòng</p> } else { <strong>@selected.TargetRoom.Code</strong><p>@selected.TargetRoom.BuildingName · Tầng @selected.TargetRoom.FloorNumber</p> }</article>
                     </div>
+                    @if (selected.TargetBedNumber is int bedNumber)
+                    {
+                        <p>Giường đã chọn <strong>@bedNumber.ToString("00")</strong></p>
+                    }
                     @if (!selected.IsCheckout && selected.TargetRoom is not null)
                     {
                         <div class="bed-ledger">
@@ -90,29 +128,18 @@
                     @if (selected.ApprovalBlockReason is not null) { <p class="placement-block"><svg><use href="#i-tool" /></svg>@selected.ApprovalBlockReason</p> }
                 </section>
 
-                <section class="case-context">
-                    <div><span><svg><use href="#i-coin" /></svg></span><p>Công nợ hiện tại<small>Không tự động chặn việc xét duyệt</small></p><strong>@Money(selected.OutstandingBalance) đ</strong></div>
-                    <div><span><svg><use href="#i-tool" /></svg></span><p>Sự cố đang mở<small>Yêu cầu do sinh viên báo</small></p><strong>@selected.OpenRepairCount</strong></div>
-                </section>
-
-                <section class="case-audit">
-                    <header><p>Dấu vết xử lý</p><strong>@selected.Events.Count cập nhật</strong></header>
-                    <div>@foreach (var entry in selected.Events) { <article><i class="@entry.StatusClass"><svg><use href="#i-check" /></svg></i><span><strong>@entry.StatusLabel</strong><p>@entry.Note</p><small>@entry.ActorName · @entry.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy, HH:mm")</small></span></article> }</div>
-                </section>
-            </main>
-
-            <aside class="decision-rail">
-                <header><p>Quyết định</p><h2>@(selected.CanConfirmMoveIn ? "Bàn giao nhận phòng" : selected.IsCheckout ? "Xác nhận trả phòng" : selected.CanStartReview ? "Tiếp nhận hồ sơ" : selected.StatusClass == "needs-info" ? "Chờ bổ sung" : "Hoàn tất hồ sơ")</h2><small>Mọi thao tác được ghi vào lịch sử đơn.</small></header>
+<aside class="decision-rail" id="application-action" tabindex="-1">
+                <header><p>Quyết định</p><h2>@(selected.CanConfirmMoveIn ? "Bàn giao nhận phòng" : selected.IsCheckout ? "Xác nhận trả phòng" : selected.CanStartReview ? "Tiếp nhận hồ sơ" : selected.CanApprove ? "Xét duyệt đơn" : selected.StatusClass == "needs-info" ? "Chờ bổ sung" : selected.CanDecide ? "Kiểm tra điều kiện" : "Đơn đã hoàn tất")</h2><small>Mọi thao tác được ghi vào lịch sử đơn.</small></header>
                 @if (selected.CanDecide)
                 {
                     @if (selected.CanConfirmMoveIn)
                     {
-                        <form class="approve-form movein-form" asp-action="ConfirmMoveIn" method="post" data-confirm="Xác nhận đã bàn giao phòng @selected.TargetRoom?.Code cho @selected.StudentName?"><input type="hidden" name="Id" value="@selected.Id" /><input type="hidden" name="RowVersion" value="@selected.RowVersion" /><div class="movein-proof"><small>Chỗ đã giữ</small><strong>@selected.TargetRoom?.Code</strong><span>Giữ đến @selected.HoldExpiresAt?.ToLocalTime().ToString("dd/MM/yyyy, HH:mm")</span></div><label><span>Ghi chú bàn giao</span><textarea name="Reason" rows="3" maxlength="600" placeholder="Tình trạng chìa khóa, tài sản... (không bắt buộc)"></textarea></label><button class="approve-request" type="submit"><svg><use href="#i-check" /></svg>Xác nhận nhận phòng</button><small>Chỉ lúc này lượt ở mới bắt đầu; nếu chuyển phòng, lượt ở cũ sẽ kết thúc cùng transaction.</small></form>
+                        <form class="approve-form movein-form" asp-action="ConfirmMoveIn" method="post" data-confirm="Xác nhận đã bàn giao phòng @selected.TargetRoom?.Code cho @selected.StudentName?"><input type="hidden" name="Id" value="@selected.Id" /><input type="hidden" name="RowVersion" value="@selected.RowVersion" /><div class="movein-proof"><small>Chỗ đã giữ</small><strong>@selected.TargetRoom?.Code</strong><span>Giữ đến @selected.HoldExpiresAt?.ToLocalTime().ToString("dd/MM/yyyy, HH:mm")</span></div><label><span>Ghi chú bàn giao</span><textarea name="Reason" rows="3" maxlength="600" placeholder="Tình trạng chìa khóa, tài sản... (không bắt buộc)"></textarea></label><button class="approve-request" type="submit"><svg><use href="#i-check" /></svg>Xác nhận nhận phòng</button><small>Xác nhận khi đã bàn giao phòng. Nếu chuyển phòng, lượt ở cũ sẽ kết thúc.</small></form>
                     }
                     else if (selected.CanStartReview)
                     {
                         <form asp-action="BeginReview" method="post"><input type="hidden" name="Id" value="@selected.Id" /><input type="hidden" name="RowVersion" value="@selected.RowVersion" /><button class="claim-request" type="submit"><svg><use href="#i-users" /></svg>Nhận xử lý đơn</button></form>
-                        <div class="decision-waiting"><strong>Bước đầu tiên</strong><p>Nhận hồ sơ để khóa đúng phiên bản dữ liệu trước khi ra quyết định.</p></div>
+                        <div class="decision-waiting"><strong>Bước đầu tiên</strong><p>Nhận đơn để bắt đầu xét duyệt.</p></div>
                     }
                     else if (selected.CanApprove)
                     {
@@ -121,7 +148,7 @@
                             : $"Duyệt đơn và giữ 1 chỗ tại phòng {selected.TargetRoom?.Code} trong 7 ngày?";
                         <form class="approve-form" asp-action="Approve" method="post" data-confirm="@confirmation">
                             <input type="hidden" name="Id" value="@selected.Id" /><input type="hidden" name="RowVersion" value="@selected.RowVersion" />
-                            <label><span>@(selected.IsCheckout ? "Ghi chú bàn giao" : "Ghi chú khi duyệt")</span><textarea name="Reason" rows="3" maxlength="600" placeholder="Không bắt buộc"></textarea></label>
+                            <details class="optional-note"><summary>Thêm ghi chú</summary><label><span>@(selected.IsCheckout ? "Ghi chú bàn giao" : "Ghi chú khi duyệt")</span><textarea name="Reason" rows="2" maxlength="600" placeholder="Không bắt buộc"></textarea></label></details>
                             <button class="approve-request" type="submit"><svg><use href="#i-check" /></svg>@selected.PrimaryActionLabel</button>
                             @if (selected.IsCheckout) { <small>Lượt lưu trú tại @selected.CurrentRoom?.Code sẽ được kết thúc.</small> } else { <small>Phòng còn @selected.TargetRoom!.Assignable chỗ; lượt ở chỉ bắt đầu sau bước xác nhận nhận phòng.</small> }
                         </form>
@@ -142,8 +169,26 @@
                 {
                     <div class="decision-complete"><span><svg><use href="#i-check" /></svg></span><strong>Đơn đã hoàn tất</strong><p>@(selected.DecisionReason ?? "Không có ghi chú quyết định.")</p></div>
                 }
-                <footer><svg><use href="#i-check" /></svg><p>@(selected.IsCheckout ? "Hệ thống đối chiếu đúng lượt lưu trú nguồn trong transaction trước khi trả phòng." : selected.CanConfirmMoveIn ? "Hệ thống kiểm tra lại chỗ giữ, sức chứa và lượt ở nguồn trước khi bàn giao." : "Hệ thống kiểm tra lại sức chứa trong transaction trước khi giữ chỗ.")</p></footer>
+                <footer><svg><use href="#i-check" /></svg><p>@(selected.IsCheckout ? "Lượt lưu trú kết thúc sau khi bạn duyệt trả phòng." : selected.CanConfirmMoveIn ? "Hệ thống kiểm tra lại chỗ giữ, sức chứa và lượt ở nguồn trước khi bàn giao." : "Duyệt đơn sẽ giữ chỗ; phòng chỉ đổi sau bước xác nhận bàn giao.")</p></footer>
             </aside>
+
+                <details class="record-history"><summary>Thông tin liên quan</summary>
+                    <dl class="record-contact"><div><dt>Điện thoại</dt><dd>@selected.PhoneNumber</dd></div><div><dt>Tài khoản</dt><dd>@(selected.Email ?? "Chưa cấp")</dd></div></dl>
+                <section class="case-context">
+                    <div><span><svg><use href="#i-coin" /></svg></span><p>Công nợ hiện tại<small>Không tự động chặn việc xét duyệt</small></p><strong>@Money(selected.OutstandingBalance) đ</strong></div>
+                    <div><span><svg><use href="#i-tool" /></svg></span><p>Sự cố đang mở<small>Yêu cầu do sinh viên báo</small></p><strong>@selected.OpenRepairCount</strong></div>
+                </section>
+
+                </details>
+                <details class="record-history"><summary>Nhật ký xử lý <span>@selected.Events.Count cập nhật</span></summary>
+                <section class="case-audit">
+
+                    <div>@foreach (var entry in selected.Events) { <article><i class="@entry.StatusClass"><svg><use href="#i-check" /></svg></i><span><strong>@entry.StatusLabel</strong><p>@entry.Note</p><small>@entry.ActorName · @entry.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy, HH:mm")</small></span></article> }</div>
+                </section>
+                </details>
+            </article>
+
+
 
             @if (selected.CanRequestInformation)
             {
@@ -156,14 +201,4 @@
         }
     </div>
 
-    @if (Model.TotalPages > 1)
-    {
-        <nav class="queue-pagination" aria-label="Phân trang hàng đợi">
-            <span>Trang @Model.Query.Page / @Model.TotalPages</span>
-            <div>
-                <a class="@(Model.Query.Page <= 1 ? "disabled" : "")" asp-action="Index" asp-route-Scope="@Model.Query.Scope" asp-route-Search="@Model.Query.Search" asp-route-Type="@Model.Query.Type" asp-route-OverdueOnly="@Model.Query.OverdueOnly" asp-route-Page="@(Model.Query.Page - 1)">Trước</a>
-                <a class="@(Model.Query.Page >= Model.TotalPages ? "disabled" : "")" asp-action="Index" asp-route-Scope="@Model.Query.Scope" asp-route-Search="@Model.Query.Search" asp-route-Type="@Model.Query.Type" asp-route-OverdueOnly="@Model.Query.OverdueOnly" asp-route-Page="@(Model.Query.Page + 1)">Sau</a>
-            </div>
-        </nav>
-    }
 </div>

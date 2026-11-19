@@ -306,16 +306,6 @@ html { -webkit-font-smoothing: antialiased; }
 .application-card dt { color: var(--campus-muted); font-size: 8px; }
 .application-card dd { margin: 3px 0 0; color: var(--campus-ink); font-size: 10px; }
 
-.invoice-overview { min-height: 92px; padding: 14px 17px; margin-bottom: 18px; display: grid; grid-template-columns: 1.5fr .75fr .75fr auto; align-items: center; gap: 18px; border: 1px solid var(--campus-line); border-radius: var(--student-radius-md); background: #fff; box-shadow: var(--student-shadow); }
-.invoice-overview > div { min-height: 47px; padding-right: 18px; display: flex; flex-direction: column; justify-content: center; border-right: 1px solid var(--campus-line); }
-.invoice-overview > div:first-child { display: grid; grid-template-columns: 45px 1fr; align-items: center; column-gap: 11px; }
-.overview-icon { grid-row: 1/3; width: 45px; height: 45px; display: grid; place-items: center; border-radius: 9px; color: var(--campus-teal); background: var(--campus-teal-soft); }
-.overview-icon svg { width: 22px; }
-.invoice-overview small { color: var(--campus-muted); font-size: 9px; }
-.invoice-overview strong { color: var(--campus-ink); font-size: 16px; }
-.invoice-overview > div:first-child strong { font-size: 22px; }
-.invoice-overview button { min-height: 39px; padding: 0 12px; border: 1px solid var(--campus-line); border-radius: 6px; color: var(--campus-ink); background: #fff; font-size: 10px; font-weight: 700; cursor: pointer; }
-.invoice-overview button:hover { border-color: rgba(15,118,110,.3); color: var(--campus-teal); }
 .invoice-status.paid { color: var(--campus-teal); background: var(--campus-teal-soft); }
 .invoice-status.issued, .invoice-status.partial { color: #a85310; background: var(--campus-orange-soft); }
 .invoice-status.overdue { color: var(--campus-red); background: var(--campus-red-soft); }
@@ -339,10 +329,6 @@ html { -webkit-font-smoothing: antialiased; }
 .invoice-transactions em { margin-top: 2px; color: #5d6979; font-size: 8px; font-style: normal; }
 .invoice-transactions b { color: var(--campus-teal); font-size: 11px; white-space: nowrap; }
 .invoice-transactions article.reversal b { color: var(--campus-red); }
-.student-invoice-card > footer { padding-top: 12px; margin-top: 4px; display: flex; align-items: center; justify-content: space-between; gap: 15px; border-top: 1px solid var(--campus-line); }
-.student-invoice-card > footer p { margin: 0; display: flex; align-items: center; gap: 7px; color: var(--campus-muted); font-size: 9px; }
-.student-invoice-card > footer p svg { width: 15px; color: var(--campus-orange); }
-.student-invoice-card > footer button { min-height: 38px; padding: 0 14px; border: 1px solid var(--campus-teal); border-radius: 6px; color: #fff; background: var(--campus-teal); font-size: 10px; font-weight: 750; cursor: pointer; }
 
 .repair-guidance { min-height: 66px; padding: 12px 14px; margin-bottom: 18px; display: flex; align-items: center; gap: 12px; border: 1px solid #f0d8c3; border-radius: 9px; background: var(--campus-orange-soft); }
 .repair-guidance > span { width: 36px; height: 36px; display: grid; place-items: center; flex: 0 0 auto; border-radius: 50%; color: var(--campus-orange); background: #fff; }
@@ -358,8 +344,6 @@ html { -webkit-font-smoothing: antialiased; }
 .repair-attachments a { min-width: 0; overflow: hidden; border: 1px solid var(--campus-line); border-radius: 7px; color: var(--campus-ink); background: #fff; text-decoration: none; }
 .repair-attachments img { width: 100%; height: 112px; display: block; object-fit: cover; background: var(--campus-inset); }
 .repair-attachments span { padding: 6px 8px; display: block; overflow: hidden; font-size: 9px; white-space: nowrap; text-overflow: ellipsis; }
-.student-form-field.attachment-picker input { height: auto; padding: 8px; color: var(--campus-muted); font-size: 10px; }
-.student-form-field.attachment-picker input::file-selector-button { min-height: 30px; margin-right: 8px; padding: 0 9px; border: 1px solid var(--campus-line); border-radius: 5px; color: var(--campus-teal); background: #fff; font-weight: 800; cursor: pointer; }
 .repair-timeline { display: grid; gap: 0; }
 .repair-timeline > div { position: relative; min-height: 54px; display: grid; grid-template-columns: 28px minmax(170px,1fr) auto; gap: 9px; }
 .repair-timeline > div:not(:last-child)::after { content: ""; position: absolute; top: 28px; bottom: 0; left: 13px; width: 1px; background: #cfdad7; }
@@ -410,7 +394,7 @@ html { -webkit-font-smoothing: antialiased; }
 .ai-assistant header button svg { width: 17px; }
 .ai-messages { padding: 14px; overflow: auto; display: flex; flex-direction: column; gap: 9px; background: #f7faf9; }
 .ai-message { max-width: 88%; padding: 10px 11px; border-radius: 9px; font-size: 10px; line-height: 1.5; }
-.ai-message p { margin: 0; }
+.ai-message p { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
 .ai-message.assistant { align-self: flex-start; border: 1px solid var(--campus-line); border-top-left-radius: 3px; background: #fff; }
 .ai-message.user { align-self: flex-end; border-bottom-right-radius: 3px; color: #fff; background: var(--campus-teal); }
 .ai-message.typing { color: var(--campus-muted); }
@@ -424,6 +408,7 @@ html { -webkit-font-smoothing: antialiased; }
 .ai-composer input:focus { border-color: var(--campus-teal); box-shadow: 0 0 0 3px rgba(15,118,110,.1); }
 .ai-composer button { width: 40px; height: 40px; display: grid; place-items: center; border: 1px solid var(--campus-teal); border-radius: 7px; color: #fff; background: var(--campus-teal); cursor: pointer; }
 .ai-composer button svg { width: 17px; }
+.ai-composer button:disabled, .ai-suggestions button:disabled { opacity: .55; cursor: wait; }
 .student-scrim { display: none; }
 .student-toast { position: fixed; z-index: 90; right: 24px; bottom: 82px; max-width: min(380px, calc(100vw - 32px)); padding: 12px 14px; border: 1px solid rgba(15,118,110,.22); border-radius: 8px; color: var(--campus-ink); background: #fff; box-shadow: 0 14px 42px rgba(20,44,39,.18); font-size: 10px; line-height: 1.5; opacity: 0; pointer-events: none; transform: translateY(8px); transition: opacity 160ms ease, transform 160ms ease; }
 .student-toast.show { opacity: 1; transform: none; }
@@ -457,7 +442,6 @@ html { -webkit-font-smoothing: antialiased; }
 .application-card header p, .student-invoice-card header p, .repair-card header p { font-size: 11px; }
 .application-timeline strong, .application-card dd, .invoice-lines > div, .repair-timeline strong { font-size: 12px; }
 .application-timeline small, .application-card dt, .application-card summary, .student-invoice-card summary, .repair-timeline small { font-size: 10px; }
-.invoice-overview small, .invoice-overview button, .student-invoice-card > footer p, .student-invoice-card > footer button { font-size: 11px; }
 .repair-guidance strong, .repair-meta strong { font-size: 12px; }
 .repair-guidance p, .repair-description { font-size: 11px; }
 .repair-meta small, .repair-timeline time { font-size: 10px; }
@@ -537,10 +521,6 @@ html { -webkit-font-smoothing: antialiased; }
   .application-timeline > div:not(:last-child)::after { right: auto; bottom: -7px; left: 13px; width: 1px; height: auto; }
   .application-card dl { grid-template-columns: 1fr; }
   .student-request-handoff { grid-template-columns: minmax(0,1fr) 26px minmax(0,1.15fr); }
-  .invoice-overview { grid-template-columns: 1fr 1fr; }
-  .invoice-overview > div:first-child { grid-column: 1/3; border-right: 0; border-bottom: 1px solid var(--campus-line); padding: 0 0 12px; }
-  .invoice-overview > div:nth-child(3) { border-right: 0; }
-  .invoice-overview button { grid-column: 1/3; min-height: 42px; }
   .repair-meta { min-width: 100px; }
 }
 
@@ -560,11 +540,8 @@ html { -webkit-font-smoothing: antialiased; }
   .active-request-banner a { grid-column: 2; grid-row: auto; }
   .page-action { min-width: 44px; padding: 0 11px; font-size: 0; }
   .page-action svg { margin: 0; }
-  .invoice-overview { gap: 12px; }
   .student-invoice-card, .application-card, .repair-card { padding: 14px; }
   .invoice-total strong { font-size: 16px; }
-  .student-invoice-card > footer { align-items: flex-end; }
-  .student-invoice-card > footer p { max-width: 180px; }
   .repair-card > header { flex-direction: column; }
   .repair-meta { align-items: flex-start; }
   .repair-timeline > div { grid-template-columns: 28px 1fr; }

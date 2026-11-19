@@ -1,0 +1,17 @@
+@{ Layout = null; }
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewData["Title"] · NẾP KTX</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/workspace.css" asp-append-version="true" />
+</head>
+<body class="info-body">
+    <main class="info-shell">
+        <a class="info-brand" asp-controller="Home" asp-action="Index">NẾP KTX</a>
+        @RenderBody()
+    </main>
+</body>
+</html>

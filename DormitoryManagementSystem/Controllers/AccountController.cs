@@ -9,15 +9,18 @@ namespace DormitoryManagementSystem.Controllers;
 
 public sealed class AccountController(
     SignInManager<ApplicationUser> signInManager,
-    UserManager<ApplicationUser> userManager) : Controller
+    UserManager<ApplicationUser> userManager,
+    TimeProvider clock) : Controller
 {
     [AllowAnonymous]
     [HttpGet]
-    public IActionResult Login(string? returnUrl = null)
+    public IActionResult Login(string? returnUrl = null, string? reason = null)
     {
         if (User.Identity?.IsAuthenticated == true)
             return RedirectToAction("Index", "Home");
 
+        if (reason == StudentAccountSession.LockedReason || StudentAccountSession.WasLocked(HttpContext))
+            ModelState.AddModelError(string.Empty, StudentAccountSession.LockedMessage);
         return View(new LoginViewModel { ReturnUrl = returnUrl });
     }
 
@@ -38,9 +41,14 @@ public sealed class AccountController(
         var result = await signInManager.PasswordSignInAsync(user, model.Password, model.RememberMe, true);
         if (!result.Succeeded)
         {
-            ModelState.AddModelError(string.Empty, result.IsLockedOut
-                ? "Tài khoản tạm khóa do đăng nhập sai nhiều lần."
-                : "Email hoặc mật khẩu không đúng.");
+            var message = "Email hoặc mật khẩu không đúng.";
+            if (result.IsLockedOut)
+            {
+                message = StudentAccountSession.IsAdministrativelyLocked(user, clock.GetUtcNow())
+                    ? StudentAccountSession.LockedMessage
+                    : "Tài khoản tạm khóa do đăng nhập sai nhiều lần.";
+            }
+            ModelState.AddModelError(string.Empty, message);
             return View(model);
         }
 

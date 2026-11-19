@@ -1,6 +1,15 @@
 ﻿@model ErrorViewModel
 @{
-    ViewData["Title"] = "Có lỗi xảy ra";
+    Layout = "_InfoLayout";
+    ViewData["Title"] = "Chưa thể hoàn tất yêu cầu";
 }
 
-<div class="error-page"><section><span><svg><use href="#i-tool" /></svg></span><p class="operations-kicker">Hệ thống tạm gián đoạn</p><h1>Chưa thể hoàn tất yêu cầu</h1><p>Dữ liệu của bạn chưa bị thay đổi. Hãy quay lại trang trước và thử lại; nếu lỗi lặp lại, gửi mã tra cứu cho quản trị hệ thống.</p>@if (Model.ShowRequestId) { <code>Mã tra cứu: @Model.RequestId</code> }<a asp-controller="Home" asp-action="Index">Về trang tổng quan</a></section></div>
+<div class="status-page">
+    <h1>Chưa thể hoàn tất yêu cầu</h1>
+    <p>Quay lại để kiểm tra kết quả trước khi thử lại. Nếu lỗi lặp lại, hãy gửi mã tra cứu cho Ban quản lý.</p>
+    @if (Model.ShowRequestId)
+    {
+        <p class="info-trace">Mã tra cứu <code>@Model.RequestId</code></p>
+    }
+    <a class="info-primary" asp-controller="Home" asp-action="Index">Về trang của tôi</a>
+</div>
