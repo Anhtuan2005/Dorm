@@ -125,18 +125,18 @@ public sealed class StudentPortalService(
         var currentStay = profile.Stays.SingleOrDefault(x => x.EndedAt == null);
         var currentRoomId = currentStay?.RoomId;
         var now = timeProvider.GetUtcNow().UtcDateTime;
-        var rooms = await SearchableRooms(profile.Gender, now).ToListAsync(cancellationToken);
-
-        var facts = rooms.Select(room =>
-        {
-            var capacity = RoomCapacityPolicy.FromRoom(room, now);
-            return new StudentRoomFact(room, capacity.Occupied, capacity.Assignable);
-        }).Where(x => x.Assignable > 0 && x.Room.Id != currentRoomId).ToList();
-
-        var buildings = facts.Select(x => x.Room.Floor.Building.Code).Distinct().Order().ToList();
-        var amenities = facts.SelectMany(x => RoomAmenities.Optional(x.Room.Amenities)).Distinct().Order().ToList();
-
-        IEnumerable<StudentRoomFact> filtered = facts;
+        var facts = from room in db.Rooms.AsNoTracking().Include(x => x.Floor).ThenInclude(x => x.Building)
+                    where room.RoomType == profile.Gender && room.Id != currentRoomId
+                    let occupied = room.Stays.Count(stay => stay.EndedAt == null)
+                    let held = room.Holds.Where(h => h.ReleasedAt == null && h.ExpiresAt > now).Sum(h => h.HeldBeds)
+                    let blocked = room.MaintenanceRequests.Where(r => OpenRepairStatuses.Contains(r.Status)).Sum(r => r.BlockedBeds)
+                    let assignable = room.Capacity - occupied - held - blocked
+                    where assignable > 0
+                    select new { Room = room, Occupied = occupied, Assignable = assignable };
+        var buildings = await facts.Select(x => x.Room.Floor.Building.Code).Distinct().OrderBy(x => x).ToListAsync(cancellationToken);
+        var amenitySets = await facts.Select(x => x.Room.Amenities).Distinct().ToListAsync(cancellationToken);
+        var amenities = amenitySets.SelectMany(RoomAmenities.Optional).Distinct().Order().ToList();
+        var filtered = facts;
         if (!string.IsNullOrWhiteSpace(query.Building))
         {
             query.Building = query.Building.Trim().ToUpperInvariant();
@@ -145,7 +145,10 @@ public sealed class StudentPortalService(
         if (query.MaxPrice.HasValue)
             filtered = filtered.Where(x => x.Room.MonthlyPrice <= query.MaxPrice.Value);
         if (!string.IsNullOrWhiteSpace(query.Amenity))
-            filtered = filtered.Where(x => RoomAmenities.List(x.Room.Amenities).Contains(query.Amenity));
+        {
+            var matchingSets = amenitySets.Where(set => RoomAmenities.List(set).Contains(query.Amenity)).ToArray();
+            filtered = filtered.Where(x => matchingSets.Contains(x.Room.Amenities));
+        }
 
         var ordered = query.Sort switch
         {
@@ -161,10 +164,10 @@ public sealed class StudentPortalService(
             .FirstOrDefaultAsync(cancellationToken);
 
         const int pageSize = 24;
-        var matches = ordered.ToList();
-        var totalPages = Math.Max(1, (matches.Count + pageSize - 1) / pageSize);
+        var matches = await filtered.CountAsync(cancellationToken);
+        var totalPages = Math.Max(1, (matches + pageSize - 1) / pageSize);
         query.Page = Math.Clamp(query.Page, 1, totalPages);
-        var shownRooms = matches.Skip((query.Page - 1) * pageSize).Take(pageSize).ToList();
+        var shownRooms = await ordered.Skip((query.Page - 1) * pageSize).Take(pageSize).ToListAsync(cancellationToken);
         var roomIds = shownRooms.Select(x => x.Room.Id).ToList();
         var roomPhotos = await db.RoomPhotos.AsNoTracking().Where(x => roomIds.Contains(x.RoomId))
             .OrderBy(x => x.Id)
@@ -179,7 +182,7 @@ public sealed class StudentPortalService(
             Rooms = shownRooms.Select(x => ToRoomOption(x.Room, x.Occupied, x.Assignable, photosByRoom[x.Room.Id].ToArray())).ToList(),
             Buildings = buildings,
             Amenities = amenities,
-            TotalMatches = matches.Count,
+            TotalMatches = matches,
             TotalPages = totalPages,
             ActiveRequest = activeRequest is null ? null : ToHousingRequest(activeRequest, now)
         };
@@ -229,6 +232,7 @@ public sealed class StudentPortalService(
         var requests = await db.HousingRequests.AsNoTracking()
             .Include(x => x.TargetRoom)
             .Include(x => x.Events).ThenInclude(x => x.ActorUser)
+            .Include(x => x.ApprovedRoomHold)
             .Where(x => x.StudentProfileId == profile.Id)
             .OrderByDescending(x => x.SubmittedAt)
             .ToListAsync(cancellationToken);
@@ -567,7 +571,7 @@ public sealed class StudentPortalService(
         var priority = Enum.TryParse<MaintenancePriority>(input.Priority, true, out var parsedPriority)
             ? parsedPriority
             : MaintenancePriority.Medium;
-        var sequence = await db.MaintenanceRequests.CountAsync(cancellationToken) + 1;
+        var sequence = await db.Database.SqlQueryRaw<long>("SELECT NEXT VALUE FOR dbo.RepairNumbers AS [Value]").ToListAsync(cancellationToken);
         var now = timeProvider.GetUtcNow().UtcDateTime;
         var prepared = await attachmentStorage.PrepareAsync(input.Attachments, now, cancellationToken);
         if (!prepared.Success) return new(false, prepared.Message);
@@ -576,7 +580,7 @@ public sealed class StudentPortalService(
             RoomId = stay.RoomId,
             ReporterStudentId = profile.Id,
             ShareWithRoom = input.ShareWithRoom,
-            Code = $"SC-SV-{sequence:0000}",
+            Code = $"SC-R-{sequence.Single():000000}",
             Title = input.Title.Trim(),
             Category = input.Category.Trim(),
             Description = input.Description.Trim(),
@@ -695,7 +699,10 @@ public sealed class StudentPortalService(
             HousingRequestWorkflow.Can(request.Status, HousingRequestAction.SubmitInformation),
             events)
         {
-            TargetBedNumber = request.TargetBedNumber
+            TargetBedNumber = request.TargetBedNumber,
+            AppointmentUtc = request.AppointmentUtc,
+            Inventory = request.Inventory,
+            HoldUntil = request.Status == HousingRequestStatus.AwaitingMoveIn ? request.ApprovedRoomHold?.ExpiresAt : null
         };
     }
 
@@ -807,5 +814,5 @@ public sealed class StudentPortalService(
         _ => "Đóng yêu cầu"
     };
 
-    private sealed record StudentRoomFact(Room Room, int Occupied, int Assignable);
+
 }

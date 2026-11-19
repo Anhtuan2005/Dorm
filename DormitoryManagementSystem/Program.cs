@@ -104,6 +104,7 @@ builder.Services.AddRateLimiter(options =>
         }, cancellationToken);
 });
 builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddHostedService<ExpiredRoomHolds>();
 builder.Services.AddControllersWithViews();
 builder.Services.AddSignalR();
 builder.Services.AddSingleton<RealtimeUpdates>();

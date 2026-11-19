@@ -111,6 +111,7 @@ public static class HousingRequestWorkflow
                 HousingRequestStatus.AwaitingMoveIn => "Chờ xác nhận nhận phòng",
                 HousingRequestStatus.Approved => "Đơn đã được duyệt",
                 HousingRequestStatus.Rejected => "Đơn đã bị từ chối",
+                HousingRequestStatus.Expired => "Hết hạn giữ giường, bạn có thể chọn phòng lại",
                 _ => "Đơn đã được hủy"
             },
             IsActive(status),
@@ -126,6 +127,7 @@ public static class HousingRequestWorkflow
         HousingRequestStatus.AwaitingMoveIn => ("Chờ nhận phòng", "awaiting-movein"),
         HousingRequestStatus.Approved => ("Đã duyệt", "approved"),
         HousingRequestStatus.Rejected => ("Từ chối", "rejected"),
+        HousingRequestStatus.Expired => ("Hết hạn giữ giường", "cancelled"),
         _ => ("Đã hủy", "cancelled")
     };
 

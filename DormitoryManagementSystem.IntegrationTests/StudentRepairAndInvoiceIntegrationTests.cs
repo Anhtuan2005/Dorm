@@ -122,6 +122,28 @@ public sealed class StudentRepairAndInvoiceIntegrationTests
         }
     }
 
+    [SqlServerFact]
+    public async Task Two_residents_submitting_repairs_receive_distinct_codes()
+    {
+        await using var database = await SqlServerTestDatabase.CreateAsync();
+        await using var db = database.CreateContext();
+        var room = new Room { Code = "QA-101", Capacity = 4, Floor = new Floor {
+            Number = 1, Building = new Building { Code = "QA", Name = "Tòa QA", SiteName = "KTX" }
+        } };
+        db.StudentProfiles.AddRange(Profile(Reporter, room), Profile(Roommate, room));
+        await db.SaveChangesAsync();
+
+        async Task<StudentOperationResult> Send(string account)
+        {
+            await using var scoped = database.CreateContext();
+            return await Portal(scoped).CreateRepairAsync(account, Request("Yêu cầu của " + account, false));
+        }
+
+        var results = await Task.WhenAll(Send(Reporter), Send(Roommate));
+        Assert.All(results, result => Assert.True(result.Success, result.Message));
+        Assert.Equal(2, await db.MaintenanceRequests.Select(x => x.Code).Distinct().CountAsync());
+    }
+
     private static StudentPortalService Portal(DormitoryDbContext context) =>
         new(context, new BillingLedgerService(context, new FixedTimeProvider(Now)), new EmptyAttachments(), new FixedTimeProvider(Now));
 

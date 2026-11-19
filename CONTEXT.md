@@ -148,6 +148,13 @@ _Avoid_: Tỷ lệ thanh toán
 - Một **Sự cố** có thể có nhiều **Ảnh hiện trường**; quyền đọc ảnh tuân theo quyền đọc sự cố thay vì URL tĩnh công khai.
 - **Ảnh chụp vận hành** liên kết số sức chứa hiện tại với **Kỳ thu** được chọn; giao diện phải ghi rõ hai mốc này để tránh hiểu chúng là cùng một khoảng thời gian.
 
+## Học kỳ, bàn giao và phí theo chỉ số
+
+- Mỗi đợt gia hạn có thời gian nhận đơn và thời gian ở do Ban quản lý nhập. Khi duyệt, hệ thống cập nhật hạn dự kiến của đúng lượt đang ở.
+- Ban quản lý có thể hẹn bàn giao nhận, chuyển hoặc trả phòng. Lịch hẹn dùng giờ Việt Nam. Biên bản ghi tình trạng chìa khóa, nội thất và thiết bị tại bước xác nhận. Hết hạn giữ giường thì đơn hết hiệu lực và sinh viên được chọn lại.
+- Tiền phòng kỳ thu lấy giá của lượt ở gần nhất có giao với kỳ, rồi mới xét phạm vi tòa. Hai mốc đầu và cuối kỳ dùng giờ Việt Nam. Phát hành theo từng tòa và phát hành toàn KTX cho cùng kết quả trên cùng dữ liệu.
+- Với kỳ thu theo chỉ số, mỗi phòng có chỉ số đầu, cuối và đơn giá riêng cho điện và nước. Khi kỳ đã kết thúc, chia tổng tiền của phòng theo thời gian ở thực tế trong kỳ. Phân bổ số đồng còn dư theo phần lẻ lớn nhất, sau đó theo mã định danh hồ sơ. Hóa đơn sinh viên lưu từng dòng phí và tỷ lệ đã dùng. Kỳ thu theo mức cố định vẫn dùng số tiền nhập theo sinh viên.
+
 ## Example dialogue
 
 > **Dev:** “Phòng C-504 có sức chứa 8 và chưa có sinh viên, vậy đơn chuyển phòng luôn duyệt được đúng không?”

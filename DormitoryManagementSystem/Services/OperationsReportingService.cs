@@ -161,7 +161,8 @@ public sealed class OperationsReportingService(
                 requestRows.Count(x => x.Type == HousingRequestType.Registration),
                 requestRows.Count(x => x.Type == HousingRequestType.Transfer),
                 requestRows.Count(x => x.Type == HousingRequestType.Checkout),
-                OperationsMetricsPolicy.Percentage(requestRows.Count(x => x.Status == HousingRequestStatus.Approved), resolvedRequests)),
+                OperationsMetricsPolicy.Percentage(requestRows.Count(x => x.Status == HousingRequestStatus.Approved), resolvedRequests),
+                requestRows.Count(x => x.Status == HousingRequestStatus.Expired)),
             Maintenance = new MaintenanceReportViewModel(
                 createdMaintenance.Count,
                 openMaintenance.Count,

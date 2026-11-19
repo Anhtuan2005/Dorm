@@ -1,0 +1,19 @@
+@model RenewalPage
+@{ Layout = "_StudentLayout"; }
+<section class="student-page-head"><div><h1>Gia hạn nội trú</h1>
+@if (Model.StayId != null) { <p>Hạn ở hiện tại · @(Model.CurrentEnd?.ToString("dd/MM/yyyy") ?? "Chưa được cập nhật")</p> }</div></section>
+<div class="term-workspace">
+@if (Model.StayId == null) { <p>Bạn cần có lượt lưu trú đang hoạt động để xin ở tiếp.</p> }
+else if (Model.Terms.Count == 0) { <p>Hiện chưa có đợt gia hạn phù hợp để gửi đơn.</p> }
+@foreach (var term in Model.Terms) {
+    <form method="post" asp-action="Apply" class="term-panel"><h2>@term.Name</h2>
+        <p>Thời gian ở @term.Starts.ToString("dd/MM/yyyy") – @term.Ends.ToString("dd/MM/yyyy")</p>
+        <p>Nhận đơn đến @term.Closes.ToString("dd/MM/yyyy")</p>
+        <input name="stayId" type="hidden" value="@Model.StayId" /><input type="hidden" name="termId" value="@term.Id" />
+        <button class="student-primary">Gửi đơn gia hạn</button></form>
+}
+<section class="term-panel"><h2>Đơn đã gửi</h2>
+@if (Model.Requests.Count == 0) { <p>Bạn chưa gửi đơn gia hạn.</p> }
+@foreach (var row in Model.Requests) {
+    <div class="term-row"><strong>@row.Term · @row.Room</strong><span>@(row.Approved switch { true => "Đã duyệt", false => "Từ chối", _ => "Chờ xét duyệt" })</span>@if (row.Note != null) { <p>@row.Note</p> }</div>
+}</section></div>

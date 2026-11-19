@@ -68,7 +68,7 @@ public class CreateRoomInput
 {
     [Range(1, int.MaxValue)] public int FloorId { get; set; }
     [Required, StringLength(12, MinimumLength = 3)] public string Code { get; set; } = string.Empty;
-    [Required, StringLength(24)] public string RoomType { get; set; } = string.Empty;
+    [Required, RegularExpression("^(Nam|Nữ|Khác)$", ErrorMessage = "Chọn loại phòng theo danh mục.")] public string RoomType { get; set; } = string.Empty;
     [StringLength(240)] public string? Amenities { get; set; }
     [Range(1, 100)] public int Capacity { get; set; }
     [Range(typeof(decimal), "0", "999999999")] public decimal MonthlyPrice { get; set; }

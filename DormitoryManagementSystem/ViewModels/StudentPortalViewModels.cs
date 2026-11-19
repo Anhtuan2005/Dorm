@@ -42,6 +42,9 @@ public sealed record StudentHousingRequestViewModel(
     bool CanSupplement,
     IReadOnlyList<StudentHousingRequestEventViewModel> Events)
 {
+    public DateTime? AppointmentUtc { get; init; }
+    public string? Inventory { get; init; }
+    public DateTime? HoldUntil { get; init; }
     public int? TargetBedNumber { get; init; }
 }
 

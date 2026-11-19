@@ -1,0 +1,46 @@
+using DormitoryManagementSystem.Data;
+using DormitoryManagementSystem.Models;
+using Microsoft.EntityFrameworkCore;
+
+namespace DormitoryManagementSystem.Services;
+
+public sealed class ExpiredRoomHolds(IServiceScopeFactory scopes, TimeProvider clock, ILogger<ExpiredRoomHolds> logger) : BackgroundService
+{
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        using var timer = new PeriodicTimer(TimeSpan.FromSeconds(20), clock);
+        do
+        {
+            try
+            {
+                await using var scope = scopes.CreateAsyncScope();
+                var db = scope.ServiceProvider.GetRequiredService<DormitoryDbContext>();
+                var recipients = new List<string?>();
+                var error = await WorkTransaction.RunAsync(db, async () => {
+                    recipients.Clear();
+                    var now = clock.GetUtcNow().UtcDateTime;
+                    var rows = await db.HousingRequests.Include(x => x.StudentProfile).Include(x => x.ApprovedRoomHold)
+                        .Where(x => x.Status == HousingRequestStatus.AwaitingMoveIn && x.ApprovedRoomHold != null &&
+                            x.ApprovedRoomHold.ExpiresAt <= now).OrderBy(x => x.Id).Take(100).ToListAsync(stoppingToken);
+                    foreach (var row in rows)
+                    {
+                        row.Status = HousingRequestStatus.Expired;
+                        row.ApprovedRoomHold!.ReleasedAt ??= now;
+                        row.ActionRequiredAt = null;
+                        row.DecisionReason = "Đã hết hạn giữ giường. Bạn có thể gửi đơn chọn phòng mới.";
+                        row.Events.Add(new() { Status = row.Status, Note = row.DecisionReason, CreatedAt = now });
+                        recipients.Add(row.StudentProfile.UserId);
+                        if (row.StudentProfile.UserId is string recipient)
+                            db.Notifications.Add(new() { UserId = recipient, Title = "Hết hạn giữ giường", Body = row.Code + " · " + row.DecisionReason,
+                                TargetUrl = "/Student/Applications", Type = "Application", CreatedAt = now });
+                    }
+                    return null;
+                }, stoppingToken);
+                if (error == null && recipients.Count > 0)
+                    await scope.ServiceProvider.GetRequiredService<RealtimeUpdates>().NotifyOperationsAsync(recipients.ToArray());
+            }
+            catch (Exception ex) when (!stoppingToken.IsCancellationRequested)
+            { logger.LogError(ex, "Không thể cập nhật đơn giữ giường đã hết hạn."); }
+        } while (await timer.WaitForNextTickAsync(stoppingToken));
+    }
+}

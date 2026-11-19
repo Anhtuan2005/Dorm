@@ -110,6 +110,7 @@ public sealed partial class BillingLedgerService(
         var name = input.PeriodName.Trim();
         if (input.StartDate is null || input.EndDate is null || input.DueDate is null)
             return new(false, "Vui lòng nhập đủ thời gian kỳ thu.");
+        if (input.EndDate == DateOnly.MaxValue) return new(false, "Ngày cuối kỳ vượt phạm vi hỗ trợ.");
         if (input.StartDate > input.EndDate)
             return new(false, "Ngày bắt đầu phải trước hoặc bằng ngày kết thúc.");
         if (input.DueDate < input.StartDate)
@@ -142,16 +143,13 @@ public sealed partial class BillingLedgerService(
                     return new(false, $"Mã kỳ {code} đã tồn tại với mốc thời gian khác.", period.Id);
                 }
 
+                var startUtc = TimeZoneInfo.ConvertTimeToUtc(input.StartDate.Value.ToDateTime(TimeOnly.MinValue), BusinessTimeZone);
+                var endUtc = TimeZoneInfo.ConvertTimeToUtc(input.EndDate.Value.AddDays(1).ToDateTime(TimeOnly.MinValue), BusinessTimeZone);
                 var staysQuery = db.Stays
                     .Include(x => x.StudentProfile)
                     .Include(x => x.Room).ThenInclude(x => x.Floor).ThenInclude(x => x.Building)
-                    .Where(x => x.StartedAt < input.EndDate.Value.AddDays(1).ToDateTime(TimeOnly.MinValue)
-                        && (x.EndedAt == null || x.EndedAt >= input.StartDate.Value.ToDateTime(TimeOnly.MinValue)));
-                if (!string.IsNullOrWhiteSpace(input.BuildingCode))
-                {
-                    var buildingCode = input.BuildingCode.Trim().ToUpperInvariant();
-                    staysQuery = staysQuery.Where(x => x.Room.Floor.Building.Code == buildingCode);
-                }
+                    .Where(x => x.StartedAt < endUtc && (x.EndedAt == null || x.EndedAt > startUtc)
+                        && (x.EndedAt == null || x.EndedAt > x.StartedAt));
 
                 var stays = await staysQuery.OrderBy(x => x.StudentProfile.StudentCode).ToListAsync(cancellationToken);
                 var existingStudentIds = (await db.Invoices
@@ -163,8 +161,24 @@ public sealed partial class BillingLedgerService(
                 var skipped = 0;
                 var notifiedUsers = new HashSet<string>(StringComparer.Ordinal);
 
-                foreach (var stay in stays.GroupBy(x => x.StudentProfileId).Select(x => x.OrderByDescending(y => y.StartedAt).First()))
+                ILookup<int, InvoiceLine>? meterFees = null;
+                if (period.Metered)
                 {
+                    if (now < endUtc) return new(false, "Chờ kết thúc kỳ để chốt thời gian ở và chỉ số thực tế.", period.Id);
+                    var readings = await db.RoomMeterReadings.AsNoTracking().Where(x => x.BillingPeriodId == period.Id)
+                        .ToDictionaryAsync(x => x.RoomId, cancellationToken);
+                    var missing = stays.Where(x => !readings.ContainsKey(x.RoomId)).Select(x => x.Room.Code).Distinct().Order().ToList();
+                    if (missing.Count != 0)
+                        return new(false, $"Cần nhập điện nước cho {missing.Count} phòng trước khi phát hành: {string.Join(", ", missing.Take(8))}.", period.Id);
+                    meterFees = MeterAllocation.Calculate(stays, readings, startUtc, endUtc);
+                }
+
+                foreach (var stay in stays.GroupBy(x => x.StudentProfileId)
+                    .Select(group => group.OrderByDescending(x => x.StartedAt).ThenByDescending(x => x.Id).First()))
+                {
+                    if (!string.IsNullOrWhiteSpace(input.BuildingCode) &&
+                        !string.Equals(stay.Room.Floor.Building.Code, input.BuildingCode.Trim(), StringComparison.OrdinalIgnoreCase))
+                        continue;
                     if (!existingStudentIds.Add(stay.StudentProfileId))
                     {
                         skipped++;
@@ -175,8 +189,12 @@ public sealed partial class BillingLedgerService(
                     {
                         new() { ChargeType = "Tiền phòng", Description = $"Phí lưu trú {stay.Room.Code} — {period.Name}", Amount = stay.Room.MonthlyPrice }
                     };
-                    AddCharge(lines, "Điện", "Điện sinh hoạt", input.ElectricityAmount);
-                    AddCharge(lines, "Nước", "Nước sinh hoạt", input.WaterAmount);
+                    if (meterFees != null) lines.AddRange(meterFees[stay.StudentProfileId]);
+                    else
+                    {
+                        AddCharge(lines, "Điện", "Điện sinh hoạt", input.ElectricityAmount);
+                        AddCharge(lines, "Nước", "Nước sinh hoạt", input.WaterAmount);
+                    }
                     AddCharge(lines, "Dịch vụ", "Phí dịch vụ KTX", input.ServiceAmount);
                     var invoice = new Invoice
                     {
@@ -542,6 +560,12 @@ public sealed partial class BillingLedgerService(
             .OrderByDescending(x => x.ConfirmedAtUtc)
             .Select(x => new VnpayReviewViewModel(x.Reference, x.Amount, x.ProviderTransactionNumber, x.ResponseCode, x.ProviderState))
             .ToListAsync(cancellationToken);
+        var resolutions = await db.VnpayCheckouts.AsNoTracking()
+            .Where(x => x.InvoiceId == invoice.Id && x.ReviewedAtUtc != null)
+            .OrderByDescending(x => x.ReviewedAtUtc)
+            .Select(x => new VnpayResolutionViewModel(x.Reference, x.State == VnpayCheckoutState.ReviewedRefunded,
+                x.ReviewEvidence!, x.ReviewedAtUtc!.Value, db.Users.Where(u => u.Id == x.ReviewedById).Select(u => u.FullName).FirstOrDefault() ?? "Ban quản lý"))
+            .ToListAsync(cancellationToken);
         return new BillingInvoiceDetailViewModel
         {
             Id = invoice.Id,
@@ -564,6 +588,7 @@ public sealed partial class BillingLedgerService(
             CanCollect = summary.CanCollect && !vnpayPending,
             VnpayPending = vnpayPending,
             VnpayReviews = vnpayReviews,
+            VnpayResolutions = resolutions,
             RowVersion = Convert.ToBase64String(invoice.RowVersion),
             Lines = invoice.Lines.OrderBy(x => x.Id)
                 .Select(x => new BillingInvoiceLineViewModel(x.Description, x.ChargeType, x.Amount))

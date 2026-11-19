@@ -39,7 +39,7 @@ public sealed class ApplicationManagementService(
             summaryRows.Count(x => x.Status == HousingRequestStatus.UnderReview),
             summaryRows.Count(x => x.Status == HousingRequestStatus.NeedsInformation),
             summaryRows.Count(x =>
-                (x.Status is HousingRequestStatus.Approved or HousingRequestStatus.Rejected or HousingRequestStatus.Cancelled) &&
+                (x.Status is HousingRequestStatus.Approved or HousingRequestStatus.Rejected or HousingRequestStatus.Cancelled or HousingRequestStatus.Expired) &&
                 x.ReviewedAt >= now.Date));
 
         var filtered = ApplyFilters(Projections(), query, overdueAt);
@@ -219,7 +219,11 @@ public sealed class ApplicationManagementService(
             if (validationError is not null) return new(false, validationError, request.Id);
 
             if (request.Type == HousingRequestType.Checkout)
+            {
+                var inventoryError = RecordInventory(request, input);
+                if (inventoryError != null) return new(false, inventoryError, request.Id);
                 currentStay!.EndedAt = now;
+            }
 
             if (request.Type is HousingRequestType.Registration or HousingRequestType.Transfer)
             {
@@ -295,6 +299,10 @@ public sealed class ApplicationManagementService(
             var moveInError = ValidateMoveIn(request, currentStay, request.TargetRoom, now);
             if (moveInError is not null) return new(false, moveInError, request.Id);
 
+            var inventoryError = RecordInventory(request, input);
+            if (inventoryError != null) return new(false, inventoryError, request.Id);
+            if (input.PlannedEnd is { } end && end < DateOnly.FromDateTime(now.AddHours(7)))
+                return new(false, "Ngày hết hạn lưu trú phải từ hôm nay trở đi.", request.Id);
             var hold = request.ApprovedRoomHold;
             request.TargetBedNumber = hold.BedNumber ??
                 RoomBedPolicy.Available(request.TargetRoom, now, excludingHoldId: hold.Id)[0];
@@ -307,6 +315,7 @@ public sealed class ApplicationManagementService(
                 RoomId = request.TargetRoom.Id,
                 BedNumber = request.TargetBedNumber,
                 HousingRequestId = request.Id,
+                PlannedEnd = input.PlannedEnd ?? currentStay?.PlannedEnd,
                 StartedAt = now
             });
             request.Status = transition.NextStatus;
@@ -457,6 +466,8 @@ public sealed class ApplicationManagementService(
             CanReject = HousingRequestWorkflow.Can(request.Status, HousingRequestAction.Reject),
             CanApprove = approvalTransition.Allowed && approvalBlock is null,
             CanConfirmMoveIn = HousingRequestWorkflow.Can(request.Status, HousingRequestAction.ConfirmMoveIn) && approvalBlock is null,
+            Inventory = request.Inventory,
+            AppointmentUtc = request.AppointmentUtc,
             HoldExpiresAt = request.ApprovedRoomHold?.ExpiresAt,
             ApprovalBlockReason = approvalBlock,
             LatestSupplement = latestSupplement,
@@ -564,7 +575,7 @@ public sealed class ApplicationManagementService(
             "new" => source.Where(x => x.Status == HousingRequestStatus.Submitted),
             "review" => source.Where(x => x.Status == HousingRequestStatus.UnderReview),
             "info" => source.Where(x => x.Status == HousingRequestStatus.NeedsInformation),
-            "completed" => source.Where(x => x.Status == HousingRequestStatus.Approved || x.Status == HousingRequestStatus.Rejected || x.Status == HousingRequestStatus.Cancelled),
+            "completed" => source.Where(x => x.Status == HousingRequestStatus.Approved || x.Status == HousingRequestStatus.Rejected || x.Status == HousingRequestStatus.Cancelled || x.Status == HousingRequestStatus.Expired),
             "all" => source,
             _ => source.Where(x => x.Status == HousingRequestStatus.Submitted || x.Status == HousingRequestStatus.UnderReview || x.Status == HousingRequestStatus.NeedsInformation || x.Status == HousingRequestStatus.AwaitingMoveIn)
         };
@@ -580,6 +591,16 @@ public sealed class ApplicationManagementService(
                                        x.StudentName.Contains(search) || (x.TargetRoomCode != null && x.TargetRoomCode.Contains(search)));
         }
         return source;
+    }
+
+    private static string? RecordInventory(HousingRequest request, ApplicationActionInput input)
+    {
+        var values = new[] { input.Keys, input.Furniture, input.Equipment };
+        if (request.AppointmentUtc == null && values.All(string.IsNullOrWhiteSpace)) return null;
+        if (values.Any(x => x is not ("Đủ, tốt" or "Hư hỏng" or "Thiếu" or "Không áp dụng")))
+            return "Ghi nhận tình trạng chìa khóa, nội thất và thiết bị trước khi xác nhận.";
+        request.Inventory = $"Chìa khóa: {input.Keys} · Nội thất: {input.Furniture} · Thiết bị: {input.Equipment}";
+        return null;
     }
 
     private bool TrySetOriginalVersion(HousingRequest request, string rowVersion)

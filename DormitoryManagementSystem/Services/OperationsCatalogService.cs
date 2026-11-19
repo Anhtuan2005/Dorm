@@ -169,8 +169,9 @@ public sealed class OperationsCatalogService(DormitoryDbContext db, TimeProvider
         var room = await db.Rooms.Include(x => x.Floor).Include(x => x.Stays).Include(x => x.Holds).Include(x => x.MaintenanceRequests)
             .SingleOrDefaultAsync(x => x.Id == roomId, cancellationToken);
         if (room is null) return new(false, "Không tìm thấy phòng.");
-        if (room.Stays.Count != 0 || room.Holds.Count != 0 || room.MaintenanceRequests.Count != 0 || await db.HousingRequests.AnyAsync(x => x.TargetRoomId == room.Id, cancellationToken))
-            return new(false, "Không thể xóa phòng đã có lượt ở, giữ chỗ, đơn hoặc sự cố. Hãy giữ bản ghi để bảo toàn lịch sử.", room.Floor.BuildingId, room.FloorId);
+        if (room.Stays.Count != 0 || room.Holds.Count != 0 || room.MaintenanceRequests.Count != 0 || await db.HousingRequests.AnyAsync(x => x.TargetRoomId == room.Id, cancellationToken)
+            || await db.RoomMeterReadings.AnyAsync(x => x.RoomId == room.Id, cancellationToken))
+            return new(false, "Không thể xóa phòng đã có lượt ở, giữ chỗ, đơn, sự cố hoặc chỉ số điện nước. Hãy giữ bản ghi để bảo toàn lịch sử.", room.Floor.BuildingId, room.FloorId);
         db.Rooms.Remove(room);
         await db.SaveChangesAsync(cancellationToken);
         return new(true, $"Đã xóa phòng {room.Code} chưa phát sinh nghiệp vụ.", room.Floor.BuildingId, room.FloorId);

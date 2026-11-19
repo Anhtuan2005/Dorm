@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
 
 namespace DormitoryManagementSystem.Controllers;
 
@@ -75,6 +76,38 @@ public sealed class BillingController(
         var result = await billingLedger.ReversePaymentAsync(input, ManagerId, cancellationToken);
         TempData[result.Success ? "Success" : "Error"] = result.Message;
         return RedirectToQueue(result.InvoiceId, context);
+    }
+
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> ResolveReview(string reference, string outcome, string evidence,
+        [FromServices] Data.DormitoryDbContext db, [FromServices] TimeProvider clock,
+        [FromServices] RealtimeUpdates live, CancellationToken token)
+    {
+        long invoiceId = 0;
+        string? student = null;
+        var error = await WorkTransaction.RunAsync(db, async () =>
+        {
+            var review = await db.VnpayCheckouts.Include(x => x.Invoice.StudentProfile)
+                .SingleOrDefaultAsync(x => x.Reference == reference, token);
+            if (review == null) return "Không tìm thấy phiên thanh toán.";
+            invoiceId = review.InvoiceId;
+            if (review.State != VnpayCheckoutState.NeedsReview) return "Phiên này đã được xử lý.";
+            if (string.IsNullOrWhiteSpace(evidence) || evidence.Trim().Length is < 5 or > 300)
+                return "Nhập mã chứng từ hoặc căn cứ đối soát từ 5 đến 300 ký tự.";
+            if (outcome is not ("unpaid" or "refunded")) return "Chọn kết quả đã xác minh với VNPAY.";
+            review.State = outcome == "unpaid" ? VnpayCheckoutState.ReviewedUnpaid : VnpayCheckoutState.ReviewedRefunded;
+            review.ReviewEvidence = evidence.Trim();
+            review.ReviewedById = ManagerId;
+            review.ReviewedAtUtc = clock.GetUtcNow().UtcDateTime;
+            student = review.Invoice.StudentProfile.UserId;
+            if (student != null) db.Notifications.Add(new() { UserId = student, Type = "Invoice",
+                Title = "Đã hoàn tất đối soát VNPAY", Body = $"Hóa đơn {review.Invoice.Code}. Bạn có thể kiểm tra lại công nợ.",
+                CreatedAt = review.ReviewedAtUtc.Value, TargetUrl = "/Student/Invoices" });
+            return null;
+        }, token);
+        if (error == null) await live.NotifyOperationsAsync(student);
+        TempData[error == null ? "Success" : "Error"] = error ?? "Đã lưu kết quả đối soát.";
+        return RedirectToAction(nameof(Index), new { SelectedId = invoiceId });
     }
 
     private string ManagerId => userManager.GetUserId(User)

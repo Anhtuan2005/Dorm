@@ -7,6 +7,7 @@
 <section class="student-page-head application-student-head">
     <div><h1>Đăng ký của tôi</h1><p>Xem tiến độ đơn lưu trú và bổ sung thông tin khi được yêu cầu.</p></div>
     <div class="student-page-actions">
+        <a class="student-secondary page-action" asp-controller="Renewals" asp-action="Mine">Gia hạn nội trú</a>
         @if (!Model.HasActiveRequest)
         {
             <a class="student-primary page-action" asp-action="Rooms"><svg><use href="#s-plus" /></svg>@(Model.CurrentRoomCode is null ? "Đăng ký phòng" : "Chuyển phòng")</a>
@@ -49,6 +50,9 @@ else
                     <p class="student-request-decision">@request.DecisionReason</p>
                 }
 
+                @if (request.HoldUntil is DateTime until) { <p>Giữ giường đến <strong>@until.AddHours(7).ToString("HH:mm dd/MM/yyyy")</strong></p> }
+                @if (request.AppointmentUtc is DateTime appt) { <p>Hẹn bàn giao <strong>@appt.AddHours(7).ToString("HH:mm dd/MM/yyyy")</strong></p> }
+                @if (request.Inventory != null) { <p><strong>Biên bản kiểm kê</strong> · @request.Inventory</p> }
                 @if (request.CanSupplement)
                 {
                     <form class="student-supplement-form" asp-action="SupplementHousingRequest" method="post">

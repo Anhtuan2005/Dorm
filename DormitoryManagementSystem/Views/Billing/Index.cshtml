@@ -11,7 +11,7 @@
 <div class="billing-page">
     <header class="operations-heading billing-heading">
         <div><h1>Thu phí và công nợ</h1><p>Tra cứu hóa đơn, ghi nhận khoản thu và kiểm tra lịch sử.</p></div>
-        <div class="billing-heading-actions"><button type="button" class="heading-room-link" data-open-dialog="issue-invoices-dialog"><svg><use href="#i-plus" /></svg>Phát hành kỳ thu</button><a class="heading-room-link quiet" asp-controller="Students" asp-action="Index"><svg><use href="#i-users" /></svg>Danh bạ sinh viên</a></div>
+        <div class="billing-heading-actions"><a class="heading-room-link" asp-controller="Meters" asp-action="Index">Chỉ số điện nước</a><button type="button" class="heading-room-link" data-open-dialog="issue-invoices-dialog"><svg><use href="#i-plus" /></svg>Phát hành kỳ thu</button><a class="heading-room-link quiet" asp-controller="Students" asp-action="Index"><svg><use href="#i-users" /></svg>Danh bạ sinh viên</a></div>
     </header>
 
     <dialog class="manager-dialog issue-dialog" id="issue-invoices-dialog" aria-labelledby="issue-invoices-title">
@@ -28,7 +28,7 @@
                 <label><span>Nước / sinh viên</span><input name="WaterAmount" type="number" min="0" step="1000" value="80000" /></label>
                 <label><span>Dịch vụ / sinh viên</span><input name="ServiceAmount" type="number" min="0" step="1000" value="50000" /></label>
             </div>
-            <div class="issue-proof"><svg><use href="#i-check" /></svg><p><strong>Có thể chạy lại an toàn.</strong> Hệ thống chỉ tạo hóa đơn còn thiếu cho sinh viên có lượt ở trong kỳ; hóa đơn đã tồn tại được bỏ qua.</p></div>
+            <div class="issue-proof"><svg><use href="#i-check" /></svg><p><strong>Có thể chạy lại an toàn.</strong> Hệ thống chỉ tạo hóa đơn còn thiếu. Với kỳ theo chỉ số, tiền điện nước được lấy từ sổ chỉ số theo phòng.</p></div>
             <footer><button type="button" data-dialog-close>Hủy</button><button type="submit">Phát hành hóa đơn</button></footer>
         </form>
     </dialog>
@@ -106,6 +106,12 @@
                     <div class="balance"><small>Còn phải thu</small><strong>@Money(selected.Balance) đ</strong><span>Hạn @selected.DueDate.ToString("dd/MM/yyyy")</span></div>
                 </section>
 
+                @if (selected.VnpayResolutions.Count > 0)
+                {
+                    <details class="optional-note"><summary>Lịch sử đối soát VNPAY</summary>
+                    @foreach (var entry in selected.VnpayResolutions) { <p><strong>@(entry.Refunded ? "Cổng đã hoàn tiền" : "Cổng xác nhận chưa thu")</strong> · @entry.Reference<br />@entry.Evidence<br />@entry.Reviewer · @entry.DateUtc.AddHours(7).ToString("HH:mm dd/MM/yyyy")</p> }
+                    </details>
+                }
                 @if (selected.VnpayReviews.Count > 0)
                 {
                     <section class="billing-vnpay-review" aria-label="Giao dịch VNPAY cần đối soát">
@@ -114,7 +120,13 @@
                         <ul>
                             @foreach (var review in selected.VnpayReviews)
                             {
-                                <li><strong>@Money(review.Amount) đ</strong> · @review.Reference@if (review.ProviderReference is { } provider) { <text> · Mã VNPAY @provider</text> } · Phản hồi @review.ResponseCode/@review.ProviderState</li>
+                                <li><strong>@Money(review.Amount) đ</strong> · @review.Reference@if (review.ProviderReference is { } provider) { <text> · Mã VNPAY @provider</text> } · Phản hồi @review.ResponseCode/@review.ProviderState
+                                    <form asp-action="ResolveReview" method="post" class="profile-form-grid">
+                                        <input type="hidden" name="reference" value="@review.Reference" />
+                                        <label>Kết quả tại cổng<select name="outcome" required><option value="">Chọn kết quả</option><option value="unpaid">Cổng xác nhận chưa thu</option><option value="refunded">Cổng đã hoàn tiền</option></select></label>
+                                        <label>Chứng từ đối soát<input name="evidence" minlength="5" maxlength="300" required /></label>
+                                        <button type="submit" class="primary">Lưu kết quả đối soát</button>
+                                    </form></li>
                             }
                         </ul>
                     </section>

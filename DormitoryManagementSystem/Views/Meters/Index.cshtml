@@ -1,0 +1,33 @@
+@model MeterPage
+@using System.Globalization
+@{ string? Num(decimal? x) => x?.ToString("0.##", CultureInfo.InvariantCulture); var edit = Model.Edit; }
+<header class="operations-heading"><div><h1>Chỉ số điện nước</h1><p>Chia chi phí từng phòng theo tỷ lệ thời gian mỗi sinh viên ở trong kỳ.</p></div><a asp-controller="Billing" asp-action="Index" class="heading-room-link">Thu phí</a></header>
+<div class="term-workspace">
+<details class="term-panel" open="@(Model.Selected == null)"><summary>Mở kỳ thu theo chỉ số</summary><form asp-action="CreatePeriod" method="post" class="term-fields">
+<label>Mã kỳ<input name="PeriodCode" required minlength="3" maxlength="12" /></label><label>Tên kỳ<input name="PeriodName" required maxlength="80" /></label>
+<label>Từ ngày<input type="date" name="StartDate" required /></label><label>Đến ngày<input type="date" name="EndDate" required /></label>
+<label>Hạn thanh toán<input type="date" name="DueDate" required /></label><button class="primary">Mở kỳ thu</button></form></details>
+@if (Model.Selected is { } period) {
+<section class="term-panel"><form method="get" class="term-fields"><label>Kỳ chỉ số<select name="periodId">@foreach (var p in Model.Periods) { <option value="@p.Id" selected="@(p.Id == period.Id)">@p.Code · @p.Name</option> }</select></label><button class="heading-room-link">Xem kỳ</button></form>
+@if (!Model.Issued) {
+<form asp-action="Reading" method="post" class="term-fields">
+<input type="hidden" name="periodId" value="@period.Id" /><input type="hidden" name="version" value="@(edit == null ? "" : Convert.ToBase64String(edit.Version))" />
+<label>Phòng<input list="meter-rooms" name="roomCode" required value="@edit?.Code" readonly="@(edit != null)" /></label><datalist id="meter-rooms">@foreach (var code in Model.Rooms) { <option value="@code"></option> }</datalist>
+@foreach (var item in new[] { ("powerStart", "Điện đầu kỳ (kWh)", edit?.PowerStart), ("powerEnd", "Điện cuối kỳ (kWh)", edit?.PowerEnd), ("powerRate", "Đơn giá điện (đ/kWh)", edit?.PowerRate), ("waterStart", "Nước đầu kỳ (m³)", edit?.WaterStart), ("waterEnd", "Nước cuối kỳ (m³)", edit?.WaterEnd), ("waterRate", "Đơn giá nước (đ/m³)", edit?.WaterRate) }) {
+<label>@item.Item2<input type="number" min="0" step="0.01" name="@item.Item1" value="@Num(item.Item3)" required /></label>
+}
+<button class="primary">Lưu chỉ số</button></form>
+} else { <p>Chỉ số đã chốt khi phát hành hóa đơn.</p> }</section>
+<section class="term-panel"><h2>Chỉ số đã nhập</h2>
+@if (Model.Readings.Count == 0) { <p>Chưa có chỉ số trong kỳ.</p> }
+@foreach (var row in Model.Readings) { <div class="term-row"><strong>@row.Code</strong>
+<span>Điện @Num(row.PowerStart) → @Num(row.PowerEnd) kWh · @Num(row.PowerRate) đ/kWh</span>
+<span>Nước @Num(row.WaterStart) → @Num(row.WaterEnd) m³ · @Num(row.WaterRate) đ/m³</span>
+@if (!Model.Issued) { <a asp-route-periodId="@period.Id" asp-route-roomId="@row.RoomId">Sửa chỉ số</a> }</div> }
+</section>
+<section class="term-panel"><h2>Phát hành hóa đơn theo chỉ số</h2><p>Nhập đủ các phòng có người ở. Số tiền điện nước được làm tròn đến đồng và tổng các phần chia bằng chi phí của phòng.</p>
+<form asp-controller="Billing" asp-action="IssueInvoices" method="post" class="term-fields">
+<input type="hidden" name="PeriodCode" value="@period.Code" /><input type="hidden" name="PeriodName" value="@period.Name" /><input type="hidden" name="StartDate" value="@period.StartDate.ToString("yyyy-MM-dd")" /><input type="hidden" name="EndDate" value="@period.EndDate.ToString("yyyy-MM-dd")" /><input type="hidden" name="DueDate" value="@period.DueDate.ToString("yyyy-MM-dd")" />
+<label>Phí dịch vụ mỗi sinh viên (đ)<input type="number" name="ServiceAmount" min="0" max="999999999" value="0" required /></label>
+<button class="primary">Phát hành hóa đơn</button></form></section>
+}</div>

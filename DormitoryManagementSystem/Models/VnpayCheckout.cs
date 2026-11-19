@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace DormitoryManagementSystem.Models;
 
-public enum VnpayCheckoutState { Pending, Settled, Failed, NeedsReview }
+public enum VnpayCheckoutState { Pending, Settled, Failed, NeedsReview, ReviewedUnpaid, ReviewedRefunded }
 
 public sealed class VnpayCheckout
 {
@@ -20,6 +20,10 @@ public sealed class VnpayCheckout
     [MaxLength(15)] public string? ProviderTransactionNumber { get; set; }
     [MaxLength(2)] public string? ResponseCode { get; set; }
     [MaxLength(2)] public string? ProviderState { get; set; }
+
+    [MaxLength(450)] public string? ReviewedById { get; set; }
+    [MaxLength(300)] public string? ReviewEvidence { get; set; }
+    public DateTime? ReviewedAtUtc { get; set; }
 
     internal static bool SupportsAmount(decimal amount) =>
         amount is >= MinimumAmount and <= 9_999_999_999m && decimal.Truncate(amount) == amount;

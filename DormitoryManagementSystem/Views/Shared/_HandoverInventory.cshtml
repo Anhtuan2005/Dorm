@@ -1,0 +1,9 @@
+<fieldset class="term-fields">
+    <legend>Tình trạng tài sản khi bàn giao</legend>
+    @foreach (var field in new[] { ("Keys", "Chìa khóa"), ("Furniture", "Nội thất"), ("Equipment", "Thiết bị") })
+    {
+        <label>@field.Item2<select name="@field.Item1"><option value="">Chưa ghi nhận</option>
+            @foreach (var state in new[] { "Đủ, tốt", "Hư hỏng", "Thiếu", "Không áp dụng" }) { <option>@state</option> }
+        </select></label>
+    }
+</fieldset>

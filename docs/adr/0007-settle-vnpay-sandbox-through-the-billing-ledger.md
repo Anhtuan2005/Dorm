@@ -16,4 +16,4 @@ A student can open a payment link for an issued invoice. A browser redirect is n
 ## Consequences
 
 - Real Sandbox credentials and a public HTTPS IPN on a test environment are required for VNPAY SIT. Local verification uses generated credentials, browser interception and disposable SQL Server databases.
-- The current operator action for a flagged checkout is to reconcile against the Sandbox portal. Manual ledger reversal is unavailable for VNPAY receipts because it does not refund them at the gateway.
+- Operators check a flagged checkout against the Sandbox portal. After verifying that the gateway collected no funds or already refunded the charge, staff can record the result and its evidence on the invoice. The decision stores the staff identity and time. A balance can then be paid again. Only the provider IPN posts VNPAY receipts to the ledger.

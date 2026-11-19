@@ -98,6 +98,13 @@ public sealed class StudentHelpChatbotService(
             || (questionText.Has("hoa don", "ky thu") && questionText.Has("cua", "bao nhieu", "han nop", "han dong", "han thanh toan", "khi nao")))
             return new(true, "Mở Hóa đơn để xem số tiền còn phải trả, hạn nộp theo kỳ và giao dịch của tài khoản đang đăng nhập.", Action: "invoices");
 
+        if (questionText.Has("gia han", "xin o tiep", "han o hien tai"))
+            return new(true, "Mở Đăng ký của tôi → Gia hạn nội trú để xem hạn ở, các đợt đang mở và kết quả đơn đã gửi.", Action: "applications");
+        if (questionText.Has("lich ban giao", "kiem ke", "lich hen nhan phong"))
+            return new(true, "Mở Đăng ký của tôi và chọn đơn nhận, chuyển hoặc trả phòng để xem giờ hẹn và tình trạng tài sản khi bàn giao.", Action: "applications");
+        if (questionText.Has("chi so dien", "chi so nuoc", "chia tien dien", "chia tien nuoc"))
+            return new(true, "Mở Hóa đơn → Chi tiết các khoản phí. Với kỳ theo chỉ số, dòng điện nước cho biết chỉ số đầu, cuối, đơn giá và phần thời gian ở của bạn.", Action: "invoices");
+
         // A workflow must never stand in for an answer about an unpublished policy or price.
         if (questionText.Has("noi quy", "quy dinh", "dieu kien", "giay to", "bieu phi", "phi", "gia phong", "gia o",
             "gia thue", "muc gia", "gia bao nhieu", "bao nhieu tien", "dong bao nhieu", "han nop", "han dong",

@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
+import { bedTextiles, windowCurtain } from "./room-textiles.js";
 
 // Match the catalogue's Vietnamese labels, with or without accents.
 const amenityPatterns = {
@@ -24,10 +25,10 @@ function interpretAmenities(amenities) {
     };
 }
 
-function surface(draw, repeatX = 1, repeatY = 1) {
+function surface(draw, repeatX = 1, repeatY = 1, size = 128) {
     const canvas = document.createElement("canvas");
-    canvas.width = canvas.height = 128;
-    draw(canvas.getContext("2d"), 128);
+    canvas.width = canvas.height = size;
+    draw(canvas.getContext("2d"), size);
     const texture = new THREE.CanvasTexture(canvas);
     texture.colorSpace = THREE.SRGBColorSpace;
     texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
@@ -37,36 +38,47 @@ function surface(draw, repeatX = 1, repeatY = 1) {
 }
 
 function createMaterials(width, depth) {
+    let seed = 14731;
+    const random = () => ((seed = (Math.imul(1664525, seed) + 1013904223) >>> 0) / 4294967296);
     const tile = surface((ctx, size) => {
-        ctx.fillStyle = "#b3afa6";
+        ctx.fillStyle = "#b9b3a8";
         ctx.fillRect(0, 0, size, size);
-        for (let col = 0; col < 2; col++) {
-            for (let row = 0; row < 2; row++) {
-                const x = col * 64;
-                const y = row * 64;
-                const light = ctx.createLinearGradient(x, y, x + 64, y + 64);
-                light.addColorStop(0, (col + row) % 2 ? "#f7f4ec" : "#eee9df");
-                light.addColorStop(1, "#dedbd2");
-                ctx.fillStyle = light;
-                ctx.fillRect(x + 1, y + 1, 62, 62);
+        const tones = ["#e7e1d4", "#eae4d9", "#e5e0d5", "#e9e4da"];
+        for (let y = 0; y < size; y += 128) {
+            for (let x = 0; x < size; x += 128) {
+                ctx.fillStyle = tones[Math.floor(random() * tones.length)];
+                ctx.fillRect(x + 0.6, y + 0.6, 126.8, 126.8);
             }
         }
-        for (let i = 0; i < 110; i++) {
-            ctx.fillStyle = i % 2 ? "#fff9e733" : "#62625413";
-            ctx.fillRect(i * 31 % 128, i * 67 % 128, 2 + i % 3, 1);
-        }
-    }, Math.round(width), Math.round(depth));
-    const wood = surface((ctx, size) => {
-        ctx.fillStyle = "#c8a075";
-        ctx.fillRect(0, 0, size, size);
-        for (let i = 0; i < 64; i++) {
-            ctx.strokeStyle = i % 3 ? "#6b442b22" : "#fff3ce40";
+        // Small aggregate chips in the tile body stay quiet from across the room.
+        const chips = ["#716a5c45", "#a4978050", "#fffdf4bb", "#a49b8c73"];
+        for (let i = 0; i < 15000; i++) {
+            const x = random() * size, y = random() * size, radius = 0.5 + random() ** 3 * 2.5;
+            ctx.fillStyle = chips[i % chips.length];
             ctx.beginPath();
-            ctx.moveTo(0, i * 2);
-            ctx.bezierCurveTo(38, i * 2 - 3, 89, i * 2 + 6, size, i * 2);
+            ctx.moveTo(x - radius, y);
+            ctx.lineTo(x + radius * 0.46, y - radius * 0.8);
+            ctx.lineTo(x + radius, y + radius * 0.3);
+            ctx.lineTo(x, y + radius * 0.7);
+            ctx.fill();
+        }
+    }, width / 2.4, depth / 2.4, 512);
+    const wood = surface((ctx, size) => {
+        ctx.fillStyle = "#c19c76";
+        ctx.fillRect(0, 0, size, size);
+        for (let i = 0; i < 310; i++) {
+            const y = random() * size, bow = 6 * Math.sin(y * 0.07);
+            ctx.strokeStyle = i % 3 ? "#75543830" : "#fff2d246";
+            ctx.lineWidth = 0.3 + random() ** 3 * 1.6;
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.bezierCurveTo(size * 0.3, y + bow, size * 0.72, y - bow * 1.3, size, y);
             ctx.stroke();
         }
-    });
+    }, 1, 1, 256);
+    const veneer = wood.clone();
+    veneer.center.set(0.5, 0.5);
+    veneer.rotation = Math.PI / 2;
     const weave = surface((ctx, size) => {
         ctx.fillStyle = "#eeeae3";
         ctx.fillRect(0, 0, size, size);
@@ -76,31 +88,71 @@ function createMaterials(width, depth) {
             ctx.fillRect(0, i, size, 1);
         }
     }, 5, 7);
+    const ticking = surface((ctx, size) => {
+        ctx.fillStyle = "#f5f1e9";
+        ctx.fillRect(0, 0, size, size);
+        for (let i = 0; i < size; i += 2) {
+            ctx.fillStyle = "#64706724";
+            ctx.fillRect(i, 0, 1, size);
+            ctx.fillStyle = "#a39c8c20";
+            ctx.fillRect(0, i, size, 1);
+        }
+        for (const y of [42, 49, 173, 424, 431, 448]) {
+            ctx.fillStyle = "#68776f6b";
+            ctx.fillRect(0, y, size, 2);
+            ctx.fillStyle = "#fffdf6d0";
+            ctx.fillRect(0, y + 2, size, 2);
+        }
+    }, 1, 1, 512);
+    const plaster = surface((ctx, size) => {
+        ctx.fillStyle = "#ede9df";
+        ctx.fillRect(0, 0, size, size);
+        for (let i = 0; i < 3800; i++) {
+            ctx.fillStyle = i % 3 ? "#837a6714" : "#fffaf32c";
+            ctx.fillRect(random() * size, random() * size, 1.2, 1.2);
+        }
+    }, 3, 2);
+    const paintedWall = surface((ctx, size) => {
+        ctx.fillStyle = "#eeeae0";
+        ctx.fillRect(0, 0, size, size);
+        // Washable lower paint, just below the windowsill.
+        ctx.fillStyle = "#c0c9be";
+        ctx.fillRect(0, size * 0.62, size, size * 0.38);
+        ctx.fillStyle = "#b4bdb2";
+        ctx.fillRect(0, size * 0.62, size, 1);
+    }, 1, 1, 256);
     const windowLight = surface((ctx, size) => {
         const shade = ctx.createLinearGradient(0, 0, 0, size);
-        shade.addColorStop(0, "#abcbd9");
-        shade.addColorStop(0.56, "#e2eae9");
-        shade.addColorStop(1, "#aebfba");
+        shade.addColorStop(0, "#aacbde");
+        shade.addColorStop(0.62, "#e1e9de");
+        shade.addColorStop(1, "#c3c9ae");
         ctx.fillStyle = shade;
         ctx.fillRect(0, 0, size, size);
-        ctx.fillStyle = "#ebf5f36b";
-        ctx.beginPath();
-        ctx.moveTo(0, 14);
-        ctx.lineTo(size, 68);
-        ctx.lineTo(size, 83);
-        ctx.lineTo(0, 32);
-        ctx.fill();
-    });
+        ctx.filter = "blur(5px)";
+        for (let i = 0; i < 160; i++) {
+            const x = random() * size, y = size * (0.65 + 0.14 * Math.sin(x / 56) + 0.26 * random());
+            ctx.fillStyle = ["#91aa8e", "#9ab29a", "#aebc94", "#849e89"][i % 4];
+            ctx.beginPath();
+            ctx.arc(x, y, 5 + random() * 16, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }, 1, 1, 256);
     const bathTile = tile.clone();
     bathTile.repeat.set(2.3, 2.3);
     const mat = (color, options) => new THREE.MeshStandardMaterial({ color, roughness: 0.86, ...options });
     return {
         tile: mat("#ffffff", { map: tile, roughness: 0.58 }),
-        wall: mat("#f0ebe1"), plasterCut: mat("#bfcac0"), skirting: mat("#918a7e"), white: mat("#f4f1e7"),
-        timber: mat("#fffaf1", { map: wood }), frame: mat("#4a5557", { metalness: 0.3, roughness: 0.58 }),
+        wall: mat("#fffdf7", { map: plaster }), plasterCut: mat("#bfcac0"), skirting: mat("#a09a8d"), white: mat("#f4f1e7"),
+        interiorWall: mat("#fffdf7", { map: paintedWall, bumpMap: plaster, bumpScale: 0.001 }),
+        lowerPaint: mat("#c0c9be"),
+        timber: mat("#fffaf1", { map: wood }), veneer: mat("#f0e1ca", { map: veneer, roughness: 0.47 }),
+        frame: mat("#425355", { metalness: 0.48, roughness: 0.36 }),
         sheet: mat("#f5f0e4", { map: weave }), pillow: mat("#fff9eb", { map: weave }),
-        blanket: mat("#ffffff", { map: weave }), dark: mat("#334443"), chair: mat("#496c67"), linenEdge: mat("#dfd8c8"),
-        glass: mat("#deded4", { map: windowLight, roughness: 0.34, emissive: "#aacbd4", emissiveIntensity: 0.36 }),
+        blanket: mat("#ffffff", { map: ticking, roughness: 0.98, side: THREE.DoubleSide, vertexColors: true }),
+        curtain: mat("#cad6c8", { map: weave, roughness: 1, side: THREE.DoubleSide }),
+        dark: mat("#334443"), chair: mat("#496c67"), linenEdge: mat("#dfd8c8"),
+        glass: mat("#cddee1", { roughness: 0.18, metalness: 0.26 }),
+        window: new THREE.MeshBasicMaterial({ map: windowLight, toneMapped: false }),
         porcelain: mat("#f6f8f4", { roughness: 0.28 }), bath: mat("#c3d6d3", { map: bathTile, roughness: 0.48 }),
         chrome: mat("#adbab7", { metalness: 0.55, roughness: 0.32 }), entryMat: mat("#959188", { map: weave }),
         indicator: mat("#89d5a1", { emissive: "#83d1ab", emissiveIntensity: 0.55 }),
@@ -114,6 +166,7 @@ function createMaterials(width, depth) {
 function createBuilder() {
     const cube = new THREE.BoxGeometry();
     const rounded = new Map();
+    const tube = new THREE.CylinderGeometry(1, 1, 1, 16);
     function place(parent, geometry, material, x, y, z) {
         const mesh = new THREE.Mesh(geometry, material);
         mesh.position.set(x, y, z);
@@ -131,7 +184,37 @@ function createBuilder() {
         if (!rounded.has(key)) rounded.set(key, new RoundedBoxGeometry(w, h, d, 3, radius));
         return place(parent, rounded.get(key), material, x, y, z);
     }
-    return { box, soft, place };
+    function rail(parent, material, radius, length, axis, x, y, z) {
+        const mesh = place(parent, tube, material, x, y, z);
+        mesh.scale.set(radius, length, radius);
+        if (axis === "z") mesh.rotation.x = Math.PI / 2;
+        if (axis === "x") mesh.rotation.z = Math.PI / 2;
+        return mesh;
+    }
+    return { box, soft, place, rail };
+}
+
+function furnitureShadow() {
+    // A soft, rectangular occlusion footprint anchors furniture even on devices without shadow maps.
+    const map = surface((ctx, size) => {
+        const pixels = ctx.createImageData(size, size);
+        for (let i = 0; i < size * size; i++) {
+            const x = (i % size + 0.5) / size * 2 - 1;
+            const y = (Math.floor(i / size) + 0.5) / size * 2 - 1;
+            const edge = THREE.MathUtils.smoothstep((x ** 4 + y ** 4) ** 0.25, 0.48, 1);
+            pixels.data.set([58, 48, 37, Math.round(48 * (1 - edge))], i * 4);
+        }
+        ctx.putImageData(pixels, 0, 0);
+    });
+    const material = new THREE.MeshBasicMaterial({ map, transparent: true, depthWrite: false });
+    const quad = new THREE.PlaneGeometry();
+    return (parent, x, z, width, depth) => {
+        const mesh = new THREE.Mesh(quad, material);
+        mesh.rotation.x = -Math.PI / 2;
+        mesh.scale.set(width, depth, 1);
+        mesh.position.set(x, 0.004, z);
+        parent.add(mesh);
+    };
 }
 
 function addStandingFans(scene, locations, m, { box, soft, place }) {
@@ -254,19 +337,24 @@ function addMiniFridge(scene, x, z, m, { box, soft }) {
             box(fridge, m.dark, 0.07, 0.037, 0.07, x, 0.019, z);
 }
 
-function addFixtures(scene, features, sizes, m, builder) {
-    const { box, soft, place } = builder;
+function addFixtures(scene, features, sizes, m, builder, contactShadow) {
+    const { box, soft, place, rail } = builder;
     const { width, back, front, rowCount, ceilingHeight } = sizes;
     const wallDepth = back + 0.11;
     const windowX = 0;
     for (const y of [1.14, 2.36]) box(scene, m.white, 2.48, 0.059, 0.125, windowX, y, wallDepth);
     for (const x of [-1.22, 1.22]) box(scene, m.white, 0.059, 1.26, 0.125, x, 1.75, wallDepth);
-    const windowGlass = box(scene, m.glass, 2.4, 1.18, 0.018, windowX, 1.75, wallDepth);
+    const windowGlass = box(scene, m.window, 2.4, 1.18, 0.018, windowX, 1.75, wallDepth);
     windowGlass.castShadow = false;
     for (const x of [windowX - 0.77, windowX, windowX + 0.77])
         box(scene, m.white, 0.043, 1.2, 0.085, x, 1.75, wallDepth + 0.034);
     box(scene, m.white, 2.5, 0.07, 0.27, windowX, 1.10, wallDepth + 0.08);
     box(scene, m.chrome, 0.045, 0.14, 0.045, 0.074, 1.68, wallDepth + 0.076);
+    rail(scene, m.frame, 0.014, 2.86, "x", 0, 2.46, wallDepth + 0.17);
+    for (const side of [-1, 1]) {
+        place(scene, windowCurtain(side), m.curtain, 0, 0, wallDepth);
+        box(scene, m.frame, 0.03, 0.04, 0.18, side * 1.36, 2.46, wallDepth + 0.08);
+    }
     if (features.air) {
         soft(scene, m.white, 1.1, 0.27, 0.27, windowX, 2.61, wallDepth + 0.12, 0.055);
         box(scene, m.dark, 0.85, 0.026, 0.045, windowX, 2.525, wallDepth + 0.267);
@@ -274,6 +362,7 @@ function addFixtures(scene, features, sizes, m, builder) {
     }
     if (features.desk) {
         const z = back + 0.53;
+        contactShadow(scene, 0, z + 0.19, 2.83, 1.53);
         soft(scene, m.timber, 2.55, 0.058, 0.76, 0, 0.77, z, 0.023);
         for (const dx of [-1.17, 1.17])
             for (const dz of [-0.28, 0.28])
@@ -293,9 +382,10 @@ function addFixtures(scene, features, sizes, m, builder) {
     if (features.locker) {
         const positions = [-width / 2 + 0.65, width / 2 - 0.65];
         for (const x of positions) {
+            contactShadow(scene, x, back + 0.43, 1.07, 0.84);
             box(scene, m.timber, 0.86, 1.93, 0.58, x, 0.965, back + 0.41);
             for (const dx of [-0.21, 0.21]) {
-                box(scene, m.white, 0.396, 1.83, 0.035, x + dx, 0.97, back + 0.713);
+                box(scene, m.veneer, 0.396, 1.83, 0.035, x + dx, 0.97, back + 0.713);
                 soft(scene, m.frame, 0.033, 0.14, 0.041, x + dx * 0.27, 1.08, back + 0.749, 0.012);
             }
         }
@@ -380,7 +470,7 @@ function addFixtures(scene, features, sizes, m, builder) {
     }
 }
 
-export const bedColors = { available: "#83a999", unavailable: "#a4a29d", selected: "#b58a58" };
+export const bedColors = { available: "#87a99c", unavailable: "#a5a7a3", selected: "#b48e69" };
 
 export function createRoomModel(scene, count, available, amenities) {
     const features = interpretAmenities(amenities);
@@ -394,7 +484,9 @@ export function createRoomModel(scene, count, available, amenities) {
     const front = depth / 2;
     const m = createMaterials(width, depth);
     const builder = createBuilder();
-    const { box, soft } = builder;
+    const { box, soft, place, rail } = builder;
+    const textiles = bedTextiles(count > 32);
+    const contactShadow = furnitureShadow();
     const beds = new Map();
     const pickable = [];
 
@@ -407,8 +499,15 @@ export function createRoomModel(scene, count, available, amenities) {
         box(scene, m.wall, wallWing, ceilingHeight, 0.12, side * (windowHalf + wallWing / 2), ceilingHeight / 2, back);
     box(scene, m.wall, windowHalf * 2, 1.12, 0.12, 0, 0.56, back);
     box(scene, m.wall, windowHalf * 2, ceilingHeight - 2.36, 0.12, 0, (ceilingHeight + 2.36) / 2, back);
+    box(scene, m.lowerPaint, width, 1.055, 0.012, 0, 0.528, back + 0.065);
     box(scene, m.skirting, width, 0.105, 0.04, 0, 0.054, back + 0.078);
+    // Inner faces are visible from the aisle and far side. From outside, the near wall cuts away
+    // naturally with back-face culling, including during the glide to a bed.
+    const sideWall = new THREE.PlaneGeometry(depth, ceilingHeight);
     for (const side of [-1, 1]) {
+        const wall = place(scene, sideWall, m.interiorWall, side * (width / 2 - 0.062), ceilingHeight / 2, 0);
+        wall.rotation.y = -side * Math.PI / 2;
+        wall.castShadow = false;
         box(scene, m.wall, 0.115, 0.31, depth, side * width / 2, 0.155, 0);
         box(scene, m.plasterCut, 0.15, 0.049, depth, side * width / 2, 0.31, 0);
         box(scene, m.skirting, 0.032, 0.1, depth, side * (width / 2 - 0.07), 0.052, 0);
@@ -416,7 +515,7 @@ export function createRoomModel(scene, count, available, amenities) {
     box(scene, m.entryMat, 1.03, 0.019, 0.56, 0, 0.012, front - 0.31);
     for (const x of [-0.64, 0.64]) box(scene, m.plasterCut, 0.105, 0.73, 0.112, x, 0.365, front);
     addCeiling(scene, width, depth, ceilingHeight);
-    addFixtures(scene, features, { width, back, front, rowCount, ceilingHeight }, m, builder);
+    addFixtures(scene, features, { width, back, front, rowCount, ceilingHeight }, m, builder, contactShadow);
 
     // The same template maps sequential bed numbers onto lower and upper bunks.
     for (let bunk = 0; bunk < Math.ceil(count / 2); bunk++) {
@@ -425,9 +524,16 @@ export function createRoomModel(scene, count, available, amenities) {
         const z = back + rearSpace + 1.11 + Math.floor(bunk / 2) * 2.46;
         const upper = bunk * 2 + 2 <= count;
         const post = upper ? 1.96 : 0.71;
+        contactShadow(scene, x, z, 1.50, 2.44);
+        const aislePost = x - side * 0.52;
+        for (const end of [-1, 1]) {
+            for (const y of (upper ? [0.39, 1.52, 1.90] : [0.39])) {
+                rail(scene, m.chrome, 0.016, 0.012, "x", aislePost - side * 0.03, y, z + end * 1.02);
+            }
+        }
         for (const dx of [-0.52, 0.52]) {
             for (const dz of [-1.02, 1.02]) {
-                soft(scene, m.frame, 0.06, post, 0.06, x + dx, post / 2, z + dz, 0.014);
+                rail(scene, m.frame, 0.033, post, "y", x + dx, post / 2, z + dz);
                 box(scene, m.dark, 0.082, 0.036, 0.082, x + dx, 0.024, z + dz);
             }
         }
@@ -437,9 +543,11 @@ export function createRoomModel(scene, count, available, amenities) {
             for (const rung of [0.25, 0.55, 0.85, 1.15, 1.45])
                 soft(scene, m.timber, 0.059, 0.053, 0.31, ladderX, rung, z + 0.785, 0.011);
             for (const y of [1.8, 1.93]) {
-                box(scene, m.frame, 0.04, 0.041, 2, x + side * 0.51, y, z);
-                box(scene, m.frame, 0.04, 0.041, 1.49, x - side * 0.51, y, z - 0.245);
+                rail(scene, m.frame, 0.021, 2.04, "z", x + side * 0.51, y, z);
+                rail(scene, m.frame, 0.021, 1.49, "z", x - side * 0.51, y, z - 0.245);
+                for (const end of [-1, 1]) rail(scene, m.frame, 0.02, 1.04, "x", x, y, z + end * 1.02);
             }
+            rail(scene, m.frame, 0.018, 0.37, "y", x - side * 0.51, 1.75, z + 0.49);
         }
         for (let level = 0; level < (upper ? 2 : 1); level++) {
             const number = bunk * 2 + level + 1;
@@ -451,13 +559,12 @@ export function createRoomModel(scene, count, available, amenities) {
             blanket.color.set(available.has(number) ? bedColors.available : bedColors.unavailable);
             box(group, m.frame, 1.06, 0.075, 2.08, 0, -0.038, 0);
             box(group, m.timber, 0.96, 0.042, 1.99, 0, 0.009, 0);
+            soft(group, m.timber, 0.97, 0.21, 0.043, 0, 0.165, -1.006, 0.015);
             soft(group, m.sheet, 0.95, 0.143, 1.96, 0, 0.096, 0, 0.046);
             soft(group, m.linenEdge, 0.948, 0.023, 1.961, 0, 0.131, 0, 0.009);
-            const pillow = soft(group, m.pillow, 0.7, 0.111, 0.39, 0, 0.195, -0.66, 0.052);
-            pillow.rotation.y = side * 0.06;
-            soft(group, blanket, 0.96, 0.059, 1.28, 0, 0.18, 0.29, 0.027);
-            soft(group, blanket, 0.955, 0.036, 0.12, 0, 0.215, -0.3, 0.016);
-            soft(group, blanket, 0.06, 0.141, 1.12, -side * 0.45, 0.12, 0.34, 0.027);
+            const pillow = place(group, textiles.pillow, m.pillow, side * 0.022, 0.222, -0.685);
+            pillow.rotation.y = side * (level ? 0.065 : -0.035);
+            place(group, textiles.duvets[(bunk + level) % 2], blanket, 0, 0, 0);
             group.children.forEach(mesh => { mesh.userData.bed = number; pickable.push(mesh); });
             beds.set(number, {
                 blanket, side, x, y, z,

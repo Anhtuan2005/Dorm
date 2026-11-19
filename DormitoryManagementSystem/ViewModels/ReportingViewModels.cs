@@ -51,7 +51,8 @@ public sealed record WorkflowReportViewModel(
     int Registration,
     int Transfer,
     int Checkout,
-    decimal ApprovalRate);
+    decimal ApprovalRate,
+    int Expired = 0);
 
 public sealed record MaintenanceReportViewModel(
     int Created,

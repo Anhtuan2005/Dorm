@@ -69,6 +69,8 @@ public sealed record BillingTransactionViewModel(
     string? ReversedCode,
     bool CanReverse);
 
+public sealed record VnpayResolutionViewModel(string Reference, bool Refunded, string Evidence, DateTime DateUtc, string Reviewer);
+
 public sealed record VnpayReviewViewModel(
     string Reference, decimal Amount, string? ProviderReference, string? ResponseCode, string? ProviderState);
 
@@ -93,6 +95,7 @@ public sealed class BillingInvoiceDetailViewModel
     public required string StatusClass { get; init; }
     public bool CanCollect { get; init; }
     public bool VnpayPending { get; init; }
+    public IReadOnlyList<VnpayResolutionViewModel> VnpayResolutions { get; init; } = [];
     public IReadOnlyList<VnpayReviewViewModel> VnpayReviews { get; init; } = [];
     public required string RowVersion { get; init; }
     public required IReadOnlyList<BillingInvoiceLineViewModel> Lines { get; init; }

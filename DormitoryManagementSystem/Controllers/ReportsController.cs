@@ -61,6 +61,7 @@ public sealed class ReportsController(IOperationsReportingService reporting) : C
             csv.AppendLine($"Đã duyệt;{report.Workflow.Approved}");
             csv.AppendLine($"Từ chối;{report.Workflow.Rejected}");
             csv.AppendLine($"Đã hủy;{report.Workflow.Cancelled}");
+            csv.AppendLine($"Hết hạn giữ giường;{report.Workflow.Expired}");
             csv.AppendLine($"Chờ bổ sung;{report.Workflow.NeedsInformation}");
             csv.AppendLine();
             csv.AppendLine("Sự cố trong kỳ;Số lượng");

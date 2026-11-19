@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import { bedColors, createRoomModel } from "./dorm-room-model.js";
 
 const page = document.querySelector("[data-room-tour]");
@@ -55,18 +56,30 @@ function mountTour() {
     canvasHost.append(renderer.domElement);
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color("#e8ebe4");
+    scene.background = new THREE.Color("#eaece8");
     renderer.toneMapping = THREE.NeutralToneMapping;
     renderer.toneMappingExposure = 1.05;
     const room = createRoomModel(scene, capacity, available, amenities);
     stage.dataset.modeledAmenities = Object.keys(room.features).filter(key => room.features[key]).join(",");
 
-    scene.add(new THREE.HemisphereLight("#f2f7fc", "#b09e87", 1.36));
-    const fill = new THREE.DirectionalLight("#e4f0ee", 0.74);
-    fill.position.set(4, 3, 6);
+    // A small prefiltered indoor environment gives the steel, glazed ceramic and timber
+    // broad reflections. It is baked once and never redrawn during camera movement.
+    let reflections;
+    if (renderer.extensions.has("EXT_color_buffer_float") || renderer.extensions.has("EXT_color_buffer_half_float")) {
+        const studio = new RoomEnvironment();
+        const pmrem = new THREE.PMREMGenerator(renderer);
+        reflections = pmrem.fromScene(studio, 0, 0.1, 100, { size: 64 });
+        studio.dispose();
+        pmrem.dispose();
+        scene.environment = reflections.texture;
+        scene.environmentIntensity = 0.29;
+    }
+    scene.add(new THREE.HemisphereLight("#e6f0fc", "#b9a18d", 0.96));
+    const fill = new THREE.DirectionalLight("#f0f2f3", 1.14);
+    fill.position.set(2.6, 4, 7);
     scene.add(fill);
-    const sun = new THREE.DirectionalLight("#fff0da", 2.52);
-    sun.position.set(-3.6, 7.8, -3.2);
+    const sun = new THREE.DirectionalLight("#ffecd0", 2.12);
+    sun.position.set(-3.4, 6.2, -7.1);
     if (capacity <= 32) {
         renderer.shadowMap.enabled = true;
         sun.castShadow = true;
@@ -147,8 +160,8 @@ function mountTour() {
         const spacing = 46; // Keep the 44 px touch targets separate.
         labels.sort((a, b) => a.point.y - b.point.y);
         const first = labels[0].point;
-        const last = labels.at(-1).point;
-        const originalCenter = (first.y + last.y) / 2;
+        const originalCenter = (first.y + labels.at(-1).point.y) / 2;
+        const originalPoints = labels.map(({ point }) => ({ ...point }));
         for (let i = 1; i < labels.length; i++) {
             const point = labels[i].point;
             for (let j = 0; j < i; j++) {
@@ -158,8 +171,22 @@ function mountTour() {
                     point.y = Math.max(point.y, other.y + Math.sqrt(spacing * spacing - dx * dx));
             }
         }
-        if (last.y - first.y > height - spacing) return;
-        const shift = THREE.MathUtils.clamp(originalCenter - (first.y + last.y) / 2, 23 - first.y, height - 23 - last.y);
+        const bottom = Math.max(...labels.map(({ point }) => point.y));
+        if (bottom - first.y > height - spacing) {
+            // A row of bunks viewed end-on may need more than one column of touch targets.
+            const slots = [];
+            for (let y = spacing / 2; y <= height - spacing / 2; y += spacing)
+                for (let x = spacing / 2; x <= width - spacing / 2; x += spacing) slots.push({ x, y });
+            labels.forEach(({ marker }, i) => {
+                if (!slots.length) { marker.hidden = true; return; }
+                const point = originalPoints[i];
+                const dist = p => (p.x - point.x) ** 2 + (p.y - point.y) ** 2;
+                const nearest = slots.reduce((best, p, j) => dist(p) < dist(slots[best]) ? j : best, 0);
+                placeLabel(marker, slots.splice(nearest, 1)[0]);
+            });
+            return;
+        }
+        const shift = THREE.MathUtils.clamp(originalCenter - (first.y + bottom) / 2, spacing / 2 - first.y, height - spacing / 2 - bottom);
         for (const { marker, point } of labels) {
             point.y += shift;
             placeLabel(marker, point);
@@ -184,7 +211,11 @@ function mountTour() {
             else schedule();
         }
         renderer.render(scene, camera);
-        const compactLabels = width < 460 && !cameraBed ? [] : null;
+        updateLabels();
+    }
+
+    function updateLabels() {
+        const compactLabels = width <= 620 && !cameraBed ? [] : null;
         for (const [number, marker] of markers) {
             const bed = room.beds.get(number);
             const point = screenPoint(inPlan ? bed.planMarker : bed.marker);
@@ -212,8 +243,8 @@ function mountTour() {
     function targetPose(number) {
         const bed = room.beds.get(number);
         if (bed) return {
-            position: new THREE.Vector3(bed.x - bed.side * 2.65, bed.y + 0.76, bed.z + 1.58),
-            target: new THREE.Vector3(bed.x, bed.y + 0.17, bed.z)
+            position: new THREE.Vector3(bed.x - bed.side * 2.26, bed.y + (bed.y > 1 ? 1.08 : 0.68), bed.z + 1.32),
+            target: new THREE.Vector3(bed.x, bed.y + 0.20, bed.z)
         };
         const target = room.bounds.getCenter(new THREE.Vector3());
         target.y *= inPlan ? 1 : 0.49;
@@ -291,6 +322,9 @@ function mountTour() {
             animation.toTarget.copy(pose.target);
             schedule();
         } else focus(cameraBed, true, inPlan);
+        // ResizeObserver runs before paint. Align the HTML controls with the new projection in this frame.
+        camera.updateMatrixWorld();
+        updateLabels();
     }
 
     controls.addEventListener("change", schedule);
@@ -336,6 +370,7 @@ function mountTour() {
         event.preventDefault();
         watcher.disconnect();
         controls.dispose();
+        reflections?.dispose();
         cancelAnimationFrame(frame);
         tour = null;
         stage.hidden = legend.hidden = true;

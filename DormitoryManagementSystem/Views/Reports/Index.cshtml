@@ -54,7 +54,7 @@
             <header><div><p>Đơn lưu trú</p><h2>Kết quả trong kỳ</h2></div><a asp-controller="Applications" asp-action="Index" asp-route-Scope="all">Mở worklist</a></header>
             <div class="outcome-number"><strong>@Model.Workflow.Submitted</strong><span>đơn được gửi</span><em>@Model.Workflow.ApprovalRate.ToString("0.0")% duyệt trên đơn đã quyết định</em></div>
             <div class="outcome-track"><i class="approved" style="--value:@Css(OperationsMetricsPolicy.Percentage(Model.Workflow.Approved, Math.Max(1, Model.Workflow.Submitted)))%"></i><i class="rejected" style="--value:@Css(OperationsMetricsPolicy.Percentage(Model.Workflow.Rejected, Math.Max(1, Model.Workflow.Submitted)))%"></i><i class="cancelled" style="--value:@Css(OperationsMetricsPolicy.Percentage(Model.Workflow.Cancelled, Math.Max(1, Model.Workflow.Submitted)))%"></i></div>
-            <dl><div><dt>Đã duyệt</dt><dd>@Model.Workflow.Approved</dd></div><div><dt>Từ chối</dt><dd>@Model.Workflow.Rejected</dd></div><div><dt>Đã hủy</dt><dd>@Model.Workflow.Cancelled</dd></div><div><dt>Chờ bổ sung</dt><dd>@Model.Workflow.NeedsInformation</dd></div></dl>
+            <dl><div><dt>Đã duyệt</dt><dd>@Model.Workflow.Approved</dd></div><div><dt>Từ chối</dt><dd>@Model.Workflow.Rejected</dd></div><div><dt>Đã hủy</dt><dd>@Model.Workflow.Cancelled</dd></div><div><dt>Hết hạn giữ giường</dt><dd>@Model.Workflow.Expired</dd></div><div><dt>Chờ bổ sung</dt><dd>@Model.Workflow.NeedsInformation</dd></div></dl>
             <p>@Model.Workflow.Registration đăng ký ở · @Model.Workflow.Transfer chuyển phòng · @Model.Workflow.Checkout trả phòng</p>
         </section>
 

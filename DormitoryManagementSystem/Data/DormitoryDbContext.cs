@@ -27,9 +27,19 @@ public sealed class DormitoryDbContext(DbContextOptions<DormitoryDbContext> opti
     public DbSet<MaintenanceAttachment> MaintenanceAttachments => Set<MaintenanceAttachment>();
     public DbSet<Notification> Notifications => Set<Notification>();
 
+    public DbSet<ResidenceTerm> ResidenceTerms => Set<ResidenceTerm>();
+    public DbSet<StayRenewal> StayRenewals => Set<StayRenewal>();
+    public DbSet<RoomMeterReading> RoomMeterReadings => Set<RoomMeterReading>();
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
+        builder.Entity<RoomMeterReading>().HasKey(x => new { x.BillingPeriodId, x.RoomId });
+        builder.Entity<RoomMeterReading>().HasOne(x => x.Room).WithMany().OnDelete(DeleteBehavior.Restrict);
+        builder.Entity<StayRenewal>().HasIndex(x => new { x.StayId, x.ResidenceTermId }).IsUnique();
+        builder.Entity<StayRenewal>().HasIndex(x => x.StayId).HasFilter("[Approved] IS NULL").IsUnique();
+        builder.Entity<ResidenceTerm>().HasIndex(x => x.Name).IsUnique();
+        builder.HasSequence<long>("RepairNumbers").StartsAt(1);
 
         builder.Entity<Building>().HasIndex(x => x.Code).IsUnique();
         builder.Entity<Floor>().HasIndex(x => new { x.BuildingId, x.Number }).IsUnique();

@@ -75,6 +75,7 @@ public sealed class Stay
     public HousingRequest? HousingRequest { get; set; }
     public DateTime StartedAt { get; set; }
     public DateTime? EndedAt { get; set; }
+    public DateOnly? PlannedEnd { get; set; }
     [Timestamp] public byte[] RowVersion { get; set; } = [];
 }
 
@@ -90,7 +91,7 @@ public sealed class RoomHold
 }
 
 public enum HousingRequestType { Registration, Transfer, Checkout }
-public enum HousingRequestStatus { Submitted, UnderReview, NeedsInformation, AwaitingMoveIn, Approved, Rejected, Cancelled }
+public enum HousingRequestStatus { Submitted, UnderReview, NeedsInformation, AwaitingMoveIn, Approved, Rejected, Cancelled, Expired }
 
 public sealed class HousingRequest
 {
@@ -113,6 +114,8 @@ public sealed class HousingRequest
     public DateTime SubmittedAt { get; set; }
     public DateTime? ActionRequiredAt { get; set; }
     public DateTime? ReviewedAt { get; set; }
+    public DateTime? AppointmentUtc { get; set; }
+    [MaxLength(400)] public string? Inventory { get; set; }
     public DateTime? MoveInConfirmedAt { get; set; }
     public string? ReviewedByUserId { get; set; }
     public ApplicationUser? ReviewedByUser { get; set; }
@@ -139,6 +142,7 @@ public sealed class BillingPeriod
     [MaxLength(80)] public string Name { get; set; } = string.Empty;
     public DateOnly StartDate { get; set; }
     public DateOnly EndDate { get; set; }
+    public bool Metered { get; set; }
     public DateOnly DueDate { get; set; }
     public ICollection<Invoice> Invoices { get; set; } = [];
 }

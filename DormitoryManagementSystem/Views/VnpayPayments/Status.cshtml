@@ -6,6 +6,8 @@
     var (label, tone, message) = Model.State switch
     {
         VnpayCheckoutState.Settled => ("Đã ghi nhận", "paid", "Khoản thu thử nghiệm đã được ghi vào lịch sử hóa đơn."),
+        VnpayCheckoutState.ReviewedUnpaid => ("Đã đối soát", "cancelled", "Cổng không ghi nhận thu tiền. Bạn có thể thanh toán lại nếu còn nợ."),
+        VnpayCheckoutState.ReviewedRefunded => ("Đã đối soát", "cancelled", "Ban quản lý đã xác minh giao dịch được hoàn tiền tại cổng."),
         VnpayCheckoutState.Failed => ("Chưa thanh toán", "cancelled", "Giao dịch không thành công. Bạn có thể quay lại hóa đơn để thử lại."),
         VnpayCheckoutState.NeedsReview => ("Cần đối soát", "overdue", "Chưa cập nhật công nợ. Hãy cung cấp mã giao dịch cho Ban quản lý trước khi thanh toán lại."),
         _ when Model.IsExpired => ("Liên kết đã hết hạn", "overdue", "Nếu đã thao tác trên VNPAY, hãy kiểm tra lại trạng thái trước khi tạo giao dịch mới."),

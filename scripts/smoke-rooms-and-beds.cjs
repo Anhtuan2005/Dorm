@@ -232,20 +232,23 @@ async function run() {
     assert.equal(await select.inputValue(), bed);
     await occupiedMarker.waitFor();
     await student.emulateMedia({ reducedMotion: "reduce" });
-    await student.setViewportSize({ width: 390, height: 844 });
-    assert.ok(await student.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
-    await stage.evaluate(async element => {
-      await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-      const markers = [...element.querySelectorAll(".room-tour-marker:not([hidden])")];
-      const bounds = markers.map(marker => marker.getBoundingClientRect());
-      for (let i = 0; i < bounds.length; i++) {
-        for (let j = i + 1; j < bounds.length; j++) {
-          const a = bounds[i], b = bounds[j];
-          if (Math.hypot(a.x - b.x, a.y - b.y) < a.width - 1)
-            throw new Error(`Bed markers ${markers[i].dataset.bed} and ${markers[j].dataset.bed} overlap on a narrow screen.`);
+    for (const width of [590, 360, 390]) {
+      await student.setViewportSize({ width, height: 844 });
+      assert.ok(await student.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+      await stage.evaluate(async element => {
+        await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+        const markers = [...element.querySelectorAll(".room-tour-marker:not([hidden])")];
+        if (markers.length < 2) throw new Error("Expected multiple visible bed markers in the overview.");
+        const bounds = markers.map(marker => marker.getBoundingClientRect());
+        for (let i = 0; i < bounds.length; i++) {
+          for (let j = i + 1; j < bounds.length; j++) {
+            const a = bounds[i], b = bounds[j];
+            if (Math.hypot(a.x - b.x, a.y - b.y) < a.width - 1)
+              throw new Error(`Bed markers ${markers[i].dataset.bed} and ${markers[j].dataset.bed} overlap in the ${element.clientWidth}px stage: ${JSON.stringify([a, b])}.`);
+          }
         }
-      }
-    });
+      });
+    }
     if (artifacts) await student.screenshot({ path: path.join(artifacts, "student-room-mobile.png") });
     assert.equal(await preview.getByRole("checkbox", { name: "Lướt camera" }).count(), 0);
     await planMode.click();

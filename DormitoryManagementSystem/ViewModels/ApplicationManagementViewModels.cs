@@ -95,6 +95,8 @@ public sealed class ApplicationCaseViewModel
     public bool CanReject { get; init; }
     public bool CanApprove { get; init; }
     public bool CanConfirmMoveIn { get; init; }
+    public DateTime? AppointmentUtc { get; init; }
+    public string? Inventory { get; init; }
     public DateTime? HoldExpiresAt { get; init; }
     public bool IsCheckout => RequestType == "Checkout";
     public string PrimaryActionLabel => IsCheckout ? "Duyệt trả phòng" : "Duyệt và giữ chỗ";
@@ -118,6 +120,10 @@ public sealed class ApplicationActionInput
 {
     [Range(1, long.MaxValue)] public long Id { get; set; }
     [Required] public string RowVersion { get; set; } = string.Empty;
+    public string? Keys { get; set; }
+    public string? Furniture { get; set; }
+    public string? Equipment { get; set; }
+    public DateOnly? PlannedEnd { get; set; }
     [StringLength(600)] public string? Reason { get; set; }
 }
 

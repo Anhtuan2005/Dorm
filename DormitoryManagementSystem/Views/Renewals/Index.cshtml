@@ -1,0 +1,22 @@
+@model RenewalPage
+<header class="operations-heading"><div><h1>Gia hạn nội trú</h1><p>Quản lý thời hạn của từng lượt ở theo học kỳ.</p></div><a asp-controller="Applications" asp-action="Index" class="heading-room-link">Đơn lưu trú</a></header>
+<div class="term-workspace">
+<details class="term-panel"><summary>Mở đợt gia hạn</summary><form asp-action="Term" method="post" class="term-fields">
+<label>Tên học kỳ<input name="name" required maxlength="80" /></label><label>Mở nhận đơn<input type="date" name="opens" required /></label><label>Hạn nhận đơn<input type="date" name="closes" required /></label>
+<label>Bắt đầu học kỳ<input type="date" name="starts" required /></label><label>Kết thúc học kỳ<input type="date" name="ends" required /></label><button class="primary">Mở đợt gia hạn</button></form>
+@foreach (var term in Model.Terms) { <p>@term.Name · nhận đơn @term.Opens.ToString("dd/MM/yyyy") – @term.Closes.ToString("dd/MM/yyyy")</p> }</details>
+<details class="term-panel"><summary>Khởi tạo hạn ở theo mã sinh viên</summary><form class="term-fields" asp-action="InitialEnd" method="post"><label>Mã sinh viên<input name="studentCode" required /></label><label>Ngày hết hạn<input name="ends" type="date" required /></label><button class="primary">Lưu hạn ở</button></form></details>
+<section class="term-panel"><h2>Đơn gia hạn</h2>
+@if (Model.Requests.Count == 0) { <p>Chưa có đơn gia hạn.</p> }
+@foreach (var row in Model.Requests) {
+    <div class="term-row"><strong>@row.Student · @row.Room</strong><p>@row.Term · đến @row.Ends.ToString("dd/MM/yyyy")</p>
+    @if (row.Approved == null) { <form class="term-fields" asp-action="Decide" method="post"><input name="id" type="hidden" value="@row.Id" /><label>Ghi chú hoặc lý do từ chối<input name="note" maxlength="300" /></label>
+        <button class="primary" name="approve" value="true">Duyệt gia hạn</button><button class="heading-room-link" name="approve" value="false">Từ chối</button></form> }
+    else { <span>@(row.Approved.Value ? "Đã duyệt" : "Đã từ chối") · @row.Note</span> }</div>
+}
+@if (Model.Page > 1) { <a asp-route-page="@(Model.Page - 1)">Trang trước</a> }
+@if (Model.More) { <a asp-route-page="@(Model.Page + 1)">Trang sau</a> }</section>
+<section class="term-panel"><h2>Đã đến hạn hoặc còn tối đa 30 ngày</h2>
+@if (Model.Expiring.Count == 0) { <p>Chưa có lượt ở đến hạn.</p> }
+@foreach (var stay in Model.Expiring) { <div class="term-row">@stay.Student · @stay.Room · @stay.Ends?.ToString("dd/MM/yyyy")</div> }</section>
+</div>

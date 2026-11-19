@@ -17,7 +17,7 @@ internal static class OperationsNotifications
         StageAsync(db, "Maintenance", "Sinh viên gửi sự cố mới", $"{request.Code} · {request.Title}",
             $"/Maintenance?Search={Uri.EscapeDataString(request.Code)}", now, cancellationToken);
 
-    private static async Task StageAsync(DormitoryDbContext db, string type, string title, string body,
+    internal static async Task StageAsync(DormitoryDbContext db, string type, string title, string body,
         string target, DateTime now, CancellationToken cancellationToken)
     {
         var recipients = await (from membership in db.UserRoles

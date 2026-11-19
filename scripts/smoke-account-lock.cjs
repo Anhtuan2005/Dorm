@@ -39,7 +39,7 @@ async function run() {
     const building = (await room.locator('[name="Code"]').getAttribute("placeholder")).split("-")[0];
     const roomCode = `${building}-QA101`;
     await room.locator('[name="Code"]').fill(roomCode);
-    await room.locator('[name="RoomType"]').fill("Nam");
+    await room.locator('[name="RoomType"]').selectOption("Nam");
     await room.locator('[name="Amenities"]').fill("Wi-Fi");
     await room.getByRole("button", { name: "Tạo phòng", exact: true }).click();
     await admin.getByRole("table").getByText(roomCode, { exact: true }).waitFor();

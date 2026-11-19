@@ -1,5 +1,5 @@
 param(
-    [ValidateSet('Vnpay', 'Realtime', 'Chatbot', 'AccountLock', 'HousingSupplement', 'RoomsAndBeds', 'Audit', 'PlanCompletions', 'Core', 'Billing')][string]$Scenario = 'Vnpay',
+    [ValidateSet('Vnpay', 'Realtime', 'Chatbot', 'AccountLock', 'HousingSupplement', 'RoomsAndBeds', 'Audit', 'Residence', 'PlanCompletions', 'Core', 'Billing')][string]$Scenario = 'Vnpay',
     [string]$AssemblyPath
 )
 
@@ -72,6 +72,7 @@ try {
         'Audit' { Join-Path $projectRoot 'scripts\audit-final-system.cjs' }
         'PlanCompletions' { Join-Path $projectRoot 'scripts\smoke-plan-completions.cjs' }
         'Core' { Join-Path $projectRoot 'scripts\smoke-core-completions.cjs' }
+        'Residence' { Join-Path $projectRoot 'scripts\smoke-residence.cjs' }
         'Billing' { Join-Path $projectRoot 'scripts\smoke-billing-ledger.cjs' }
     }
     node $testScript
