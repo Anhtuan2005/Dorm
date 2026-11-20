@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using DormitoryManagementSystem.Models;
 
 namespace DormitoryManagementSystem.ViewModels;
 
@@ -69,9 +70,24 @@ public class CreateRoomInput
     [Range(1, int.MaxValue)] public int FloorId { get; set; }
     [Required, StringLength(12, MinimumLength = 3)] public string Code { get; set; } = string.Empty;
     [Required, RegularExpression("^(Nam|Nữ|Khác)$", ErrorMessage = "Chọn loại phòng theo danh mục.")] public string RoomType { get; set; } = string.Empty;
-    [StringLength(240)] public string? Amenities { get; set; }
+    // Older catalog forms post a single pipe-delimited value.
+    [StringLength(RoomAmenities.MaximumStoredLength)] public string? Amenities { get; set; }
+    public string[]? SelectedAmenities { get; set; }
+    [StringLength(RoomAmenities.MaximumStoredLength)] public string? OtherAmenities { get; set; }
     [Range(1, 100)] public int Capacity { get; set; }
     [Range(typeof(decimal), "0", "999999999")] public decimal MonthlyPrice { get; set; }
+
+    public string? GetStoredAmenities(string? existing = null)
+    {
+        // Reject a stale free-text submission so a previous form cannot add an unmodeled item.
+        if (!string.IsNullOrWhiteSpace(OtherAmenities)) return null;
+        var selected = (SelectedAmenities ?? []).Concat(RoomAmenities.Optional(Amenities))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var legacy = RoomAmenities.Optional(existing).Where(name => RoomAmenities.ModelKey(name) is null).ToArray();
+        var options = RoomAmenities.Options.Select(option => option.Name);
+        if (!selected.IsSubsetOf(options.Concat(legacy))) return null;
+        return RoomAmenities.Serialize(string.Join('|', options.Where(selected.Contains).Concat(legacy)));
+    }
 }
 
 public sealed class UpdateRoomInput : CreateRoomInput

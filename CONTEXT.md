@@ -31,7 +31,7 @@ Vị trí đánh số từ 01 đến **Sức chứa** trong một **Phòng**. Si
 Ảnh do Ban quản lý tải lên trong danh mục phòng để sinh viên xem khi tìm phòng.
 
 **Tiện nghi phòng**:
-Mọi **Phòng** có WC khép kín. Các tiện nghi bổ sung do Ban quản lý khai báo theo từng phòng.
+Mọi **Phòng** có WC khép kín. Ban quản lý tích chọn tiện nghi bổ sung từ danh mục có mô hình 3D. Mỗi tiện nghi trong danh mục có mã riêng để hiển thị trong phòng 3D. Các mục tự nhập từ trước vẫn được giữ trong hồ sơ phòng.
 
 **Chỗ đang ở**:
 Số **Lượt lưu trú** chưa kết thúc trong một **Phòng**.
@@ -149,6 +149,9 @@ _Avoid_: Tỷ lệ thanh toán
 - **Ảnh chụp vận hành** liên kết số sức chứa hiện tại với **Kỳ thu** được chọn; giao diện phải ghi rõ hai mốc này để tránh hiểu chúng là cùng một khoảng thời gian.
 
 ## Học kỳ, bàn giao và phí theo chỉ số
+
+- Khi ghi chỉ số từ ảnh, Ban quản lý đối chiếu số nhận dạng với mặt đồng hồ. Nút **Điền vào sổ** điền vào biểu mẫu của phòng. Nút **Lưu chỉ số** mới ghi dữ liệu dùng để tính phí. Ảnh chỉ được xử lý trên thiết bị trong lúc đối chiếu.
+- Chỉ số nước ghi theo m³, chính xác đến 0,001 m³ (một lít). Với đồng hồ có dãy số nguyên nền đen và phần lẻ nền đỏ, giữ các số 0 đầu phần lẻ khi ghép chỉ số.
 
 - Mỗi đợt gia hạn có thời gian nhận đơn và thời gian ở do Ban quản lý nhập. Khi duyệt, hệ thống cập nhật hạn dự kiến của đúng lượt đang ở.
 - Ban quản lý có thể hẹn bàn giao nhận, chuyển hoặc trả phòng. Lịch hẹn dùng giờ Việt Nam. Biên bản ghi tình trạng chìa khóa, nội thất và thiết bị tại bước xác nhận. Hết hạn giữ sau khi duyệt thì đơn chờ nhận phòng hết hiệu lực. Hết hạn giữ tạm trước khi duyệt chỉ mở lại giường, hồ sơ tiếp tục chờ xét.

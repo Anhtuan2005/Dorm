@@ -3,15 +3,18 @@
   "private": true,
   "description": "Browser regression and capture tools for the Razor application.",
   "scripts": {
+    "build:meter-ocr": "node scripts/build-meter-ocr.cjs",
     "audit": "node scripts/audit-final-system.cjs",
     "smoke:placement": "node scripts/smoke-application-transaction.cjs",
     "smoke:accounts": "node scripts/smoke-student-account-lifecycle.cjs",
     "build:room-preview": "esbuild frontend/room-preview.js --bundle --minify --format=esm --legal-comments=eof --outfile=DormitoryManagementSystem/wwwroot/js/room-preview.bundle.js"
   },
   "devDependencies": {
+    "@tesseract.js-data/eng": "1.0.0",
     "esbuild": "0.28.2",
     "playwright": "1.65.0",
     "sharp": "0.35.5",
+    "tesseract.js": "7.0.0",
     "three": "0.187.0"
   }
 }

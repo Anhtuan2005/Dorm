@@ -874,16 +874,16 @@ namespace DormitoryManagementSystem.Data.Migrations
                         .HasColumnType("rowversion");
 
                     b.Property<decimal>("WaterEnd")
-                        .HasPrecision(12, 2)
-                        .HasColumnType("decimal(12,2)");
+                        .HasPrecision(13, 3)
+                        .HasColumnType("decimal(13,3)");
 
                     b.Property<decimal>("WaterRate")
                         .HasPrecision(12, 2)
                         .HasColumnType("decimal(12,2)");
 
                     b.Property<decimal>("WaterStart")
-                        .HasPrecision(12, 2)
-                        .HasColumnType("decimal(12,2)");
+                        .HasPrecision(13, 3)
+                        .HasColumnType("decimal(13,3)");
 
                     b.HasKey("BillingPeriodId", "RoomId");
 

@@ -1,0 +1,32 @@
+<dialog id="meter-photo" class="meter-photo" aria-labelledby="meter-photo-title">
+    <header>
+        <div><p id="meter-photo-context"></p><h2 id="meter-photo-title">Đọc chỉ số từ ảnh</h2></div>
+        <button type="button" class="heading-room-link" data-dialog-close aria-label="Đóng">Đóng</button>
+    </header>
+    <label class="meter-file">Ảnh mặt đồng hồ
+        <span class="meter-file-choice"><span class="heading-room-link" aria-hidden="true">Chọn ảnh</span>
+            <span id="meter-file-name" aria-hidden="true"></span>
+            <input id="meter-file" type="file" accept="image/jpeg,image/png,image/webp" aria-label="Chọn ảnh mặt đồng hồ" aria-describedby="meter-file-help" />
+        </span>
+    </label>
+    <small id="meter-file-help">Chọn ảnh JPG, PNG hoặc WebP tối đa 12 MB. Ảnh được xử lý trên thiết bị.</small>
+    <div class="meter-review" hidden>
+        <div>
+            <div class="meter-image-frame">
+                <div class="meter-image-area">
+                    <img alt="Ảnh mặt đồng hồ để đối chiếu chỉ số" draggable="false" />
+                    <span class="meter-crop" hidden></span>
+                </div>
+            </div>
+            <p>Kéo khoanh dãy số nếu ảnh có cả số sê-ri hoặc thông số kỹ thuật.</p>
+            <button type="button" class="heading-room-link" data-full-image hidden>Đọc lại toàn ảnh</button>
+        </div>
+        <div class="meter-result">
+            <label for="meter-draft">Chỉ số đối chiếu <span id="meter-unit"></span></label>
+            <input id="meter-draft" type="text" inputmode="decimal" autocomplete="off" aria-describedby="meter-draft-help" />
+            <small id="meter-draft-help">Kiểm tra dấu thập phân và các chữ số màu đỏ. Bạn có thể sửa lại số đọc được.</small>
+            <button type="button" class="primary-button" data-use-reading disabled>Điền vào sổ</button>
+        </div>
+    </div>
+    <p role="status" aria-live="polite" id="meter-photo-status"></p>
+</dialog>

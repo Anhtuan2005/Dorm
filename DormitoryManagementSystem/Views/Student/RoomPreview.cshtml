@@ -127,7 +127,7 @@
                 <div>
                     <h2>Tiện nghi</h2>
                     <ul class="room-choice-amenities" data-room-amenities>
-                        @foreach (var amenity in room.Amenities) { <li>@amenity</li> }
+                        @foreach (var amenity in room.Amenities) { <li data-model-key="@RoomAmenities.ModelKey(amenity)">@amenity</li> }
                     </ul>
                 </div>
             }

@@ -36,8 +36,8 @@ public sealed class RoomMeterReading
     [Precision(12, 2)] public decimal PowerStart { get; set; }
     [Precision(12, 2)] public decimal PowerEnd { get; set; }
     [Precision(12, 2)] public decimal PowerRate { get; set; }
-    [Precision(12, 2)] public decimal WaterStart { get; set; }
-    [Precision(12, 2)] public decimal WaterEnd { get; set; }
+    [Precision(13, 3)] public decimal WaterStart { get; set; }
+    [Precision(13, 3)] public decimal WaterEnd { get; set; }
     [Precision(12, 2)] public decimal WaterRate { get; set; }
     [Timestamp] public byte[] RowVersion { get; set; } = [];
 }

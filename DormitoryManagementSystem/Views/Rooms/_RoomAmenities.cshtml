@@ -1,0 +1,20 @@
+@model IReadOnlyList<string>
+<fieldset class="room-amenity-picker">
+    <legend>Tiện nghi phòng</legend>
+    <p>@RoomAmenities.Bathroom có sẵn ở mọi phòng.</p>
+    <div class="room-amenity-options">
+        @foreach (var option in RoomAmenities.Options)
+        {
+            <label>
+                <input type="checkbox" name="SelectedAmenities" value="@option.Name"
+                       checked="@Model.Contains(option.Name, StringComparer.OrdinalIgnoreCase)" />
+                <span>@option.Name</span>
+            </label>
+        }
+    </div>
+    @{ var legacy = Model.Where(name => RoomAmenities.ModelKey(name) is null).ToArray(); }
+    @if (legacy.Length > 0)
+    {
+        <p>@string.Join(", ", legacy) <span>(đã lưu từ trước, chưa có mô hình 3D)</span></p>
+    }
+</fieldset>

@@ -2,29 +2,6 @@ import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
 import { bedTextiles, windowCurtain } from "./room-textiles.js";
 
-// Match the catalogue's Vietnamese labels, with or without accents.
-const amenityPatterns = {
-    wifi: /\b(wi fi|wifi|internet|mang khong day)\b/,
-    air: /\b(dieu hoa|may lanh|ac)\b/,
-    desk: /\b(ban hoc|ban lam viec)\b/,
-    locker: /\b(tu ca nhan|tu do|tu quan ao|locker)\b/,
-    standingFan: /^(quat|may quat)$|\b(quat dung|quat cay)\b/,
-    ceilingFan: /^(quat|may quat)$|\b(quat tran)\b/,
-    fridge: /\b(tu lanh)\b/,
-    balcony: /\b(ban cong|lo gia)\b/,
-    heater: /\b(nong lanh|nuoc nong|may nuoc nong)\b/
-};
-
-function interpretAmenities(amenities) {
-    const names = amenities.map(name => name.toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu, "")
-        .replaceAll("đ", "d").replace(/[^a-z0-9]+/g, " ").trim()).filter(name => !/^(khong|chua)\b/.test(name));
-    return {
-        bath: true,
-        ...Object.fromEntries(Object.entries(amenityPatterns).map(([key, pattern]) =>
-            [key, names.some(name => pattern.test(name))]))
-    };
-}
-
 function surface(draw, repeatX = 1, repeatY = 1, size = 128) {
     const canvas = document.createElement("canvas");
     canvas.width = canvas.height = size;
@@ -472,8 +449,8 @@ function addFixtures(scene, features, sizes, m, builder, contactShadow) {
 
 export const bedColors = { available: "#87a99c", unavailable: "#a5a7a3", selected: "#b48e69" };
 
-export function createRoomModel(scene, count, available, amenities) {
-    const features = interpretAmenities(amenities);
+export function createRoomModel(scene, count, available, modelKeys) {
+    const features = Object.fromEntries(["bath", ...modelKeys].map(key => [key, true]));
     const rowCount = Math.ceil(count / 4);
     const rearSpace = 2.1;
     const entrySpace = 2.29;

@@ -4,6 +4,8 @@ ASP.NET Core MVC dormitory-management project using Razor Views, handwritten CSS
 
 The current implementation contains the approved Option 2 manager room map, operations dashboard, editable building/floor/room catalog, period/building reports with CSV export, student portal, application review/account management, billing ledger with period issuance, and the maintenance response desk with protected image evidence. Student room search, housing requests, move-in confirmation, invoice lookup, payment recording/reversal, repair requests, maintenance dispatch, notifications and account links use SQL Server data. The student AI assistant calls Google Gemini through an authenticated backend endpoint and guides users through implemented workflows.
 
+In **Thu phí → Chỉ số điện nước**, choose **Đọc thử ảnh đồng hồ** to preview a reading before opening the first metered period. To record a reading for a room, open a period and choose **Đọc ảnh** next to the opening or closing reading. The browser reads the photograph locally, and the operator checks the proposed digits before applying and saving the reading. The bundled OCR runtime and language data ship with the app. Run `npm run build:meter-ocr` after updating those dependencies.
+
 ## Run locally
 
 The active workspace is `D:\DormPrj\Dorm-master`. Run commands from this directory; the HTTP launch profile serves `http://localhost:5001`.

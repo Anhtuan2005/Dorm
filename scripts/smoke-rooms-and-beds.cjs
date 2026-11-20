@@ -39,7 +39,7 @@ function addFixtureRoommates() {
       DATEADD(day, -2, SYSUTCDATETIME()), CASE WHEN StudentCode = N'QA-RM-05' THEN DATEADD(day,-1,SYSUTCDATETIME()) END,
       CASE WHEN StudentCode = N'QA-RM-04' THEN 2 END
     FROM StudentProfiles WHERE StudentCode LIKE N'QA-RM-%';
-    UPDATE Rooms SET Amenities = N'Bàn học|Quạt|Tủ lạnh' WHERE Code = N'C-504';
+    UPDATE Rooms SET Amenities = N'Bàn học|Quạt|Tủ lạnh|Kệ bên máy lạnh' WHERE Code = N'C-504';
     COMMIT TRANSACTION;`;
   const result = spawnSync("sqlcmd", [
     "-S", "DESKTOP-OSSBOT1\\TUANANH", "-d", process.env.DORM_BROWSER_FIXTURE_DB, "-E", "-C", "-b", "-Q", sql
@@ -163,11 +163,28 @@ async function run() {
       assert.ok(!samples.includes(file + ".webp"), file);
     assert.equal(await sparse.getByRole("link", { name: "Nguồn ảnh tham khảo" }).count(), 0);
     await sparse.locator("[data-tour-stage] canvas").waitFor({ timeout: 12000 });
-    assert.equal(await sparse.locator("[data-tour-stage]").getAttribute("data-modeled-amenities"), "bath,desk,standingFan,ceilingFan,fridge");
+    assert.deepEqual(new Set((await sparse.locator("[data-tour-stage]").getAttribute("data-modeled-amenities")).split(",")),
+      new Set(["bath", "desk", "standingFan", "ceilingFan", "fridge"]));
     assert.deepEqual(await sparse.locator("[data-room-amenities] li").allTextContents(),
-      ["WC khép kín", "Bàn học", "Quạt trần", "Quạt đứng", "Tủ lạnh"]);
+      ["WC khép kín", "Bàn học", "Quạt trần", "Quạt đứng", "Tủ lạnh", "Kệ bên máy lạnh"]);
     await sparse.locator("[data-tour-stage] .room-tour-marker:visible").first().waitFor();
     if (artifacts) await student.screenshot({ path: path.join(artifacts, "room-tour-fans-and-fridge.png") });
+    await staff.goto(baseUrl + "/Rooms/Catalog");
+    await staff.getByRole("link", { name: /^Tòa C/ }).click();
+    await staff.getByRole("link", { name: /^Tầng 5/ }).click();
+    const row504 = staff.locator("tbody tr").filter({ hasText: "C-504" });
+    await row504.getByRole("button", { name: "Sửa", exact: true }).click();
+    const editor = staff.locator("dialog[open]");
+    await editor.getByText("Kệ bên máy lạnh", { exact: false }).waitFor();
+    const options = editor.getByRole("checkbox");
+    assert.equal(await options.count(), 9);
+    for (const option of await options.all()) await option.check();
+    await editor.getByRole("button", { name: "Lưu phòng", exact: true }).click();
+    await row504.getByText(/Ban công.*Kệ bên máy lạnh/).waitFor();
+    await student.reload();
+    await sparse.locator("[data-tour-stage] canvas").waitFor();
+    assert.deepEqual(new Set((await sparse.locator("[data-tour-stage]").getAttribute("data-modeled-amenities")).split(",")),
+      new Set(["bath", "wifi", "air", "standingFan", "ceilingFan", "desk", "locker", "fridge", "heater", "balcony"]));
     const preview = await chooseRoom(student);
     await preview.getByRole("heading", {name:"Ảnh thật của phòng " + room, exact:true}).waitFor();
     assert.equal(await preview.getByText("Nguồn ảnh tham khảo").count(), 0);
@@ -189,7 +206,8 @@ async function run() {
     const label = bed.padStart(2, "0");
     const stage = preview.locator("[data-tour-stage]");
     await stage.locator("canvas").waitFor({ timeout: 12000 });
-    assert.equal(await stage.getAttribute("data-modeled-amenities"), "bath,wifi,air,desk,locker");
+    assert.deepEqual(new Set((await stage.getAttribute("data-modeled-amenities")).split(",")),
+      new Set(["bath", "wifi", "air", "desk", "locker"]));
     const occupiedMarker = stage.locator('button[data-bed="2"]');
     await occupiedMarker.waitFor();
     assert.equal(await occupiedMarker.isDisabled(), true);

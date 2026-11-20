@@ -19,7 +19,7 @@ const instructions = page.querySelector("[data-tour-instructions]");
 const fallback = page.querySelector("[data-tour-fallback]");
 const canvasHost = page.querySelector("[data-tour-canvas]");
 const markersHost = page.querySelector("[data-tour-markers]");
-const amenities = [...page.querySelectorAll("[data-room-amenities] li")].map(item => item.textContent.trim());
+const modelKeys = [...page.querySelectorAll("[data-room-amenities] [data-model-key]")].map(item => item.dataset.modelKey).filter(Boolean);
 const bedName = number => `Giường ${String(number).padStart(2, "0")}`;
 const bedTier = number => number % 2 ? "Tầng dưới" : "Tầng trên";
 const bedState = number => available.has(number) ? "Có thể xếp" : "Không thể xếp";
@@ -59,7 +59,7 @@ function mountTour() {
     scene.background = new THREE.Color("#eaece8");
     renderer.toneMapping = THREE.NeutralToneMapping;
     renderer.toneMappingExposure = 1.05;
-    const room = createRoomModel(scene, capacity, available, amenities);
+    const room = createRoomModel(scene, capacity, available, modelKeys);
     stage.dataset.modeledAmenities = Object.keys(room.features).filter(key => room.features[key]).join(",");
 
     // A small prefiltered indoor environment gives the steel, glazed ceramic and timber

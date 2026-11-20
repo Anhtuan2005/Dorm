@@ -1,21 +1,40 @@
 @model MeterPage
 @using System.Globalization
-@{ string? Num(decimal? x) => x?.ToString("0.##", CultureInfo.InvariantCulture); var edit = Model.Edit; }
+@{ string? Num(decimal? x) => x?.ToString("0.###", CultureInfo.InvariantCulture); var edit = Model.Edit; }
 <header class="operations-heading"><div><h1>Chỉ số điện nước</h1><p>Chia chi phí từng phòng theo tỷ lệ thời gian mỗi sinh viên ở trong kỳ.</p></div><a asp-controller="Billing" asp-action="Index" class="heading-room-link">Thu phí</a></header>
 <div class="term-workspace">
+@if (Model.Selected is null) {
+    <section class="term-panel meter-intro" aria-labelledby="meter-intro-title">
+        <div>
+            <h2 id="meter-intro-title">Chưa có kỳ thu theo chỉ số</h2>
+            <p>Bạn có thể đọc thử ảnh đồng hồ điện hoặc nước ngay tại đây. Để lưu chỉ số theo phòng, hãy mở kỳ thu bên dưới.</p>
+        </div>
+        <button type="button" class="primary-button" data-preview-meter aria-haspopup="dialog" hidden>Đọc thử ảnh đồng hồ</button>
+        <noscript><p>Bật JavaScript để đọc ảnh trên thiết bị.</p></noscript>
+    </section>
+}
 <details class="term-panel" open="@(Model.Selected == null)"><summary>Mở kỳ thu theo chỉ số</summary><form asp-action="CreatePeriod" method="post" class="term-fields">
 <label>Mã kỳ<input name="PeriodCode" required minlength="3" maxlength="12" /></label><label>Tên kỳ<input name="PeriodName" required maxlength="80" /></label>
 <label>Từ ngày<input type="date" name="StartDate" required /></label><label>Đến ngày<input type="date" name="EndDate" required /></label>
-<label>Hạn thanh toán<input type="date" name="DueDate" required /></label><button class="primary">Mở kỳ thu</button></form></details>
+<label>Hạn thanh toán<input type="date" name="DueDate" required /></label><button class="heading-room-link">Mở kỳ thu</button></form></details>
 @if (Model.Selected is { } period) {
 <section class="term-panel"><form method="get" class="term-fields"><label>Kỳ chỉ số<select name="periodId">@foreach (var p in Model.Periods) { <option value="@p.Id" selected="@(p.Id == period.Id)">@p.Code · @p.Name</option> }</select></label><button class="heading-room-link">Xem kỳ</button></form>
 @if (!Model.Issued) {
-<form asp-action="Reading" method="post" class="term-fields">
+<form asp-action="Reading" method="post" class="term-fields meter-entry" id="meter-entry">
 <input type="hidden" name="periodId" value="@period.Id" /><input type="hidden" name="version" value="@(edit == null ? "" : Convert.ToBase64String(edit.Version))" />
 <label>Phòng<input list="meter-rooms" name="roomCode" required value="@edit?.Code" readonly="@(edit != null)" /></label><datalist id="meter-rooms">@foreach (var code in Model.Rooms) { <option value="@code"></option> }</datalist>
 @foreach (var item in new[] { ("powerStart", "Điện đầu kỳ (kWh)", edit?.PowerStart), ("powerEnd", "Điện cuối kỳ (kWh)", edit?.PowerEnd), ("powerRate", "Đơn giá điện (đ/kWh)", edit?.PowerRate), ("waterStart", "Nước đầu kỳ (m³)", edit?.WaterStart), ("waterEnd", "Nước cuối kỳ (m³)", edit?.WaterEnd), ("waterRate", "Đơn giá nước (đ/m³)", edit?.WaterRate) }) {
-<label>@item.Item2<input type="number" min="0" step="0.01" name="@item.Item1" value="@Num(item.Item3)" required /></label>
+<div class="meter-field">
+    <label for="meter-@item.Item1">@item.Item2</label>
+    <div class="meter-field-input">
+        <input id="meter-@item.Item1" type="number" min="0" max="99999999" step="@(item.Item1 is "waterStart" or "waterEnd" ? "0.001" : "0.01")" name="@item.Item1" value="@Num(item.Item3)" required />
+        @if (!item.Item1.EndsWith("Rate")) {
+            <button type="button" class="meter-photo-button" data-read-meter="@item.Item1" data-caption="@item.Item2" aria-label="Đọc ảnh cho @item.Item2" aria-haspopup="dialog" hidden>Đọc ảnh</button>
+        }
+    </div>
+</div>
 }
+<p class="meter-estimate" hidden><strong>Tạm tính cho phòng</strong> <span id="meter-estimate"></span></p>
 <button class="primary">Lưu chỉ số</button></form>
 } else { <p>Chỉ số đã chốt khi phát hành hóa đơn.</p> }</section>
 <section class="term-panel"><h2>Chỉ số đã nhập</h2>
@@ -31,3 +50,12 @@
 <label>Phí dịch vụ mỗi sinh viên (đ)<input type="number" name="ServiceAmount" min="0" max="999999999" value="0" required /></label>
 <button class="primary">Phát hành hóa đơn</button></form></section>
 }</div>
+
+@if (!Model.Issued) {
+    <partial name="_ReadPhoto" />
+}
+@section Scripts {
+    @if (!Model.Issued) {
+        <script type="module" src="~/js/meter-photo.js" asp-append-version="true"></script>
+    }
+}

@@ -111,9 +111,10 @@ public sealed class OperationsCatalogService(DormitoryDbContext db, TimeProvider
         if (!code.StartsWith($"{floor.Building.Code}-", StringComparison.OrdinalIgnoreCase))
             return new(false, $"Mã phòng phải bắt đầu bằng {floor.Building.Code}-.", floor.BuildingId, floor.Id);
         if (await db.Rooms.AnyAsync(x => x.Code == code, cancellationToken)) return new(false, $"Mã phòng {code} đã tồn tại.", floor.BuildingId, floor.Id);
-        var amenities = RoomAmenities.Serialize(input.Amenities);
+        var amenities = input.GetStoredAmenities();
+        if (amenities is null) return new(false, "Hãy mở lại biểu mẫu và tích chọn tiện nghi trong danh sách.", floor.BuildingId, floor.Id);
         if (amenities.Length > RoomAmenities.MaximumStoredLength)
-            return new(false, "Danh sách tiện nghi quá dài khi tính cả WC khép kín. Hãy rút ngắn tiện nghi bổ sung.", floor.BuildingId, floor.Id);
+            return new(false, "Danh sách tiện nghi vượt giới hạn lưu trữ. Hãy giảm số mục được chọn.", floor.BuildingId, floor.Id);
         var room = new Room { FloorId = floor.Id, Code = code, RoomType = input.RoomType.Trim(), Amenities = amenities, Capacity = input.Capacity, MonthlyPrice = input.MonthlyPrice };
         db.Rooms.Add(room);
         await db.SaveChangesAsync(cancellationToken);
@@ -143,9 +144,10 @@ public sealed class OperationsCatalogService(DormitoryDbContext db, TimeProvider
         var code = input.Code.Trim().ToUpperInvariant();
         if (!code.StartsWith($"{room.Floor.Building.Code}-", StringComparison.OrdinalIgnoreCase)) return new(false, $"Mã phòng phải bắt đầu bằng {room.Floor.Building.Code}-.", room.Floor.BuildingId, room.FloorId);
         if (await db.Rooms.AnyAsync(x => x.Id != room.Id && x.Code == code, cancellationToken)) return new(false, $"Mã phòng {code} đã tồn tại.", room.Floor.BuildingId, room.FloorId);
-        var amenities = RoomAmenities.Serialize(input.Amenities);
+        var amenities = input.GetStoredAmenities(room.Amenities);
+        if (amenities is null) return new(false, "Hãy mở lại biểu mẫu và tích chọn tiện nghi trong danh sách.", room.Floor.BuildingId, room.FloorId);
         if (amenities.Length > RoomAmenities.MaximumStoredLength)
-            return new(false, "Danh sách tiện nghi quá dài khi tính cả WC khép kín. Hãy rút ngắn tiện nghi bổ sung.", room.Floor.BuildingId, room.FloorId);
+            return new(false, "Danh sách tiện nghi vượt giới hạn lưu trữ. Hãy giảm số mục được chọn.", room.Floor.BuildingId, room.FloorId);
         room.Code = code;
         room.RoomType = input.RoomType.Trim();
         room.Amenities = amenities;

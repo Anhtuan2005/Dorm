@@ -1,4 +1,5 @@
 const fs = require("fs");
+const assert = require("node:assert/strict");
 const path = require("path");
 const { spawnSync } = require("child_process");
 const { chromium } = require("playwright");
@@ -88,9 +89,43 @@ async function submitDialog(page, id, fields, submitName) {
     await manager.getByRole("button", { name: "Thêm tầng" }).click();
     await submitDialog(manager, "create-floor-dialog", { Number: "1" }, "Thêm tầng");
     await manager.getByRole("button", { name: "Thêm phòng", exact: true }).click();
-    await submitDialog(manager, "create-room-dialog", { Code: "QA-101", RoomType: "Nam", Capacity: "8", MonthlyPrice: "990000", Amenities: "Wi-Fi|Bàn học" }, "Tạo phòng");
+    const createRoom = manager.locator("#create-room-dialog");
+    assert.equal(await createRoom.getByRole("checkbox").count(), 9);
+    assert.equal(await createRoom.locator('[name="OtherAmenities"]').count(), 0);
+    await createRoom.getByRole("checkbox", { name: "Wi-Fi", exact: true }).check();
+    await createRoom.getByRole("checkbox", { name: "Bàn học", exact: true }).check();
+    await submitDialog(manager, "create-room-dialog", { Code: "QA-101", RoomType: "Nam", Capacity: "8", MonthlyPrice: "990000.00" }, "Tạo phòng");
     const roomRow = manager.locator("tbody tr").filter({ hasText: "QA-101" });
-    if (!(await roomRow.isVisible())) issues.push("room create was not reflected");
+    await roomRow.waitFor();
+    const roomAmenities = roomRow.locator("td").first().locator("small");
+    assert.equal(await roomAmenities.innerText(), "WC khép kín · Wi-Fi · Bàn học");
+
+    await roomRow.getByRole("button", { name: "Sửa", exact: true }).click();
+    const editRoom = manager.locator("dialog[open]");
+    assert.equal(Number(await editRoom.locator('[name="MonthlyPrice"]').inputValue()), 990000);
+    for (const name of ["Wi-Fi", "Bàn học"])
+      assert.ok(await editRoom.getByRole("checkbox", { name, exact: true }).isChecked());
+    await editRoom.getByRole("checkbox", { name: "Bàn học", exact: true }).uncheck();
+    await editRoom.getByRole("checkbox", { name: "Quạt trần", exact: true }).check();
+    assert.equal(await editRoom.locator('[name="OtherAmenities"]').count(), 0);
+    if (process.env.DORM_BROWSER_FIXTURE_ARTIFACTS) {
+      const artifacts = process.env.DORM_BROWSER_FIXTURE_ARTIFACTS;
+      await editRoom.screenshot({ path: path.join(artifacts, "room-amenities-desktop.png") });
+      await manager.setViewportSize({ width: 390, height: 844 });
+      assert.ok(await editRoom.evaluate(dialog => dialog.scrollWidth <= dialog.clientWidth));
+      await editRoom.screenshot({ path: path.join(artifacts, "room-amenities-mobile.png") });
+      await manager.setViewportSize({ width: 1500, height: 960 });
+    }
+    await editRoom.getByRole("button", { name: "Lưu phòng", exact: true }).click();
+    await roomRow.getByText("WC khép kín · Wi-Fi · Quạt trần", { exact: true }).waitFor();
+
+    await roomRow.getByRole("button", { name: "Sửa", exact: true }).click();
+    const checked = editRoom.getByRole("checkbox", { checked: true });
+    while (await checked.count()) await checked.first().uncheck();
+    await Promise.all([manager.waitForNavigation(), editRoom.getByRole("button", { name: "Lưu phòng", exact: true }).click()]);
+    assert.equal(await roomRow.count(), 1, await manager.locator(".workspace-flash").first().textContent());
+    assert.equal(await roomAmenities.innerText(), "WC khép kín");
+    assert.equal(await roomRow.getByText("990.000 đ", { exact: true }).count(), 1);
 
     await manager.goto(`${baseUrl}/Students`, { waitUntil: "networkidle" });
     await manager.getByRole("button", { name: "Thêm sinh viên" }).click();

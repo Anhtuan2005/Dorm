@@ -61,8 +61,8 @@ public sealed class MetersController(DormitoryDbContext db) : Controller
         var numbers = new decimal[6];
         for (int i = 0; i < raw.Length; i++)
             if (!decimal.TryParse(raw[i], NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out numbers[i]) ||
-                numbers[i] is < 0 or > 99999999 || decimal.Round(numbers[i], 2) != numbers[i])
-                return Back("Chỉ số và đơn giá phải là số không âm, tối đa hai chữ số thập phân.", "", periodId);
+                numbers[i] is < 0 or > 99999999 || decimal.Round(numbers[i], i is 3 or 4 ? 3 : 2) != numbers[i])
+                return Back("Nhập số từ 0 đến 99.999.999. Chỉ số nước nhận tối đa ba chữ số thập phân, chỉ số điện và đơn giá nhận tối đa hai.", "", periodId);
         if (numbers[1] < numbers[0] || numbers[4] < numbers[3] ||
             (numbers[1] - numbers[0]) * numbers[2] > 999999999m || (numbers[4] - numbers[3]) * numbers[5] > 999999999m)
             return Back("Kiểm tra chỉ số cuối và thành tiền mỗi khoản (tối đa 999.999.999 đ).", "", periodId);

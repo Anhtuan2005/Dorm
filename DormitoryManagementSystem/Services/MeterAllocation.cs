@@ -35,7 +35,7 @@ public static class MeterAllocation
                     var code = room.First().Room.Code;
                     lines.Add((part.Student, new InvoiceLine {
                         ChargeType = type, Amount = amount,
-                        Description = $"{type} {code}: ({final:0.##} − {initial:0.##}) {units} × {rate:0.##} đ · phần ở {part.Ticks / totalWeight:P2}"
+                        Description = $"{type} {code}: ({final:0.###} − {initial:0.###}) {units} × {rate:0.##} đ · phần ở {part.Ticks / totalWeight:P2}"
                     }));
                 }
             }
